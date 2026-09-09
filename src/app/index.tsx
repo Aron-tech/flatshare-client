@@ -3,8 +3,9 @@ import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
 import { WebBadge } from "@/components/web-badge";
 import { BottomTabInset, MaxContentWidth, Spacing } from "@/constants/theme";
+import { useAuth } from "@/context/AuthContext";
 import * as Device from "expo-device";
-import { Platform, StyleSheet } from "react-native";
+import { Platform, StyleSheet, Text, TouchableOpacity } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import "../../global.css";
 
@@ -28,6 +29,7 @@ function getDevMenuHint() {
 }
 
 export default function HomeScreen() {
+  const { logout } = useAuth();
   return (
     <ThemedView style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
@@ -37,6 +39,13 @@ export default function HomeScreen() {
             Welcome to&nbsp;Expo
           </ThemedText>
         </ThemedView>
+
+        <TouchableOpacity
+          className="bg-red-500 py-3 px-6 rounded-xl"
+          onPress={logout}
+        >
+          <Text className="text-white font-semibold">Kijelentkezés</Text>
+        </TouchableOpacity>
 
         {Platform.OS === "web" && <WebBadge />}
       </SafeAreaView>
