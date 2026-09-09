@@ -3,7 +3,7 @@ import AppTabs from "@/components/app-tabs";
 import { DarkTheme, DefaultTheme, ThemeProvider } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { useColorScheme } from "react-native";
-import "../global.css";
+import "../../global.css";
 
 SplashScreen.preventAutoHideAsync();
 
