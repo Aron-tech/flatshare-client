@@ -2,13 +2,9 @@ import * as AuthSession from "expo-auth-session";
 import * as Localization from "expo-localization";
 import * as WebBrowser from "expo-web-browser";
 import { useState } from "react";
-import {
-  ActivityIndicator,
-  Alert,
-  Text,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import { ActivityIndicator, Alert, View } from "react-native";
+import { Button } from "../components/ui/button";
+import { Text } from "../components/ui/text";
 import { useAuth } from "../context/AuthContext";
 
 WebBrowser.maybeCompleteAuthSession();
@@ -25,8 +21,6 @@ export default function LoginScreen() {
     path: "callback",
   });
 
-  console.log("PONTOS REDIRECT URI:", redirectUri);
-
   const handleLogin = async (provider?: "GoogleOAuth" | "AppleOAuth") => {
     try {
       setLoading(true);
@@ -42,7 +36,10 @@ export default function LoginScreen() {
 
       const result = await WebBrowser.openAuthSessionAsync(
         authUrl,
-        redirectUri
+        redirectUri,
+        {
+          preferEphemeralSession: true,
+        }
       );
 
       if (result.type === "success" && result.url) {
@@ -86,39 +83,34 @@ export default function LoginScreen() {
   };
 
   return (
-    <View className="flex-1 justify-center items-center p-6 bg-white">
-      <Text className="text-2xl font-bold mb-8">FlatShare Bejelentkezés</Text>
+    <View className="flex-1 justify-center items-center p-6 bg-background">
+      <Text className="text-3xl font-bold tracking-tight mb-8 text-foreground">
+        FlatShare Bejelentkezés
+      </Text>
 
       {loading ? (
-        <ActivityIndicator size="large" color="#000" />
+        <ActivityIndicator size="large" className="text-primary" />
       ) : (
-        <View className="w-full gap-4">
-          <TouchableOpacity
-            className="bg-black py-4 rounded-xl items-center"
-            onPress={() => handleLogin()}
-          >
-            <Text className="text-white font-semibold">
-              Folytatás WorkOS fiókkal
-            </Text>
-          </TouchableOpacity>
+        <View className="w-full gap-3">
+          <Button size="lg" variant="default" onPress={() => handleLogin()}>
+            <Text className="font-semibold">Folytatás WorkOS fiókkal</Text>
+          </Button>
 
-          <TouchableOpacity
-            className="bg-red-500 py-4 rounded-xl items-center"
+          <Button
+            size="lg"
+            variant="outline"
             onPress={() => handleLogin("GoogleOAuth")}
           >
-            <Text className="text-white font-semibold">
-              Bejelentkezés Google-lel
-            </Text>
-          </TouchableOpacity>
+            <Text className="font-semibold">Bejelentkezés Google-lel</Text>
+          </Button>
 
-          <TouchableOpacity
-            className="bg-gray-800 py-4 rounded-xl items-center"
+          <Button
+            size="lg"
+            variant="secondary"
             onPress={() => handleLogin("AppleOAuth")}
           >
-            <Text className="text-white font-semibold">
-              Bejelentkezés Apple-lel
-            </Text>
-          </TouchableOpacity>
+            <Text className="font-semibold">Bejelentkezés Apple-lel</Text>
+          </Button>
         </View>
       )}
     </View>

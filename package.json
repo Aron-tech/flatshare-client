@@ -5,6 +5,7 @@
   "dependencies": {
     "@expo/ui": "~57.0.17",
     "@rn-primitives/portal": "^1.5.3",
+    "@rn-primitives/slot": "^1.5.2",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "expo": "~57.0.21",
@@ -24,6 +25,7 @@
     "expo-symbols": "~57.0.2",
     "expo-system-ui": "~57.0.3",
     "expo-web-browser": "~57.0.2",
+    "lucide-react-native": "^1.43.0",
     "nativewind": "^4.2.6",
     "react": "19.2.3",
     "react-dom": "19.2.3",

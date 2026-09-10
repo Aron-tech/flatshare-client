@@ -1,4 +1,6 @@
+import { PortalHost } from "@rn-primitives/portal";
 import { Stack, useRouter, useSegments } from "expo-router";
+import { StatusBar } from "expo-status-bar";
 import { useEffect } from "react";
 import { ActivityIndicator, View } from "react-native";
 import "../../global.css";
@@ -30,16 +32,20 @@ function RootNavigation() {
   }
 
   return (
-    <Stack screenOptions={{ headerShown: false }}>
-      <Stack.Screen name="index" />
-      <Stack.Screen name="login" options={{ gestureEnabled: false }} />
-    </Stack>
+    <>
+      <Stack screenOptions={{ headerShown: false }}>
+        <Stack.Screen name="index" />
+        <Stack.Screen name="login" options={{ gestureEnabled: false }} />
+      </Stack>
+      <PortalHost />
+    </>
   );
 }
 
 export default function RootLayout() {
   return (
     <AuthProvider>
+      <StatusBar style="auto" />
       <RootNavigation />
     </AuthProvider>
   );
