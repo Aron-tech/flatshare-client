@@ -34,7 +34,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         const storedToken = await getToken();
         if (storedToken) {
           setToken(storedToken);
-          const res = await fetch(`${BACKEND_URL}/me`, {
+          const res = await fetch(`${BACKEND_URL}/user/me`, {
             headers: {
               Authorization: `Bearer ${storedToken}`,
               Accept: "application/json",
