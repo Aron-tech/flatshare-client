@@ -1,49 +1,81 @@
+const { fontFamilies, typography, radius, spacing } = require("./src/theme/tokens");
+
+/** Színtoken → `hsl(var(--token))`. Az értékek a global.css-ben vannak. */
+const color = (name) => `hsl(var(--${name}))`;
+
 /** @type {import('tailwindcss').Config} */
 module.exports = {
   darkMode: "class",
-  content: [
-    "./src/**/*.{js,jsx,ts,tsx}",
-    "./src/app/**/*.{js,jsx,ts,tsx}",
-    "./src/components/**/*.{js,jsx,ts,tsx}",
-  ],
+  content: ["./src/**/*.{js,jsx,ts,tsx}"],
   presets: [require("nativewind/preset")],
   theme: {
     extend: {
       colors: {
-        border: "hsl(var(--border))",
-        input: "hsl(var(--input))",
-        ring: "hsl(var(--ring))",
-        background: "hsl(var(--background))",
-        foreground: "hsl(var(--foreground))",
+        border: color("border"),
+        input: color("input"),
+        ring: color("ring"),
+        placeholder: color("placeholder"),
+        background: color("background"),
+        foreground: color("foreground"),
         primary: {
-          DEFAULT: "hsl(var(--primary))",
-          foreground: "hsl(var(--primary-foreground))",
+          DEFAULT: color("primary"),
+          foreground: color("primary-foreground"),
+          active: color("primary-active"),
+          soft: color("primary-soft"),
+          "soft-foreground": color("primary-soft-foreground"),
         },
         secondary: {
-          DEFAULT: "hsl(var(--secondary))",
-          foreground: "hsl(var(--secondary-foreground))",
+          DEFAULT: color("secondary"),
+          foreground: color("secondary-foreground"),
+          active: color("secondary-active"),
+        },
+        success: {
+          DEFAULT: color("success"),
+          foreground: color("success-foreground"),
+          active: color("success-active"),
+          soft: color("success-soft"),
+          "soft-foreground": color("success-soft-foreground"),
         },
         destructive: {
-          DEFAULT: "hsl(var(--destructive))",
-          foreground: "hsl(var(--destructive-foreground))",
+          DEFAULT: color("destructive"),
+          foreground: color("destructive-foreground"),
         },
         muted: {
-          DEFAULT: "hsl(var(--muted))",
-          foreground: "hsl(var(--muted-foreground))",
+          DEFAULT: color("muted"),
+          foreground: color("muted-foreground"),
         },
         accent: {
-          DEFAULT: "hsl(var(--accent))",
-          foreground: "hsl(var(--accent-foreground))",
+          DEFAULT: color("accent"),
+          foreground: color("accent-foreground"),
         },
         popover: {
-          DEFAULT: "hsl(var(--popover))",
-          foreground: "hsl(var(--popover-foreground))",
+          DEFAULT: color("popover"),
+          foreground: color("popover-foreground"),
         },
         card: {
-          DEFAULT: "hsl(var(--card))",
-          foreground: "hsl(var(--card-foreground))",
+          DEFAULT: color("card"),
+          foreground: color("card-foreground"),
         },
       },
+      fontFamily: {
+        sans: [fontFamilies.sans[400]],
+        serif: [fontFamilies.serif[400]],
+      },
+      fontSize: Object.fromEntries(
+        Object.entries(typography).map(([name, t]) => [
+          name,
+          [
+            `${t.size}px`,
+            {
+              lineHeight: `${t.lineHeight}px`,
+              letterSpacing: `${t.tracking}px`,
+              fontWeight: String(t.weight),
+            },
+          ],
+        ]),
+      ),
+      borderRadius: radius,
+      spacing,
     },
   },
   plugins: [],

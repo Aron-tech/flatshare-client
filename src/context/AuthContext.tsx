@@ -1,14 +1,16 @@
-import React, { createContext, useContext, useEffect, useState } from "react";
-import { getToken, removeToken, saveToken } from "../services/authStorage";
-
-interface User {
-  id: number;
-  email: string;
-  first_name: string | null;
-  last_name: string | null;
-  avatar: string | null;
-  language: string | null;
-}
+import { authService } from "@/services/api/AuthService";
+import { pushNotificationService } from "@/services/notifications/PushNotificationService";
+import { applyUserLanguage } from "@/i18n";
+import { tokenStorage } from "@/services/storage/TokenStorage";
+import { IAuthService, ITokenStorage, User } from "@/types/auth";
+import React, {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 
 interface AuthContextType {
   token: string | null;
@@ -17,67 +19,109 @@ interface AuthContextType {
   login: (token: string, user: User) => Promise<void>;
   updateUser: (user: User) => void;
   logout: () => Promise<void>;
+  authService: IAuthService;
 }
 
-const AuthContext = createContext<AuthContextType>({} as AuthContextType);
+const AuthContext = createContext<AuthContextType | null>(null);
 
-const BACKEND_URL = "http://192.168.0.39:8000/api";
+interface AuthProviderProps {
+  children: React.ReactNode;
+  storage?: ITokenStorage;
+  service?: IAuthService;
+}
 
-export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
+export const AuthProvider: React.FC<AuthProviderProps> = ({
+  children,
+  storage = tokenStorage,
+  service = authService,
+}) => {
   const [token, setToken] = useState<string | null>(null);
   const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
 
   useEffect(() => {
-    async function loadStoredAuth() {
+    let isMounted = true;
+
+    async function initializeAuth() {
       try {
-        const storedToken = await getToken();
-        if (storedToken) {
+        const storedToken = await storage.getToken();
+        if (!storedToken) {
+          return;
+        }
+
+        // A tokent csak ellenőrzés után tesszük a state-be, különben a
+        // többi provider lejárt tokennel kérdezne le adatokat (401).
+        const currentUser = await service.getCurrentUser(storedToken);
+        if (isMounted) {
           setToken(storedToken);
-          const res = await fetch(`${BACKEND_URL}/user/me`, {
-            headers: {
-              Authorization: `Bearer ${storedToken}`,
-              Accept: "application/json",
-            },
-          });
-          if (res.ok) {
-            const data = await res.json();
-            setUser(data.user);
-          } else {
-            await removeToken();
-            setToken(null);
-          }
+          setUser(currentUser);
+          applyUserLanguage(currentUser.language);
+        }
+      } catch {
+        await storage.removeToken();
+        if (isMounted) {
+          setToken(null);
+          setUser(null);
         }
       } finally {
-        setIsLoading(false);
+        if (isMounted) setIsLoading(false);
       }
     }
-    loadStoredAuth();
+
+    initializeAuth();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [storage, service]);
+
+  const login = useCallback(
+    async (newToken: string, newUser: User) => {
+      await storage.saveToken(newToken);
+      setToken(newToken);
+      setUser(newUser);
+      applyUserLanguage(newUser.language);
+    },
+    [storage]
+  );
+
+  const updateUser = useCallback((updatedUser: User) => {
+    setUser(updatedUser);
+    applyUserLanguage(updatedUser.language);
   }, []);
 
-  const login = async (newToken: string, newUser: User) => {
-    await saveToken(newToken);
-    setToken(newToken);
-    setUser(newUser);
-  };
-
-  const updateUser = (updatedUser: User) => {
-    setUser(updatedUser);
-  };
-
-  const logout = async () => {
-    await removeToken();
+  const logout = useCallback(async () => {
+    if (token) {
+      // Kijelentkezés után ne kapjon értesítést az eszköz erre a fiókra.
+      await pushNotificationService.unregister(token).catch(() => undefined);
+    }
+    await storage.removeToken();
     setToken(null);
     setUser(null);
-  };
+  }, [storage, token]);
+
+  const contextValue = useMemo(
+    () => ({
+      token,
+      user,
+      isLoading,
+      login,
+      updateUser,
+      logout,
+      authService: service,
+    }),
+    [token, user, isLoading, login, updateUser, logout, service]
+  );
 
   return (
-    <AuthContext.Provider
-      value={{ token, user, isLoading, login, updateUser, logout }}
-    >
-      {children}
-    </AuthContext.Provider>
+    <AuthContext.Provider value={contextValue}>{children}</AuthContext.Provider>
   );
 };
 
-export const useAuth = () => useContext(AuthContext);
+export const useAuth = (): AuthContextType => {
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error("useAuth must be used within an AuthProvider");
+  }
+  return context;
+};

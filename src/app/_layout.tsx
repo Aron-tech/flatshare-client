@@ -1,32 +1,59 @@
+import { AuthProvider, useAuth } from "@/context/AuthContext";
+import { HouseholdProvider, useHousehold } from "@/context/HouseholdContext";
+import { usePushNotifications } from "@/hooks/use-push-notifications";
+import { ToastHost } from "@/components/ui/toast";
+import { useNavTheme } from "@/hooks/use-theme";
+import { FONT_ASSETS } from "@/theme/fonts";
 import { PortalHost } from "@rn-primitives/portal";
-import { Stack, useRouter, useSegments } from "expo-router";
+import { useFonts } from "expo-font";
+import { Stack, ThemeProvider, useRouter, useSegments } from "expo-router";
+import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
 import { useEffect } from "react";
 import { ActivityIndicator, View } from "react-native";
 import "../../global.css";
-import { AuthProvider, useAuth } from "../context/AuthContext";
+
+SplashScreen.preventAutoHideAsync();
 
 function RootNavigation() {
-  const { token, isLoading } = useAuth();
+  const { token, isLoading: authLoading } = useAuth();
+  const {
+    households,
+    activeHousehold,
+    isLoading: householdLoading,
+  } = useHousehold();
   const segments = useSegments();
   const router = useRouter();
 
-  useEffect(() => {
-    if (isLoading) return;
+  usePushNotifications();
 
-    const inAuthGroup = segments[0] === "login";
+  const isGlobalLoading = authLoading || (!!token && householdLoading);
+
+  useEffect(() => {
+    if (isGlobalLoading) return;
+
+    const currentSegment = segments[0] as string | undefined;
+    const inAuthGroup = currentSegment === "login";
+    const inSetup = currentSegment === "household-setup";
+    const inSwitch = currentSegment === "household-switch";
 
     if (!token && !inAuthGroup) {
       router.replace("/login");
-    } else if (token && inAuthGroup) {
-      router.replace("/");
+    } else if (token) {
+      if (households.length === 0 && !inSetup) {
+        router.replace("/household-setup");
+      } else if (households.length > 0 && !activeHousehold && !inSwitch) {
+        router.replace("/household-switch");
+      } else if (activeHousehold && inAuthGroup) {
+        router.replace("/");
+      }
     }
-  }, [token, isLoading, segments]);
+  }, [token, households, activeHousehold, isGlobalLoading, segments, router]);
 
-  if (isLoading) {
+  if (isGlobalLoading) {
     return (
-      <View className="flex-1 justify-center items-center">
-        <ActivityIndicator size="large" />
+      <View className="flex-1 items-center justify-center bg-background">
+        <ActivityIndicator size="large" className="text-primary" />
       </View>
     );
   }
@@ -34,19 +61,41 @@ function RootNavigation() {
   return (
     <>
       <Stack screenOptions={{ headerShown: false }}>
-        <Stack.Screen name="index" />
+        <Stack.Screen name="(tabs)" />
         <Stack.Screen name="login" options={{ gestureEnabled: false }} />
+        <Stack.Screen
+          name="household-setup"
+          options={{ gestureEnabled: households.length > 0 }}
+        />
+        <Stack.Screen
+          name="household-switch"
+          options={{ presentation: "modal" }}
+        />
       </Stack>
       <PortalHost />
+      <ToastHost />
     </>
   );
 }
 
 export default function RootLayout() {
+  const navTheme = useNavTheme();
+  const [fontsLoaded, fontError] = useFonts(FONT_ASSETS);
+
+  useEffect(() => {
+    if (fontsLoaded || fontError) SplashScreen.hideAsync();
+  }, [fontsLoaded, fontError]);
+
+  if (!fontsLoaded && !fontError) return null;
+
   return (
-    <AuthProvider>
-      <StatusBar style="auto" />
-      <RootNavigation />
-    </AuthProvider>
+    <ThemeProvider value={navTheme}>
+      <AuthProvider>
+        <HouseholdProvider>
+          <StatusBar style="auto" />
+          <RootNavigation />
+        </HouseholdProvider>
+      </AuthProvider>
+    </ThemeProvider>
   );
 }
