@@ -4,7 +4,7 @@ import { Separator } from "@/components/ui/separator";
 import { Text } from "@/components/ui/text";
 import { Elevation } from "@/constants/theme";
 import { Category, TASK_USER_WEIGHTS, TaskUserWeight } from "@/types/task";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useLayoutEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ActivityIndicator, Alert, LayoutChangeEvent, Modal, PanResponder, Pressable, View } from "react-native";
 
@@ -29,6 +29,7 @@ interface TaskActionsSheetProps {
 
 const THUMB = 28;
 const NEUTRAL_INDEX = TASK_USER_WEIGHTS.indexOf("neutral");
+const LAST_STEP = TASK_USER_WEIGHTS.length - 1;
 
 /** Vízszintes, 5 állású csúszka; elengedéskor adja vissza a kiválasztott súlyt. */
 function WeightSlider({ disabled, onChange }: { disabled: boolean; onChange: (weight: TaskUserWeight) => void }) {
@@ -36,46 +37,40 @@ function WeightSlider({ disabled, onChange }: { disabled: boolean; onChange: (we
   const [index, setIndex] = useState(NEUTRAL_INDEX);
   const widthRef = useRef(0);
   const [width, setWidth] = useState(0);
-  const indexRef = useRef(NEUTRAL_INDEX);
+  // A PanResponder egyszer jön létre, ezért a friss propokat refen keresztül olvassa.
   const onChangeRef = useRef(onChange);
   const disabledRef = useRef(disabled);
-  onChangeRef.current = onChange;
-  disabledRef.current = disabled;
+  useLayoutEffect(() => {
+    onChangeRef.current = onChange;
+    disabledRef.current = disabled;
+  });
 
-  const lastStep = TASK_USER_WEIGHTS.length - 1;
+  // A refeket csak a gesztus-callbackek olvassák, nem a render.
+  // eslint-disable-next-line react-hooks/refs
+  const [responder] = useState(() => {
+    const update = (x: number) => {
+      const usable = widthRef.current - THUMB;
+      if (usable <= 0) return;
+      const next = Math.min(LAST_STEP, Math.max(0, Math.round(((x - THUMB / 2) / usable) * LAST_STEP)));
+      setIndex(next);
+      onChangeRef.current(TASK_USER_WEIGHTS[next]);
+    };
 
-  const update = (x: number) => {
-    const usable = widthRef.current - THUMB;
-    if (usable <= 0) return;
-    const next = Math.min(lastStep, Math.max(0, Math.round(((x - THUMB / 2) / usable) * lastStep)));
-    indexRef.current = next;
-    setIndex(next);
-    onChangeRef.current(TASK_USER_WEIGHTS[next]);
-  };
-
-  const responder = useMemo(
-    () =>
-      PanResponder.create({
-        onStartShouldSetPanResponder: () => !disabledRef.current,
-        onMoveShouldSetPanResponder: () => !disabledRef.current,
-        onPanResponderTerminationRequest: () => false,
-        onPanResponderGrant: (e) => update(e.nativeEvent.locationX),
-        onPanResponderMove: (e) => update(e.nativeEvent.locationX),
-      }),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [],
-  );
-
-  useEffect(() => {
-    indexRef.current = index;
-  }, [index]);
+    return PanResponder.create({
+      onStartShouldSetPanResponder: () => !disabledRef.current,
+      onMoveShouldSetPanResponder: () => !disabledRef.current,
+      onPanResponderTerminationRequest: () => false,
+      onPanResponderGrant: (e) => update(e.nativeEvent.locationX),
+      onPanResponderMove: (e) => update(e.nativeEvent.locationX),
+    });
+  });
 
   const onLayout = (e: LayoutChangeEvent) => {
     widthRef.current = e.nativeEvent.layout.width;
     setWidth(e.nativeEvent.layout.width);
   };
 
-  const fraction = index / lastStep;
+  const fraction = index / LAST_STEP;
 
   return (
     <View className="gap-3">
@@ -108,11 +103,13 @@ function WeightSlider({ disabled, onChange }: { disabled: boolean; onChange: (we
 /** Feladat-műveletek: saját súlyozás (pontszorzó), szerkesztés és törlés. */
 export function TaskActionsSheet({ target, isBusy, onClose, onWeight, onEdit, onDelete }: TaskActionsSheetProps) {
   const { t } = useTranslation();
-  const [weight, setWeight] = useState<TaskUserWeight>("neutral");
-
-  useEffect(() => {
-    setWeight("neutral");
-  }, [target?.taskId]);
+  // Másik feladat megnyitásakor a súly semlegesre áll vissza (a csúszka is újramountol a `key` miatt).
+  const [selection, setSelection] = useState<{ taskId?: number; weight: TaskUserWeight }>({ weight: "neutral" });
+  const weight = selection.taskId === target?.taskId ? selection.weight : "neutral";
+  const setWeight = useCallback(
+    (next: TaskUserWeight) => setSelection({ taskId: target?.taskId, weight: next }),
+    [target?.taskId],
+  );
 
   const confirmDelete = () => {
     if (!target) return;

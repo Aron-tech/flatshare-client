@@ -28,18 +28,46 @@ function firstFieldErrors(errors: unknown): Record<string, string> {
   return result;
 }
 
+/**
+ * A folyamatban lévő GET kérések (kulcs: token + URL). Több képernyő ugyanazt az
+ * adatot egyszerre kérve (pl. `/households/{id}/me` újratöltéskor) egy kérésen osztozik.
+ */
+const inFlightGets = new Map<string, Promise<unknown>>();
+
 export class HttpClient {
   public constructor(private readonly baseUrl: string) {}
 
-  public async request<T>(
+  public request<T>(
     endpoint: string,
     options: RequestInit = {},
     token?: string | null,
-    { inlineValidation = false }: RequestOptions = {},
+    requestOptions: RequestOptions = {},
+  ): Promise<T> {
+    const isGet = (options.method ?? "GET").toUpperCase() === "GET" && !options.body;
+    if (!isGet) return this.send<T>(endpoint, options, token, requestOptions);
+
+    const key = `${token ?? ""} ${this.baseUrl}${endpoint}`;
+    const pending = inFlightGets.get(key);
+    if (pending) return pending as Promise<T>;
+
+    const promise = this.send<T>(endpoint, options, token, requestOptions).finally(() => {
+      inFlightGets.delete(key);
+    });
+    inFlightGets.set(key, promise);
+    return promise;
+  }
+
+  private async send<T>(
+    endpoint: string,
+    options: RequestInit,
+    token: string | null | undefined,
+    { inlineValidation = false }: RequestOptions,
   ): Promise<T> {
     const headers: Record<string, string> = {
       "Content-Type": "application/json",
       Accept: "application/json",
+      // Bejelentkezés előtt ebből tudja a backend a válaszok nyelvét.
+      "Accept-Language": i18n.language,
       ...(options.headers as Record<string, string>),
     };
 

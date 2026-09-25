@@ -45,7 +45,7 @@ export const HouseholdProvider: React.FC<HouseholdProviderProps> = ({
   const [activeHousehold, setActiveHousehold] = useState<Household | null>(
     null
   );
-  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [isLoading, setIsLoading] = useState<boolean>(!!token);
 
   const syncActiveHousehold = useCallback(
     async (items: Household[]) => {
@@ -70,16 +70,14 @@ export const HouseholdProvider: React.FC<HouseholdProviderProps> = ({
     [storage]
   );
 
+  /**
+   * Az `isLoading` csak a (tokenváltás utáni) első betöltésnél igaz: a gyökér
+   * navigáció ilyenkor spinnert mutat, ami egy későbbi frissítésnél az összes
+   * képernyőt újramountolná és újratöltetné.
+   */
   const refreshHouseholds = useCallback(async () => {
-    if (!token) {
-      setHouseholds([]);
-      setActiveHousehold(null);
-      setIsLoading(false);
-      return;
-    }
-
+    if (!token) return;
     try {
-      setIsLoading(true);
       const list = await service.getAll(token);
       setHouseholds(list);
       await syncActiveHousehold(list);
@@ -89,6 +87,16 @@ export const HouseholdProvider: React.FC<HouseholdProviderProps> = ({
       setIsLoading(false);
     }
   }, [token, service, syncActiveHousehold]);
+
+  // Tokenváltáskor (be-/kijelentkezés) a render közben állítjuk vissza az állapotot,
+  // így nem villan fel a régi fiók háztartása, és nincs effektbeli setState.
+  const [loadedToken, setLoadedToken] = useState(token);
+  if (loadedToken !== token) {
+    setLoadedToken(token);
+    setHouseholds([]);
+    setActiveHousehold(null);
+    setIsLoading(!!token);
+  }
 
   useEffect(() => {
     refreshHouseholds();

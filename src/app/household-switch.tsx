@@ -61,7 +61,8 @@ export default function HouseholdSwitchScreen() {
   const [qrTarget, setQrTarget] = useState<Household | null>(null);
   const [qrSvg, setQrSvg] = useState<string | null>(null);
   const [qrLoading, setQrLoading] = useState(false);
-  const copiedOpacity = useRef(new Animated.Value(0)).current;
+  // Lusta inicializálás: nem jön létre minden renderkor új Animated.Value.
+  const [copiedOpacity] = useState(() => new Animated.Value(0));
 
   const membersCache = useRef(new Map<number, MembersEntry>());
 
