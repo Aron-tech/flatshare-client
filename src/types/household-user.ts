@@ -14,45 +14,39 @@ export interface HouseholdUser {
   user: User;
 }
 
-export interface AddHouseholdUserDto {
-  user_id: number;
+export interface UpdateHouseholdUserDto {
   role: HouseholdRole;
 }
 
-export interface UpdateHouseholdUserDto {
-  role?: HouseholdRole;
-  points_balance?: number;
-}
-
+/** `PUT /household-users/{id}` */
 export interface HouseholdUserResponse {
-  member: HouseholdUser;
+  household_user: HouseholdUser;
 }
 
+/** `GET /households/{h}/users` – csak admin kérheti le. */
 export interface HouseholdUserListResponse {
-  members: HouseholdUser[];
+  household_users: HouseholdUser[];
+}
+
+/** A háztartás egy tagja felelősnek választáshoz. */
+export interface HouseholdMember {
+  user_id: number;
+  name: string;
+}
+
+/** `GET /households/{h}/members` – bármelyik tag lekérheti. */
+export interface HouseholdMemberListResponse {
+  members: HouseholdMember[];
 }
 
 export interface IHouseholdUserService {
+  getMembers(householdId: number, token: string): Promise<HouseholdMember[]>;
   getByHousehold(householdId: number, token: string): Promise<HouseholdUser[]>;
-  getById(
-    householdId: number,
-    userId: number,
-    token: string
-  ): Promise<HouseholdUser>;
-  addMember(
-    householdId: number,
-    dto: AddHouseholdUserDto,
-    token: string
-  ): Promise<HouseholdUser>;
-  updateMember(
-    householdId: number,
-    userId: number,
+  /** Saját magát bárki, mást csak admin módosíthat. */
+  update(
+    householdUserId: number,
     dto: UpdateHouseholdUserDto,
     token: string
   ): Promise<HouseholdUser>;
-  removeMember(
-    householdId: number,
-    userId: number,
-    token: string
-  ): Promise<void>;
+  remove(householdUserId: number, token: string): Promise<void>;
 }

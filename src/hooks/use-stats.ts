@@ -1,4 +1,4 @@
-import { statsService } from "@/services/mock/MockStatsService";
+import { statsService } from "@/services/api/StatsService";
 import { useHouseholdQuery } from "@/hooks/use-household-query";
 
 const fetchStats = (householdId: number, token: string) =>

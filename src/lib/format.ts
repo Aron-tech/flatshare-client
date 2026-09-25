@@ -68,13 +68,15 @@ export function formatRecurrence(
     : t(`format.recurrence.${unit}Interval`, { count });
 }
 
-export function initials(firstName?: string | null, lastName?: string | null): string {
-  return `${firstName?.[0] ?? ""}${lastName?.[0] ?? ""}`.toUpperCase();
-}
-
-/** "Márton T." */
-export function shortName(firstName: string, lastName: string): string {
-  return lastName ? `${firstName} ${lastName[0]}.` : firstName;
+/** A név első két szavának kezdőbetűi. */
+export function initials(name?: string | null): string {
+  return (name ?? "")
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0])
+    .join("")
+    .toUpperCase();
 }
 
 /** Napszak szerinti köszönés kulcsa. */

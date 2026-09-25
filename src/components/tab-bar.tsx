@@ -3,7 +3,7 @@ import { Text } from "@/components/ui/text";
 import { Elevation, MaxContentWidth } from "@/constants/theme";
 import { cn } from "@/lib/utils";
 import type { BottomTabBarProps } from "expo-router/js-tabs";
-import { ChartColumn, House, ListChecks, type LucideIcon, Plus, Settings } from "lucide-react-native";
+import { ChartColumn, Gift, House, ListChecks, type LucideIcon, Plus } from "lucide-react-native";
 import { useTranslation } from "react-i18next";
 import { Pressable, View } from "react-native";
 
@@ -11,7 +11,7 @@ const TAB_ICONS: Record<string, LucideIcon> = {
   index: House,
   chores: ListChecks,
   stats: ChartColumn,
-  settings: Settings,
+  rewards: Gift,
 };
 
 /** A tab bar magassága a safe area nélkül – a képernyők alsó paddingjéhez. */
@@ -79,7 +79,7 @@ export function TabBar({ state, descriptors, navigation, insets, onAddPress }: T
           <Pressable
             onPress={onAddPress}
             accessibilityRole="button"
-            accessibilityLabel={t("tabs.add")}
+            accessibilityLabel={t("tabs.log")}
             className="-mt-9 h-16 w-16 items-center justify-center rounded-full bg-primary active:bg-primary-active"
             style={{ boxShadow: "0px 10px 24px -6px rgba(198, 106, 77, 0.55)" }}
           >

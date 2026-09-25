@@ -1,13 +1,16 @@
 import { alertError } from "@/lib/errors";
 import { Button } from "@/components/ui/button";
+import { SegmentedControl } from "@/components/ui/segmented-control";
 import { Text } from "@/components/ui/text";
 import { useAuth } from "@/context/AuthContext";
 import { useHousehold } from "@/context/HouseholdContext";
 import { householdUserService } from "@/services/api/HouseholdUserService";
-import { HouseholdUser } from "@/types/household-user";
+import { HouseholdRole, HouseholdUser } from "@/types/household-user";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ActivityIndicator, Alert, FlatList, View } from "react-native";
+
+const ROLES = ["admin", "user", "child"] as const;
 
 export type MembersEntry = {
   data?: HouseholdUser[];
@@ -60,11 +63,32 @@ export function HouseholdMembersView({
     };
   }, [initialEntry, t]);
 
+  const updateMembers = (next: HouseholdUser[]) => {
+    setMembers(next);
+    onMembersChange(next);
+  };
+
+  const handleRoleChange = async (member: HouseholdUser, role: HouseholdRole) => {
+    if (!token || role === member.role) return;
+    try {
+      setBusyUserId(member.user_id);
+      const updated = await householdUserService.update(member.id, { role }, token);
+      // A válasz nem tölti be a `user` relációt, ezért csak a szerepkört vesszük át.
+      updateMembers(
+        members.map((m) => (m.id === member.id ? { ...m, role: updated.role } : m)),
+      );
+    } catch (error) {
+      alertError(error, t("members.roleFailed"));
+    } finally {
+      setBusyUserId(null);
+    }
+  };
+
   const handleRemove = (member: HouseholdUser) => {
     Alert.alert(
       t("members.removeTitle"),
       t("members.removeMessage", {
-        name: `${member.user.first_name} ${member.user.last_name}`,
+        name: member.user.name,
       }),
       [
         { text: t("common.cancel"), style: "cancel" },
@@ -75,14 +99,8 @@ export function HouseholdMembersView({
             if (!token) return;
             try {
               setBusyUserId(member.user_id);
-              await householdUserService.removeMember(
-                parsedHouseholdId,
-                member.user_id,
-                token,
-              );
-              const next = members.filter((m) => m.id !== member.id);
-              setMembers(next);
-              onMembersChange(next);
+              await householdUserService.remove(member.id, token);
+              updateMembers(members.filter((m) => m.id !== member.id));
             } catch (error) {
               alertError(error, t("members.removeFailed"));
             } finally {
@@ -99,26 +117,40 @@ export function HouseholdMembersView({
     const isSelf = user?.id === item.user_id;
     const isBusy = busyUserId === item.user_id;
 
+    const canEdit = !isOwner && !isSelf;
+
     return (
-      <View className="mb-3 flex-row items-center justify-between gap-3 rounded-card border border-border bg-card p-4">
-        <View className="flex-1">
-          <Text variant="h4">
-            {item.user.first_name} {item.user.last_name}
-          </Text>
-          <Text variant="muted">
-            {item.user.email}
-            {isOwner ? ` · ${t("members.owner")}` : ""}
-          </Text>
+      <View className="mb-3 gap-3 rounded-card border border-border bg-card p-4">
+        <View className="flex-row items-center justify-between gap-3">
+          <View className="flex-1">
+            <Text variant="h4">
+              {item.user.name}
+            </Text>
+            <Text variant="muted">
+              {item.user.email}
+              {isOwner ? ` · ${t("members.owner")}` : ""}
+            </Text>
+          </View>
+          {canEdit && (
+            <Button
+              size="sm"
+              variant="destructive"
+              disabled={isBusy}
+              onPress={() => handleRemove(item)}
+            >
+              <Text>{t("members.remove")}</Text>
+            </Button>
+          )}
         </View>
-        {!isOwner && !isSelf && (
-          <Button
-            size="sm"
-            variant="destructive"
-            disabled={isBusy}
-            onPress={() => handleRemove(item)}
-          >
-            <Text>{t("members.remove")}</Text>
-          </Button>
+        {canEdit && (
+          <View className={isBusy ? "opacity-50" : undefined} style={{ pointerEvents: isBusy ? "none" : "auto" }}>
+            <SegmentedControl
+              activeTone="primary"
+              value={item.role}
+              onChange={(role) => handleRoleChange(item, role)}
+              options={ROLES.map((role) => ({ value: role, label: t(`members.roles.${role}`) }))}
+            />
+          </View>
         )}
       </View>
     );

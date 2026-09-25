@@ -1,6 +1,7 @@
 import { Config } from "@/config/env";
 import {
-  AddHouseholdUserDto,
+  HouseholdMember,
+  HouseholdMemberListResponse,
   HouseholdUser,
   HouseholdUserListResponse,
   HouseholdUserResponse,
@@ -25,62 +26,34 @@ export class HouseholdUserService implements IHouseholdUserService {
       { method: "GET" },
       token
     );
-    return response.members;
+    return response.household_users;
   }
 
-  public async getById(
-    householdId: number,
-    userId: number,
-    token: string
-  ): Promise<HouseholdUser> {
-    const response = await this.http.request<HouseholdUserResponse>(
-      `/households/${householdId}/users/${userId}`,
+  public async getMembers(householdId: number, token: string): Promise<HouseholdMember[]> {
+    const response = await this.http.request<HouseholdMemberListResponse>(
+      `/households/${householdId}/members`,
       { method: "GET" },
       token
     );
-    return response.member;
+    return response.members;
   }
 
-  public async addMember(
-    householdId: number,
-    dto: AddHouseholdUserDto,
-    token: string
-  ): Promise<HouseholdUser> {
-    const response = await this.http.request<HouseholdUserResponse>(
-      `/households/${householdId}/users`,
-      {
-        method: "POST",
-        body: JSON.stringify(dto),
-      },
-      token
-    );
-    return response.member;
-  }
-
-  public async updateMember(
-    householdId: number,
-    userId: number,
+  public async update(
+    householdUserId: number,
     dto: UpdateHouseholdUserDto,
     token: string
   ): Promise<HouseholdUser> {
     const response = await this.http.request<HouseholdUserResponse>(
-      `/households/${householdId}/users/${userId}`,
-      {
-        method: "PUT",
-        body: JSON.stringify(dto),
-      },
+      `/household-users/${householdUserId}`,
+      { method: "PUT", body: JSON.stringify(dto) },
       token
     );
-    return response.member;
+    return response.household_user;
   }
 
-  public async removeMember(
-    householdId: number,
-    userId: number,
-    token: string
-  ): Promise<void> {
+  public async remove(householdUserId: number, token: string): Promise<void> {
     await this.http.request<unknown>(
-      `/households/${householdId}/users/${userId}`,
+      `/household-users/${householdUserId}`,
       { method: "DELETE" },
       token
     );

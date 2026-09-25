@@ -2,8 +2,7 @@ import { HouseholdRole } from "./household-user";
 
 export interface StatsMember {
   user_id: number;
-  first_name: string;
-  last_name: string;
+  name: string;
   role: HouseholdRole;
   points: number;
   target: number;
@@ -13,7 +12,8 @@ export interface StatsMember {
 export type PenaltyStatus = "pending" | "resolved";
 
 export interface Penalty {
-  id: number;
+  /** `weekly-goal-{task_instance_user_id}`, `pending-{task_instance_user_id}` vagy `resolved-{point_transaction_id}`. */
+  id: string;
   user_id: number;
   user_name: string;
   task_name: string;
@@ -50,6 +50,13 @@ export interface HouseholdStats {
   activity: ActivityEntry[];
 }
 
+export interface ActivityPage {
+  data: ActivityEntry[];
+  /** A következő oldal kurzora; null, ha nincs több teljesítés. */
+  next_cursor: number | null;
+}
+
 export interface IStatsService {
   getStats(householdId: number, token: string): Promise<HouseholdStats>;
+  getActivity(householdId: number, token: string, cursor: number | null, limit: number): Promise<ActivityPage>;
 }

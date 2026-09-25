@@ -1,50 +1,67 @@
-import i18n from "@/i18n";
 import { dashboardService } from "@/services/api/DashboardService";
 import { taskService } from "@/services/api/TaskService";
 import { useHouseholdQuery } from "@/hooks/use-household-query";
-import { useCallback, useState } from "react";
+import { emitTasksChanged, subscribeTasksChanged } from "@/lib/task-events";
+import { TaskUserWeight } from "@/types/task";
+import { useCallback, useEffect, useState } from "react";
 
 const fetchChores = async (householdId: number, token: string) => {
-  const [me, taskInstances] = await Promise.all([
+  const [me, tasks] = await Promise.all([
     dashboardService.getMyPoints(householdId, token),
-    dashboardService.getTaskInstances(householdId, token),
+    taskService.getHouseholdTasks(householdId, token),
   ]);
-  // A feladat-definíciókat csak admin kérheti le (különben 403 + hiba toast).
-  const isAdmin = me.household_user.role === "admin";
-  const tasks = isAdmin ? await taskService.getHouseholdTasks(householdId, token) : null;
-  return { isAdmin, tasks, pool: taskInstances.available };
+  // Gyerek szerepkör nem szerkesztheti és nem törölheti a feladatokat (a backend 403-mal utasítja el).
+  return { canManage: me.household_user.role !== "child", tasks };
 };
 
 export function useChores() {
   const query = useHouseholdQuery(fetchChores);
-  const { householdId, token, reload, setError } = query;
-  const [claimingId, setClaimingId] = useState<number | null>(null);
+  const { householdId, token, reload } = query;
+  const [busyTaskId, setBusyTaskId] = useState<number | null>(null);
 
-  const claim = useCallback(
-    async (taskInstanceId: number) => {
-      if (!token || householdId === null) return;
-      setClaimingId(taskInstanceId);
+  useEffect(() => subscribeTasksChanged(() => void reload()), [reload]);
+
+  /** Feladat-művelet: hiba esetén a HttpClient toastot mutat; `true`, ha sikerült. */
+  const runTaskAction = useCallback(
+    async (taskId: number, action: (householdId: number, token: string) => Promise<void>) => {
+      if (!token || householdId === null) return false;
+      setBusyTaskId(taskId);
       try {
-        await dashboardService.claimTaskInstance(householdId, taskInstanceId, token);
-      } catch (e) {
-        setError(e instanceof Error ? e.message : i18n.t("dashboard.actionFailed"));
-      } finally {
+        await action(householdId, token);
         await reload();
-        setClaimingId(null);
+        emitTasksChanged();
+        return true;
+      } catch {
+        return false;
+      } finally {
+        setBusyTaskId(null);
       }
     },
-    [token, householdId, reload, setError]
+    [token, householdId, reload]
+  );
+
+  const deleteTask = useCallback(
+    (taskId: number) =>
+      runTaskAction(taskId, (h, tk) => taskService.deleteTask(h, taskId, tk)),
+    [runTaskAction]
+  );
+
+  /** A pontszámítás a súlyozás alapján változik, ezért utána újratölt. */
+  const setWeight = useCallback(
+    (taskId: number, weight: TaskUserWeight) =>
+      runTaskAction(taskId, (h, tk) => taskService.setUserWeight(h, taskId, weight, tk)),
+    [runTaskAction]
   );
 
   return {
-    isAdmin: query.data?.isAdmin ?? false,
+    canManage: query.data?.canManage ?? false,
     tasks: query.data?.tasks ?? null,
-    pool: query.data?.pool ?? [],
     isLoading: query.isLoading,
     isRefreshing: query.isRefreshing,
     error: query.error,
-    claimingId,
+    busyTaskId,
     refresh: query.refresh,
-    claim,
+    deleteTask,
+    setWeight,
   };
 }

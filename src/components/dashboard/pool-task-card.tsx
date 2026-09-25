@@ -5,20 +5,32 @@ import { Text } from "@/components/ui/text";
 import { Elevation } from "@/constants/theme";
 import { formatDue } from "@/lib/format";
 import { TaskInstance } from "@/types/dashboard";
-import { Zap } from "lucide-react-native";
+import { Check, Scale, Zap } from "lucide-react-native";
 import { useTranslation } from "react-i18next";
-import { ActivityIndicator, View } from "react-native";
+import { ActivityIndicator, Alert, View } from "react-native";
 
 interface PoolTaskCardProps {
   item: TaskInstance;
   isClaiming: boolean;
   onClaim: () => void;
+  /** Vállalás és azonnali lezárás (megerősítés után). */
+  onFinish: () => void;
+  /** Súlyozás nélküli feladatnál a vállalás helyett ez nyitja a gyors súlyozást. */
+  onWeight: () => void;
 }
 
 /** Elvállalható (Instant Pool) feladat teljes szélességű vállalás gombbal. */
-export function PoolTaskCard({ item, isClaiming, onClaim }: PoolTaskCardProps) {
+export function PoolTaskCard({ item, isClaiming, onClaim, onFinish, onWeight }: PoolTaskCardProps) {
   const { t } = useTranslation();
   const category = item.task.category;
+  const needsWeight = !item.task.user_weights?.length;
+
+  const confirmFinish = () => {
+    Alert.alert(t("dashboard.finishTitle"), t("dashboard.finishMessage", { name: item.task.name }), [
+      { text: t("common.cancel"), style: "cancel" },
+      { text: t("dashboard.finishConfirm"), onPress: onFinish },
+    ]);
+  };
 
   return (
     <View className="gap-4 rounded-card bg-card p-4" style={Elevation.level1}>
@@ -38,25 +50,50 @@ export function PoolTaskCard({ item, isClaiming, onClaim }: PoolTaskCardProps) {
           </Text>
         </View>
       </View>
-      <Button
-        variant="success"
-        onPress={onClaim}
-        disabled={isClaiming}
-        accessibilityLabel={t("dashboard.claimLabel", { name: item.task.name })}
-      >
-        {isClaiming ? (
-          <ActivityIndicator className="text-success-foreground" />
-        ) : (
-          <>
-            <Icon as={Zap} size={16} className="text-success-foreground" />
-            <Text>
-              {item.points === null
-                ? t("dashboard.claim")
-                : t("dashboard.claimWithPoints", { count: item.points })}
-            </Text>
-          </>
+      <View className="flex-row gap-3">
+        <Button
+          className="flex-1"
+          variant="success"
+          onPress={needsWeight ? onWeight : onClaim}
+          disabled={isClaiming}
+          accessibilityLabel={
+            needsWeight
+              ? t("dashboard.setWeightLabel", { name: item.task.name })
+              : t("dashboard.claimLabel", { name: item.task.name })
+          }
+        >
+          {isClaiming ? (
+            <ActivityIndicator className="text-success-foreground" />
+          ) : needsWeight ? (
+            <>
+              <Icon as={Scale} size={16} className="text-success-foreground" />
+              <Text>{t("dashboard.setWeight")}</Text>
+            </>
+          ) : (
+            <>
+              <Icon as={Zap} size={16} className="text-success-foreground" />
+              <Text>{t("dashboard.claim")}</Text>
+            </>
+          )}
+        </Button>
+        {!needsWeight && (
+          <Button
+            className="flex-1"
+            variant="outline"
+            onPress={confirmFinish}
+            disabled={isClaiming}
+            accessibilityLabel={t("dashboard.finishLabel", { name: item.task.name })}
+          >
+            <Icon as={Check} size={16} className="text-foreground" />
+            <Text>{t("dashboard.finish")}</Text>
+          </Button>
         )}
-      </Button>
+      </View>
+      {needsWeight && (
+        <Text variant="muted" className="text-center">
+          {t("dashboard.weightRequired")}
+        </Text>
+      )}
     </View>
   );
 }

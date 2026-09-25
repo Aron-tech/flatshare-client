@@ -3,6 +3,9 @@ export interface User {
   email: string;
   first_name: string;
   last_name: string;
+  /** Becenév, ennek hiányában a teljes név (backend számolja). */
+  name: string;
+  nickname: string | null;
   avatar: string | null;
   language: string;
 }
@@ -28,4 +31,6 @@ export interface IAuthService {
   buildWorkOSAuthUrl(redirectUri: string, provider?: OAuthProvider): string;
   exchangeWorkOSCode(code: string, language: string): Promise<AuthResponse>;
   getCurrentUser(token: string): Promise<User>;
+  updateNickname(token: string, nickname: string | null): Promise<User>;
+  updateLanguage(token: string, language: string): Promise<User>;
 }

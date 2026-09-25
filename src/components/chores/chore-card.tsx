@@ -1,24 +1,23 @@
 import { CategoryIconBadge } from "@/components/category-icon";
-import { Button } from "@/components/ui/button";
-import { Icon } from "@/components/ui/icon";
 import { Text } from "@/components/ui/text";
 import { Elevation } from "@/constants/theme";
 import { Category } from "@/types/task";
-import { Check } from "lucide-react-native";
 import { useTranslation } from "react-i18next";
-import { ActivityIndicator, View } from "react-native";
+import { Pressable, View } from "react-native";
 
 interface ChoreCardProps {
   name: string;
   category: Category | null;
   iconHint?: string | null;
-  /** Pl. "Hetente", "Azonnal elvégezhető". */
+  /** Pl. "Hetente", "Egyszeri". */
   meta: string;
   points: number | null;
-  /** Alsó sor bal oldala: időtartam vagy felelős. */
+  /** Alsó sor bal oldala: időtartam. */
   footer: string;
-  onClaim?: () => void;
-  isClaiming?: boolean;
+  /** Amíg a user nem súlyozta a feladatot, erre figyelmeztetünk. */
+  needsWeight?: boolean;
+  /** Koppintásra: feladat-műveletek (súlyozás, szerkesztés, törlés). */
+  onPress?: () => void;
 }
 
 export function ChoreCard({
@@ -28,13 +27,19 @@ export function ChoreCard({
   meta,
   points,
   footer,
-  onClaim,
-  isClaiming = false,
+  needsWeight = false,
+  onPress,
 }: ChoreCardProps) {
   const { t } = useTranslation();
 
   return (
-    <View className="gap-4 rounded-card bg-card p-4" style={Elevation.level1}>
+    <Pressable
+      onPress={onPress}
+      disabled={!onPress}
+      accessibilityRole={onPress ? "button" : undefined}
+      className="gap-4 rounded-card bg-card p-4 active:opacity-90"
+      style={Elevation.level1}
+    >
       <View className="flex-row items-start justify-between gap-3">
         <View className="flex-1 flex-row gap-3">
           <CategoryIconBadge
@@ -62,19 +67,8 @@ export function ChoreCard({
         <Text variant="muted" className="flex-1">
           {footer}
         </Text>
-        {onClaim && (
-          <Button size="sm" variant="success" onPress={onClaim} disabled={isClaiming}>
-            {isClaiming ? (
-              <ActivityIndicator className="text-success-foreground" />
-            ) : (
-              <>
-                <Icon as={Check} size={14} className="text-success-foreground" />
-                <Text>{t("chores.claim")}</Text>
-              </>
-            )}
-          </Button>
-        )}
+        {needsWeight && <Text className="text-label-md text-primary">{t("chores.weightMissing")}</Text>}
       </View>
-    </View>
+    </Pressable>
   );
 }

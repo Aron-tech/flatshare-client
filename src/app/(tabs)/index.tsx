@@ -1,4 +1,5 @@
 import { MyTaskCard } from "@/components/dashboard/my-task-card";
+import { TaskActionsSheet, TaskActionsTarget } from "@/components/chores/task-actions-sheet";
 import { PoolTaskCard } from "@/components/dashboard/pool-task-card";
 import { PresenceStrip } from "@/components/dashboard/presence-strip";
 import { WeeklyGoalCard } from "@/components/dashboard/weekly-goal-card";
@@ -15,7 +16,6 @@ import { useStats } from "@/hooks/use-stats";
 import { currentLocale } from "@/i18n";
 import { currentCycle } from "@/lib/cycle";
 import { greetingKey } from "@/lib/format";
-import { showToast } from "@/lib/toast";
 import { CircleAlert, Sprout } from "lucide-react-native";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -35,21 +35,20 @@ export default function DashboardScreen() {
     error,
     claimingId,
     completingId,
+    weightingTaskId,
     refresh,
     claim,
+    claimAndComplete,
     complete,
+    setWeight,
   } = useDashboard();
   const { stats, refresh: refreshStats } = useStats();
   const [view, setView] = useState<DashboardView>("mine");
+  const [weightTarget, setWeightTarget] = useState<TaskActionsTarget | null>(null);
 
   const cycle = currentCycle();
   const openCount = taskInstances.claimed.filter((i) => !(i.id in completedIds)).length;
   const weekday = new Date().toLocaleDateString(currentLocale(), { weekday: "long" });
-
-  const handleComplete = async (id: number, pts: number | null) => {
-    const ok = await complete(id, pts);
-    if (ok) showToast(t("dashboard.completedToast", { count: pts ?? 0 }));
-  };
 
   return (
     <TabScreen
@@ -62,7 +61,7 @@ export default function DashboardScreen() {
       <View className="flex-row items-center justify-between gap-3">
         <View className="flex-1 gap-1">
           <Text className="text-headline-lg">
-            {t(`dashboard.greeting.${greetingKey()}`, { name: user?.first_name ?? "" })}
+            {t(`dashboard.greeting.${greetingKey()}`, { name: user?.name ?? "" })}
           </Text>
           <Text className="text-body-lg text-muted-foreground">
             {weekday.charAt(0).toUpperCase() + weekday.slice(1)} •{" "}
@@ -130,7 +129,7 @@ export default function DashboardScreen() {
                 item={item}
                 done={item.id in completedIds}
                 isCompleting={completingId === item.id}
-                onComplete={() => handleComplete(item.id, item.points)}
+                onComplete={() => complete(item.id)}
               />
             ))
           )
@@ -143,12 +142,31 @@ export default function DashboardScreen() {
               item={item}
               isClaiming={claimingId === item.id}
               onClaim={() => claim(item.id)}
+              onFinish={() => claimAndComplete(item.id)}
+              onWeight={() =>
+                setWeightTarget({
+                  taskId: item.task_id,
+                  name: item.task.name,
+                  category: item.task.category ?? null,
+                  iconHint: item.task.icon ?? null,
+                  canManage: false,
+                })
+              }
             />
           ))
         )}
 
         {view === "mine" && stats && <PresenceStrip activity={stats.activity} />}
       </View>
+
+      <TaskActionsSheet
+        target={weightTarget}
+        isBusy={weightTarget !== null && weightingTaskId === weightTarget.taskId}
+        onClose={() => setWeightTarget(null)}
+        onWeight={async (weight) => {
+          if (weightTarget && (await setWeight(weightTarget.taskId, weight))) setWeightTarget(null);
+        }}
+      />
     </TabScreen>
   );
 }

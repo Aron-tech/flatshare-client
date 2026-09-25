@@ -41,13 +41,21 @@ export function MyTaskCard({ item, done, isCompleting, onComplete }: MyTaskCardP
                 <Text className="text-label-md text-muted-foreground">{category.name}</Text>
               </View>
             )}
-            <View className="rounded-full bg-success-soft px-2.5 py-0.5">
-              <Text className="text-label-md text-success-soft-foreground">
-                {item.points === null
-                  ? t("dashboard.noPoints")
-                  : t("dashboard.plusPoints", { count: item.points })}
-              </Text>
-            </View>
+            {item.is_penalty ? (
+              <View className="rounded-full bg-primary-soft px-2.5 py-0.5">
+                <Text className="text-label-md text-primary-soft-foreground">
+                  {t("dashboard.penaltyTask")}
+                </Text>
+              </View>
+            ) : (
+              <View className="rounded-full bg-success-soft px-2.5 py-0.5">
+                <Text className="text-label-md text-success-soft-foreground">
+                  {item.points === null
+                    ? t("dashboard.noPoints")
+                    : t("dashboard.plusPoints", { count: item.points })}
+                </Text>
+              </View>
+            )}
           </View>
           <Text
             className={cn("text-headline-sm", done && "text-muted-foreground line-through")}

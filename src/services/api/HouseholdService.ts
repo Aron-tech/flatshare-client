@@ -79,7 +79,7 @@ export class HouseholdService implements IHouseholdService {
 
   public async leave(householdId: number, token: string): Promise<void> {
     await this.http.request<unknown>(
-      `/households/leave/${householdId}`,
+      `/households/${householdId}/leave`,
       { method: "DELETE" },
       token
     );

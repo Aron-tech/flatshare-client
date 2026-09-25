@@ -3,6 +3,7 @@ import { HouseholdProvider, useHousehold } from "@/context/HouseholdContext";
 import { usePushNotifications } from "@/hooks/use-push-notifications";
 import { ToastHost } from "@/components/ui/toast";
 import { useNavTheme } from "@/hooks/use-theme";
+import { useApplyStoredTheme } from "@/hooks/use-theme-preference";
 import { FONT_ASSETS } from "@/theme/fonts";
 import { PortalHost } from "@rn-primitives/portal";
 import { useFonts } from "expo-font";
@@ -71,6 +72,9 @@ function RootNavigation() {
           name="household-switch"
           options={{ presentation: "modal" }}
         />
+        <Stack.Screen name="add-task" options={{ presentation: "modal" }} />
+        <Stack.Screen name="log-task" options={{ presentation: "modal" }} />
+        <Stack.Screen name="reward-form" options={{ presentation: "modal" }} />
       </Stack>
       <PortalHost />
       <ToastHost />
@@ -80,6 +84,7 @@ function RootNavigation() {
 
 export default function RootLayout() {
   const navTheme = useNavTheme();
+  useApplyStoredTheme();
   const [fontsLoaded, fontError] = useFonts(FONT_ASSETS);
 
   useEffect(() => {

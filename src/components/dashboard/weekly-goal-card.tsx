@@ -42,6 +42,7 @@ export function WeeklyGoalCard({
   const percent = minPoints > 0 ? Math.min(100, Math.round((balance / minPoints) * 100)) : 100;
   const behind = Math.max(0, Math.round(minPoints * elapsedFraction) - balance);
   const reached = balance >= minPoints;
+  const hasGoal = minPoints > 0;
 
   return (
     <View className="gap-4 rounded-card bg-card p-6" style={Elevation.level1}>
@@ -49,7 +50,7 @@ export function WeeklyGoalCard({
         <View className="shrink flex-row items-center gap-2">
           <Icon as={Target} size={18} className="text-primary" />
           <Text className="shrink text-label-md uppercase text-muted-foreground" numberOfLines={1}>
-            {t("dashboard.weeklyGoal", { count: minPoints })}
+            {hasGoal ? t("dashboard.weeklyGoal", { count: minPoints }) : t("dashboard.noWeeklyGoal")}
           </Text>
         </View>
         <View className="rounded-full bg-primary-soft px-3 py-1">
@@ -62,13 +63,17 @@ export function WeeklyGoalCard({
       <View className="flex-row items-end justify-between gap-2">
         <View className="flex-row items-baseline gap-2">
           <Text className="text-headline-xl">{balance}</Text>
-          <Text className="font-serif text-headline-sm font-normal text-muted-foreground">
-            {t("dashboard.ofPoints", { count: minPoints })}
-          </Text>
+          {hasGoal && (
+            <Text className="font-serif text-headline-sm font-normal text-muted-foreground">
+              {t("dashboard.ofPoints", { count: minPoints })}
+            </Text>
+          )}
         </View>
-        <Text className="pb-2 text-label-lg text-success-soft-foreground">
-          {t("dashboard.percentDone", { percent })}
-        </Text>
+        {hasGoal && (
+          <Text className="pb-2 text-label-lg text-success-soft-foreground">
+            {t("dashboard.percentDone", { percent })}
+          </Text>
+        )}
       </View>
 
       <Progress

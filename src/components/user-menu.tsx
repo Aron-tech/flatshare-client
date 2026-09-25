@@ -1,9 +1,10 @@
 import { Icon } from "@/components/ui/icon";
 import { Text } from "@/components/ui/text";
+import { initials } from "@/lib/format";
 import { Elevation } from "@/constants/theme";
 import { useAuth } from "@/context/AuthContext";
 import { useRouter } from "expo-router";
-import { Settings } from "lucide-react-native";
+import { LogOut, Settings } from "lucide-react-native";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Image, Modal, Pressable, View } from "react-native";
@@ -11,7 +12,6 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export function UserAvatar({ size = 40 }: { size?: number }) {
   const { user } = useAuth();
-  const initials = `${user?.first_name?.[0] ?? ""}${user?.last_name?.[0] ?? ""}`;
 
   if (user?.avatar) {
     return (
@@ -28,14 +28,14 @@ export function UserAvatar({ size = 40 }: { size?: number }) {
       style={{ width: size, height: size, borderRadius: size / 2 }}
     >
       <Text className="text-label-lg text-primary-foreground">
-        {initials.toUpperCase()}
+        {initials(user?.name)}
       </Text>
     </View>
   );
 }
 
 export function UserMenu() {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const { t } = useTranslation();
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -64,7 +64,7 @@ export function UserMenu() {
           >
             <View className="px-4 py-3">
               <Text className="text-label-lg text-popover-foreground">
-                {user?.first_name} {user?.last_name}
+                {user?.name}
               </Text>
             </View>
             <View className="h-px bg-border" />
@@ -77,6 +77,16 @@ export function UserMenu() {
             >
               <Icon as={Settings} size={16} />
               <Text>{t("menu.settings")}</Text>
+            </Pressable>
+            <Pressable
+              className="flex-row items-center gap-2 px-4 py-3 active:bg-secondary"
+              onPress={() => {
+                setOpen(false);
+                logout();
+              }}
+            >
+              <Icon as={LogOut} size={16} />
+              <Text>{t("home.logout")}</Text>
             </Pressable>
           </View>
         </Pressable>

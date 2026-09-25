@@ -49,6 +49,27 @@ export class AuthService implements IAuthService {
     );
     return response.user;
   }
+
+  public async updateNickname(
+    token: string,
+    nickname: string | null
+  ): Promise<User> {
+    const response = await this.http.request<UserMeResponse>(
+      "/user/me",
+      { method: "PUT", body: JSON.stringify({ nickname }) },
+      token
+    );
+    return response.user;
+  }
+
+  public async updateLanguage(token: string, language: string): Promise<User> {
+    const response = await this.http.request<UserMeResponse>(
+      "/user/me",
+      { method: "PUT", body: JSON.stringify({ language }) },
+      token
+    );
+    return response.user;
+  }
 }
 
 export const authService = new AuthService();

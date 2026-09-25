@@ -1,5 +1,5 @@
 import { HouseholdUser } from "./household-user";
-import { Category, TaskDifficulty } from "./task";
+import { Category, TaskDifficulty, TaskUserWeight } from "./task";
 
 export interface TaskInstanceTask {
   id: number;
@@ -11,6 +11,8 @@ export interface TaskInstanceTask {
   icon?: string | null;
   /** Csak akkor van, ha a backend betölti a `task.category` relációt. */
   category?: Category | null;
+  /** A bejelentkezett user súlyozása; üres, ha még nem adta meg a nehézséget. */
+  user_weights?: { weight: TaskUserWeight }[];
 }
 
 export interface TaskInstance {
@@ -22,6 +24,8 @@ export interface TaskInstance {
   completed_at: string | null;
   /** A bejelentkezett felhasználóra számolt pont; null, ha nincs súlyozás. */
   points: number | null;
+  /** A heti minimum elmulasztása miatt kiosztott büntető feladat: nem jár érte pont. */
+  is_penalty?: boolean;
   task: TaskInstanceTask;
 }
 
@@ -35,7 +39,7 @@ export interface MyHouseholdPointsResponse {
     HouseholdUser,
     "id" | "household_id" | "user_id" | "points_balance" | "role"
   >;
-  /** Heti elérendő pont / fő. */
+  /** A bejelentkezett user e heti minimum pontszáma (a hét közben hozzáadott feladatok arányosan számítanak). */
   min_points: number;
 }
 
@@ -55,11 +59,18 @@ export interface IDashboardService {
   ): Promise<void>;
 }
 
-/** Feladat teljesítése – a backenden még nincs végpont (lásd MockTaskCompletionService). */
+/** `POST /households/{h}/task-instances/{id}/complete` */
+export interface TaskCompletionResponse {
+  /** A teljesítésért jóváírt pont. */
+  points: number;
+  /** A felhasználó új pontállása a háztartásban. */
+  points_balance: number;
+}
+
 export interface ITaskCompletionService {
   complete(
     householdId: number,
     taskInstanceId: number,
     token: string
-  ): Promise<void>;
+  ): Promise<TaskCompletionResponse>;
 }

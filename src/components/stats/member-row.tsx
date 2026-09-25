@@ -1,6 +1,6 @@
 import { Progress } from "@/components/ui/progress";
 import { Text } from "@/components/ui/text";
-import { initials, shortName } from "@/lib/format";
+import { initials } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { StatsMember } from "@/types/stats";
 import { useTranslation } from "react-i18next";
@@ -43,14 +43,14 @@ export function MemberRow({ member }: { member: StatsMember }) {
             member.is_me ? "text-primary-soft-foreground" : "text-success-soft-foreground"
           )}
         >
-          {initials(member.first_name, member.last_name)}
+          {initials(member.name)}
         </Text>
       </View>
       <View className="flex-1 gap-1.5">
         <View className="flex-row items-center justify-between gap-2">
           <View className="shrink flex-row items-center gap-2">
             <Text className="shrink text-label-lg" numberOfLines={1}>
-              {shortName(member.first_name, member.last_name)}
+              {member.name}
             </Text>
             {member.is_me ? (
               <View className="rounded-full bg-secondary-active px-2 py-0.5">

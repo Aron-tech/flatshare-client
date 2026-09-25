@@ -4,7 +4,7 @@ import {
   CategoryFilterOption,
 } from "@/components/chores/category-filter";
 import { ChoreCard } from "@/components/chores/chore-card";
-import { GoodDeedBanner } from "@/components/chores/good-deed-banner";
+import { TaskActionsSheet, TaskActionsTarget } from "@/components/chores/task-actions-sheet";
 import { TabScreen } from "@/components/screen";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -16,14 +16,15 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Text } from "@/components/ui/text";
 import { useChores } from "@/hooks/use-chores";
 import { formatRecurrence } from "@/lib/format";
-import { showToast } from "@/lib/toast";
-import { Category } from "@/types/task";
+import { Category, HouseholdTask } from "@/types/task";
+import { useRouter } from "expo-router";
 import { CircleAlert, Plus, Search } from "lucide-react-native";
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { View } from "react-native";
 
-type ChoreView = "recurring" | "pool";
+/** Automatizált: ismétlődő, a rendszer ütemezi; társított: egyszeri, a háztartáshoz csatolt feladat. */
+type ChoreView = "automated" | "attached";
 
 interface Row {
   id: number;
@@ -33,50 +34,48 @@ interface Row {
   meta: string;
   points: number | null;
   footer: string;
-  claimable: boolean;
+  needsWeight: boolean;
 }
 
+/**
+ * A háztartás feladat-definíciói: itt csak csatolni (új feladat), szerkeszteni, törölni
+ * és súlyozni lehet – az elvállalás a kezdőlapon, a rögzítés a "+" gombbal történik.
+ */
 export default function ChoresScreen() {
   const { t } = useTranslation();
-  const { isAdmin, tasks, pool, isLoading, isRefreshing, error, claimingId, refresh, claim } =
-    useChores();
-  const [view, setView] = useState<ChoreView>("pool");
+  const router = useRouter();
+  const { canManage, tasks, isLoading, isRefreshing, error, busyTaskId, refresh, deleteTask, setWeight } = useChores();
+  const [actionsTarget, setActionsTarget] = useState<TaskActionsTarget | null>(null);
+  const [view, setView] = useState<ChoreView>("automated");
   const [query, setQuery] = useState("");
   const [categoryKey, setCategoryKey] = useState(ALL_CATEGORIES);
 
-  const recurringRows = useMemo<Row[]>(
-    () =>
-      (tasks ?? [])
-        .filter((task) => task.is_recurring)
-        .map((task) => ({
-          id: task.id,
-          name: task.name,
-          category: task.category,
-          iconHint: task.icon,
-          meta: formatRecurrence(true, task.recurrence_interval, task.recurrence_unit, t),
-          points: task.base_points,
-          footer: t("chores.duration", { count: task.duration_minutes }),
-          claimable: false,
-        })),
-    [tasks, t]
+  const toRow = useCallback(
+    (task: HouseholdTask): Row => ({
+      id: task.id,
+      name: task.name,
+      category: task.category,
+      iconHint: task.icon,
+      meta: task.is_recurring
+        ? formatRecurrence(true, task.recurrence_interval, task.recurrence_unit, t)
+        : t("chores.oneOff"),
+      points: task.base_points,
+      footer: t("chores.duration", { count: task.duration_minutes }),
+      needsWeight: !task.user_weights?.length,
+    }),
+    [t]
   );
 
-  const poolRows = useMemo<Row[]>(
-    () =>
-      pool.map((item) => ({
-        id: item.id,
-        name: item.task.name,
-        category: item.task.category ?? null,
-        iconHint: item.task.icon ?? null,
-        meta: t("chores.readyNow"),
-        points: item.points,
-        footer: t("chores.duration", { count: item.task.duration_minutes }),
-        claimable: true,
-      })),
-    [pool, t]
+  const automatedRows = useMemo(
+    () => (tasks ?? []).filter((task) => task.is_recurring).map(toRow),
+    [tasks, toRow]
+  );
+  const attachedRows = useMemo(
+    () => (tasks ?? []).filter((task) => !task.is_recurring).map(toRow),
+    [tasks, toRow]
   );
 
-  const rows = view === "recurring" ? recurringRows : poolRows;
+  const rows = view === "automated" ? automatedRows : attachedRows;
 
   const filterOptions = useMemo<CategoryFilterOption[]>(() => {
     const counts = new Map<string, CategoryFilterOption>();
@@ -95,11 +94,18 @@ export default function ChoresScreen() {
     return inCategory && inSearch;
   });
 
-  const subtitle = isAdmin
-    ? t("chores.subtitleAdmin", { routines: recurringRows.length, pool: poolRows.length })
-    : t("chores.subtitleMember", { pool: poolRows.length });
+  const subtitle = t("chores.subtitle", { automated: automatedRows.length, attached: attachedRows.length });
 
-  const comingSoon = () => showToast(t("tabs.addComingSoon"));
+  const openActions = (row: Row) =>
+    setActionsTarget({
+      taskId: row.id,
+      name: row.name,
+      category: row.category,
+      iconHint: row.iconHint,
+      canManage,
+    });
+
+  const closeActions = () => setActionsTarget(null);
 
   return (
     <TabScreen refreshing={isRefreshing} onRefresh={refresh}>
@@ -107,10 +113,6 @@ export default function ChoresScreen() {
         <View className="flex-1 gap-1">
           <Text className="text-headline-lg">{t("chores.title")}</Text>
           {!isLoading && <Text className="text-body-md text-muted-foreground">{subtitle}</Text>}
-        </View>
-        <View className="flex-row items-center gap-2 rounded-full bg-success-soft px-3 py-1.5">
-          <View className="h-2 w-2 rounded-full bg-success" />
-          <Text className="text-label-md text-success-soft-foreground">{t("chores.sync")}</Text>
         </View>
       </View>
 
@@ -134,7 +136,7 @@ export default function ChoresScreen() {
             returnKeyType="search"
           />
         </View>
-        <Button onPress={comingSoon} accessibilityLabel={t("tabs.add")}>
+        <Button onPress={() => router.push("/add-task")} accessibilityLabel={t("tabs.add")}>
           <Icon as={Plus} size={18} className="text-primary-foreground" />
           <Text>{t("chores.new")}</Text>
         </Button>
@@ -148,11 +150,8 @@ export default function ChoresScreen() {
           setCategoryKey(ALL_CATEGORIES);
         }}
         options={[
-          // A feladat-definíciókat csak admin látja.
-          ...(isAdmin
-            ? [{ value: "recurring" as const, label: t("chores.recurring", { count: recurringRows.length }) }]
-            : []),
-          { value: "pool" as const, label: t("chores.pool", { count: poolRows.length }) },
+          { value: "automated" as const, label: t("chores.automated", { count: automatedRows.length }) },
+          { value: "attached" as const, label: t("chores.attached", { count: attachedRows.length }) },
         ]}
       />
 
@@ -178,14 +177,29 @@ export default function ChoresScreen() {
               meta={row.meta}
               points={row.points}
               footer={row.footer}
-              onClaim={row.claimable ? () => claim(row.id) : undefined}
-              isClaiming={claimingId === row.id}
+              needsWeight={row.needsWeight}
+              onPress={() => openActions(row)}
             />
           ))
         )}
       </View>
 
-      <GoodDeedBanner onLog={comingSoon} />
+      <TaskActionsSheet
+        target={actionsTarget}
+        isBusy={actionsTarget !== null && busyTaskId === actionsTarget.taskId}
+        onClose={closeActions}
+        onWeight={async (weight) => {
+          if (actionsTarget && (await setWeight(actionsTarget.taskId, weight))) closeActions();
+        }}
+        onEdit={() => {
+          if (!actionsTarget) return;
+          closeActions();
+          router.push({ pathname: "/add-task", params: { taskId: String(actionsTarget.taskId) } });
+        }}
+        onDelete={async () => {
+          if (actionsTarget && (await deleteTask(actionsTarget.taskId))) closeActions();
+        }}
+      />
     </TabScreen>
   );
 }
