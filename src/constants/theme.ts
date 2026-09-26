@@ -8,10 +8,7 @@
  * FONTOS: a `THEME` értékeinek egyezniük kell a `global.css` változóival.
  */
 
-import "../../global.css";
-
 import { DarkTheme, DefaultTheme, type Theme } from "expo-router";
-import { Platform } from "react-native";
 
 export const THEME = {
   light: {
@@ -124,67 +121,7 @@ export const Elevation = {
   },
 } as const;
 
-/* ---------------------------------------------------------------------------
- * Expo template helper-ek (ThemedText / ThemedView / explore / app-tabs).
- * A meleg palettára vannak kötve, hogy a régi képernyők se lógjanak ki.
- * ------------------------------------------------------------------------ */
-
-export const Colors = {
-  light: {
-    text: THEME.light.foreground,
-    background: THEME.light.background,
-    backgroundElement: THEME.light.secondary,
-    backgroundSelected: THEME.light.secondaryActive,
-    textSecondary: THEME.light.mutedForeground,
-  },
-  dark: {
-    text: THEME.dark.foreground,
-    background: THEME.dark.background,
-    backgroundElement: THEME.dark.secondary,
-    backgroundSelected: THEME.dark.secondaryActive,
-    textSecondary: THEME.dark.mutedForeground,
-  },
-} as const;
-
-export type ThemeColor = keyof typeof Colors.light & keyof typeof Colors.dark;
-
-export const Fonts = Platform.select({
-  ios: {
-    /** iOS `UIFontDescriptorSystemDesignDefault` */
-    sans: "system-ui",
-    /** iOS `UIFontDescriptorSystemDesignSerif` */
-    serif: "ui-serif",
-    /** iOS `UIFontDescriptorSystemDesignRounded` */
-    rounded: "ui-rounded",
-    /** iOS `UIFontDescriptorSystemDesignMonospaced` */
-    mono: "ui-monospace",
-  },
-  default: {
-    sans: "normal",
-    serif: "serif",
-    rounded: "normal",
-    mono: "monospace",
-  },
-  web: {
-    sans: "var(--font-display)",
-    serif: "var(--font-serif)",
-    rounded: "var(--font-rounded)",
-    mono: "var(--font-mono)",
-  },
-});
-
-export const Spacing = {
-  half: 2,
-  one: 4,
-  two: 8,
-  three: 16,
-  four: 24,
-  five: 32,
-  six: 64,
-} as const;
-
 /** DESIGN.md mobil margó / gutter (1.25rem). Egyezik a `px-gutter` osztállyal. */
 export const Gutter = 20;
 
-export const BottomTabInset = Platform.select({ ios: 50, android: 80 }) ?? 0;
 export const MaxContentWidth = 800;

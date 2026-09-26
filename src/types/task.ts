@@ -51,6 +51,8 @@ export interface HouseholdTask {
   rotations?: { user_id: number; rotation_order: number }[];
   /** A bejelentkezett user súlyozása (üres, ha még nem adta meg). */
   user_weights?: { weight: TaskUserWeight }[];
+  /** A háztartás közös ára a feladatért egy vállalónak (a tagok súlyainak átlagával). */
+  points?: number;
 }
 
 /** `GET /households/{h}/tasks` – kategórianév szerint csoportosítva. */

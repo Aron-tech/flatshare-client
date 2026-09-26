@@ -1,5 +1,5 @@
 import * as Localization from "expo-localization";
-import i18n from "i18next";
+import { createInstance } from "i18next";
 import { initReactI18next } from "react-i18next";
 import en from "./locales/en";
 import hu from "./locales/hu";
@@ -17,6 +17,8 @@ function detectDeviceLanguage(): AppLanguage {
   const code = Localization.getLocales()[0]?.languageCode?.toLowerCase();
   return isSupportedLanguage(code) ? code : FALLBACK_LANGUAGE;
 }
+
+const i18n = createInstance();
 
 i18n.use(initReactI18next).init({
   resources: { hu: { translation: hu }, en: { translation: en } },

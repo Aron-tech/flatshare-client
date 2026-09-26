@@ -3,7 +3,7 @@
  * https://docs.expo.dev/guides/color-schemes/
  */
 
-import { Colors, NAV_THEME, THEME } from '@/constants/theme';
+import { NAV_THEME, THEME } from '@/constants/theme';
 import { useColorScheme } from 'nativewind';
 
 /** Aktuális (light/dark) téma neve – ugyanaz a forrás, amit a Nativewind `dark:` is használ. */
@@ -20,9 +20,4 @@ export function useThemeColors() {
 /** React Navigation téma a `ThemeProvider`-hez. */
 export function useNavTheme() {
   return NAV_THEME[useThemeName()];
-}
-
-/** Expo template (ThemedText / ThemedView) színei. */
-export function useTheme() {
-  return Colors[useThemeName()];
 }

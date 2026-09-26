@@ -52,3 +52,27 @@ export interface RewardResponse {
 export interface RedeemRewardResponse {
   points_balance: number;
 }
+
+/** Egy beváltás, amíg a jutalom feltöltője (vagy a beváltó) teljesítettnek nem jelöli. */
+export interface RewardRedemption {
+  id: number;
+  household_id: number;
+  reward_id: number | null;
+  /** A beváltó user. */
+  user_id: number;
+  points_spent: number;
+  fulfilled_at: string | null;
+  /** A feltöltő távozásakor a nem teljesített beváltás visszatérítődik. */
+  refunded_at: string | null;
+  created_at: string;
+  reward: Reward | null;
+  user?: User;
+}
+
+/** `GET /households/{h}/reward-redemptions` */
+export interface RewardRedemptionListResponse {
+  /** A saját jutalmaim beváltásai, amelyeket nekem kell teljesítenem. */
+  to_fulfill: RewardRedemption[];
+  /** Az általam beváltott, még nem teljesített jutalmak. */
+  waiting: RewardRedemption[];
+}

@@ -1,18 +1,18 @@
 import { alertError } from "@/lib/errors";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  HouseholdMembersView,
-  MembersEntry,
-} from "@/components/household-members-view";
+import { HouseholdMembersView } from "@/components/household-members-view";
+import { HouseholdSettingsView } from "@/components/household-settings-view";
 import { Icon } from "@/components/ui/icon";
 import { Input } from "@/components/ui/input";
 import { Text } from "@/components/ui/text";
 import { Elevation } from "@/constants/theme";
 import { useAuth } from "@/context/AuthContext";
 import { useHousehold } from "@/context/HouseholdContext";
-import { householdUserService } from "@/services/api/HouseholdUserService";
+import { HouseholdQueries, householdKey } from "@/lib/queries";
+import { householdService } from "@/services/api/HouseholdService";
 import { Household } from "@/types/household";
+import { useQueryClient } from "@tanstack/react-query";
 import * as Clipboard from "expo-clipboard";
 import { useRouter } from "expo-router";
 import {
@@ -20,11 +20,12 @@ import {
   LogOut,
   Pencil,
   QrCode,
+  Settings,
   Trash2,
   Users,
   X,
 } from "lucide-react-native";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -47,8 +48,8 @@ export default function HouseholdSwitchScreen() {
     renameHousehold,
     leaveHousehold,
     deleteHousehold,
-    getHouseholdQrCode,
   } = useHousehold();
+  const queryClient = useQueryClient();
   const router = useRouter();
 
   const [editingId, setEditingId] = useState<number | null>(null);
@@ -58,34 +59,14 @@ export default function HouseholdSwitchScreen() {
   const [membersHouseholdId, setMembersHouseholdId] = useState<number | null>(
     null,
   );
+  const [settingsHouseholdId, setSettingsHouseholdId] = useState<
+    number | null
+  >(null);
   const [qrTarget, setQrTarget] = useState<Household | null>(null);
   const [qrSvg, setQrSvg] = useState<string | null>(null);
   const [qrLoading, setQrLoading] = useState(false);
   // Lusta inicializálás: nem jön létre minden renderkor új Animated.Value.
   const [copiedOpacity] = useState(() => new Animated.Value(0));
-
-  const membersCache = useRef(new Map<number, MembersEntry>());
-
-  const getMembersEntry = (householdId: number): MembersEntry => {
-    const cached = membersCache.current.get(householdId);
-    if (cached) return cached;
-    const entry: MembersEntry = {
-      promise: householdUserService
-        .getByHousehold(householdId, token ?? "")
-        .then((list) => {
-          entry.data = list;
-          return list;
-        })
-        .catch((error) => {
-          if (membersCache.current.get(householdId) === entry) {
-            membersCache.current.delete(householdId);
-          }
-          throw error;
-        }),
-    };
-    membersCache.current.set(householdId, entry);
-    return entry;
-  };
 
   // Háttérben előtöltjük a tagokat, hogy a "Tagok kezelése" azonnal nyíljon.
   useEffect(() => {
@@ -93,10 +74,12 @@ export default function HouseholdSwitchScreen() {
     households
       .filter((h) => h.created_by === user?.id)
       .forEach((h) => {
-        getMembersEntry(h.id).promise.catch(() => {});
+        void queryClient.prefetchQuery({
+          queryKey: HouseholdQueries.householdUsers.key(h.id),
+          queryFn: () => HouseholdQueries.householdUsers.fetch(h.id, token),
+        });
       });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isManaging, token, households, user?.id]);
+  }, [isManaging, token, households, user?.id, queryClient]);
 
   const handleSelect = async (id: number) => {
     if (isManaging) return;
@@ -106,7 +89,6 @@ export default function HouseholdSwitchScreen() {
 
   const stopManaging = () => {
     cancelEdit();
-    membersCache.current.clear();
     setIsManaging(false);
   };
 
@@ -115,7 +97,13 @@ export default function HouseholdSwitchScreen() {
     setQrSvg(null);
     setQrLoading(true);
     try {
-      const svg = await getHouseholdQrCode(item.id);
+      if (!token) return;
+      // A join kód nem változik, ezért a QR kód a munkamenet végéig cache-elhető.
+      const svg = await queryClient.fetchQuery({
+        queryKey: [...householdKey(item.id), "qrcode"],
+        queryFn: () => householdService.getQrCode(item.id, token),
+        staleTime: Infinity,
+      });
       setQrSvg(svg);
     } catch (error) {
       alertError(error, t("switch.qrLoadFailed"));
@@ -319,6 +307,15 @@ export default function HouseholdSwitchScreen() {
                   </Button>
                   <Button
                     size="icon"
+                    variant="outline"
+                    disabled={isBusy}
+                    onPress={() => setSettingsHouseholdId(item.id)}
+                    accessibilityLabel={t("switch.settings")}
+                  >
+                    <Icon as={Settings} size={18} />
+                  </Button>
+                  <Button
+                    size="icon"
                     variant="destructive"
                     disabled={isBusy}
                     onPress={() => handleDelete(item)}
@@ -345,15 +342,22 @@ export default function HouseholdSwitchScreen() {
     );
   };
 
+  const settingsHousehold = households.find(
+    (h) => h.id === settingsHouseholdId,
+  );
+  if (settingsHousehold) {
+    return (
+      <HouseholdSettingsView
+        household={settingsHousehold}
+        onBack={() => setSettingsHouseholdId(null)}
+      />
+    );
+  }
+
   if (membersHouseholdId !== null) {
     return (
       <HouseholdMembersView
         householdId={membersHouseholdId}
-        getMembers={() => getMembersEntry(membersHouseholdId)}
-        onMembersChange={(list) => {
-          const entry = membersCache.current.get(membersHouseholdId);
-          if (entry) entry.data = list;
-        }}
         onBack={() => setMembersHouseholdId(null)}
       />
     );

@@ -8,6 +8,11 @@ import {
   IHouseholdUserService,
   UpdateHouseholdUserDto,
 } from "@/types/household-user";
+import {
+  MemberDeparture,
+  MemberDepartureListResponse,
+  ResolveMemberDepartureResponse,
+} from "@/types/member-departure";
 import { HttpClient } from "./HttpClient";
 
 export class HouseholdUserService implements IHouseholdUserService {
@@ -57,6 +62,29 @@ export class HouseholdUserService implements IHouseholdUserService {
       { method: "DELETE" },
       token
     );
+  }
+
+  public async getDepartures(householdId: number, token: string): Promise<MemberDeparture[]> {
+    const response = await this.http.request<MemberDepartureListResponse>(
+      `/households/${householdId}/member-departures`,
+      { method: "GET" },
+      token
+    );
+    return response.member_departures;
+  }
+
+  public async resolveDeparture(
+    householdId: number,
+    departureId: number,
+    taskIds: number[],
+    token: string
+  ): Promise<number> {
+    const response = await this.http.request<ResolveMemberDepartureResponse>(
+      `/households/${householdId}/member-departures/${departureId}/resolve`,
+      { method: "POST", body: JSON.stringify({ task_ids: taskIds }) },
+      token
+    );
+    return response.deleted_count;
   }
 }
 

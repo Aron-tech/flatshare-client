@@ -1,155 +1,136 @@
 import i18n from "@/i18n";
+import {
+  useHouseholdMutation,
+  useHouseholdQuery,
+  useHouseholdSession,
+} from "@/hooks/use-household-query";
+import { householdKey, HouseholdQueries } from "@/lib/queries";
+import { showToast } from "@/lib/toast";
 import { dashboardService } from "@/services/api/DashboardService";
 import { taskCompletionService } from "@/services/api/TaskCompletionService";
-import { useHouseholdQuery } from "@/hooks/use-household-query";
-import { emitTasksChanged, subscribeTasksChanged } from "@/lib/task-events";
-import { taskService } from "@/services/api/TaskService";
-import { TaskUserWeight } from "@/types/task";
-import { useCallback, useEffect, useState } from "react";
+import { CreateTaskOfferDto, MyHouseholdPointsResponse, TaskInstanceListResponse } from "@/types/dashboard";
+import { useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
 
-const fetchDashboard = async (householdId: number, token: string) => {
-  const [points, taskInstances] = await Promise.all([
-    dashboardService.getMyPoints(householdId, token),
-    dashboardService.getTaskInstances(householdId, token),
-  ]);
-  return { points, taskInstances };
-};
+const EMPTY_INSTANCES: TaskInstanceListResponse = { available: [], claimed: [], offered: [] };
 
-const EMPTY_INSTANCES = { available: [], claimed: [] };
-
-interface LocalCompletions<T> {
-  /** A betöltött adat, amelyhez a teljesítések tartoznak; újratöltéskor érvénytelenek. */
-  source: T | null;
+interface LocalCompletions {
+  /** A betöltött lista, amelyhez a teljesítések tartoznak; újratöltéskor érvénytelenek. */
+  source: TaskInstanceListResponse | null;
   /** Teljesített feladat → jóváírt pont (a kártya "kész" állapotához). */
   points: Record<number, number>;
-  /** A legutóbbi teljesítés után a backendtől kapott pontállás. */
-  balance: number | null;
+}
+
+/** Csere / türelmi nap kérés: a kártya azonosítója (a busy jelzéshez) és a művelet. */
+interface RequestAction {
+  taskInstanceId: number;
+  send: (householdId: number, token: string) => Promise<unknown>;
+  successKey: string;
 }
 
 export function useDashboard() {
-  const query = useHouseholdQuery(fetchDashboard);
-  const { householdId, token, reload, setError } = query;
+  const queryClient = useQueryClient();
+  const { householdId } = useHouseholdSession();
+  const me = useHouseholdQuery(HouseholdQueries.me);
+  const instances = useHouseholdQuery(HouseholdQueries.taskInstances);
 
-  useEffect(() => subscribeTasksChanged(() => void reload()), [reload]);
-
-  const [claimingId, setClaimingId] = useState<number | null>(null);
-  const [completingId, setCompletingId] = useState<number | null>(null);
-  const [weightingTaskId, setWeightingTaskId] = useState<number | null>(null);
   /**
    * A frissen teljesített feladatok "kész" állapotban maradnak a listában a
    * következő újratöltésig; utána a backend már nem adja vissza őket.
    */
-  const [local, setLocal] = useState<LocalCompletions<typeof query.data>>({
-    source: null,
-    points: {},
-    balance: null,
-  });
-  const completions =
-    local.source === query.data ? local : { points: {}, balance: null };
+  const [local, setLocal] = useState<LocalCompletions>({ source: null, points: {} });
+  const completedIds = local.source === instances.data ? local.points : {};
 
-  const claim = useCallback(
-    async (taskInstanceId: number) => {
-      if (!token || householdId === null) return;
-      setClaimingId(taskInstanceId);
-      try {
-        await dashboardService.claimTaskInstance(householdId, taskInstanceId, token);
-      } catch (e) {
-        setError(e instanceof Error ? e.message : i18n.t("dashboard.actionFailed"));
-      } finally {
-        await reload();
-        setClaimingId(null);
-        emitTasksChanged();
-      }
-    },
-    [token, householdId, reload, setError]
+  const claim = useHouseholdMutation((h, token, taskInstanceId: number) =>
+    dashboardService.claimTaskInstance(h, taskInstanceId, token)
   );
 
   /** Azonnali elvégzés: vállalás, majd rögtön lezárás (a backend a lezáráshoz vállalást kér). */
-  const claimAndComplete = useCallback(
-    async (taskInstanceId: number) => {
-      if (!token || householdId === null) return;
-      setClaimingId(taskInstanceId);
-      try {
-        await dashboardService.claimTaskInstance(householdId, taskInstanceId, token);
-        await taskCompletionService.complete(householdId, taskInstanceId, token);
-      } catch (e) {
-        setError(e instanceof Error ? e.message : i18n.t("dashboard.actionFailed"));
-      } finally {
-        await reload();
-        setClaimingId(null);
-        emitTasksChanged();
-      }
-    },
-    [token, householdId, reload, setError]
+  const claimAndComplete = useHouseholdMutation(async (h, token, taskInstanceId: number) => {
+    await dashboardService.claimTaskInstance(h, taskInstanceId, token);
+    await taskCompletionService.complete(h, taskInstanceId, token);
+  });
+
+  const request = useHouseholdMutation(async (h, token, { send, successKey }: RequestAction) => {
+    await send(h, token);
+    showToast(i18n.t(successKey));
+  });
+
+  // A lista szándékosan nem töltődik újra, hogy a teljesített kártya "kész" maradjon.
+  const completion = useHouseholdMutation(
+    (h, token, taskInstanceId: number) => taskCompletionService.complete(h, taskInstanceId, token),
+    { invalidate: false }
   );
 
-  /** A pontszámítás a súlyozástól függ, ezért utána újratölt; `true`, ha sikerült (hibát a HttpClient jelez). */
-  const setWeight = useCallback(
-    async (taskId: number, weight: TaskUserWeight): Promise<boolean> => {
-      if (!token || householdId === null) return false;
-      setWeightingTaskId(taskId);
-      try {
-        await taskService.setUserWeight(householdId, taskId, weight, token);
-        await reload();
-        emitTasksChanged();
-        return true;
-      } catch {
-        return false;
-      } finally {
-        setWeightingTaskId(null);
-      }
-    },
-    [token, householdId, reload]
-  );
+  /** A jóváírt pontot adja vissza, hiba esetén `null`-t. */
+  const complete = async (taskInstanceId: number): Promise<number | null> => {
+    const result = await completion.run(taskInstanceId);
+    if (!result || householdId === null) return null;
 
-  const complete = useCallback(
-    /** A jóváírt pontot adja vissza, hiba esetén `null`-t. */
-    async (taskInstanceId: number): Promise<number | null> => {
-      if (!token || householdId === null) return null;
-      setCompletingId(taskInstanceId);
-      try {
-        const result = await taskCompletionService.complete(householdId, taskInstanceId, token);
-        setLocal((prev) => {
-          const base = prev.source === query.data ? prev : { points: {}, balance: null };
-          return {
-            source: query.data,
-            points: { ...base.points, [taskInstanceId]: result.points },
-            balance: result.points_balance,
-          };
-        });
-        return result.points;
-      } catch (e) {
-        setError(e instanceof Error ? e.message : i18n.t("dashboard.actionFailed"));
-        return null;
-      } finally {
-        setCompletingId(null);
-      }
-    },
-    [token, householdId, setError, query.data]
-  );
+    const earned = result.points + (result.offer_points ?? 0);
+    setLocal((prev) => ({
+      source: instances.data,
+      points: { ...(prev.source === instances.data ? prev.points : {}), [taskInstanceId]: earned },
+    }));
+    queryClient.setQueryData<MyHouseholdPointsResponse>(HouseholdQueries.me.key(householdId), (current) =>
+      current && { ...current, weekly_points: result.weekly_points, spendable_points: result.spendable_points }
+    );
+    // A pont a statisztikát és a jutalmakat is érinti; a feladatlista és a friss pontállás marad.
+    const keep = [HouseholdQueries.taskInstances.key(householdId), HouseholdQueries.me.key(householdId)];
+    void queryClient.invalidateQueries({
+      queryKey: householdKey(householdId),
+      predicate: (query) => !keep.some((key) => key[2] === query.queryKey[2]),
+    });
+    return earned;
+  };
 
-  const points = query.data?.points ?? null;
+  const runRequest = async (action: RequestAction) => (await request.run(action)) !== null;
+  const points = me.data;
 
   return {
     points: points
       ? {
-          balance: completions.balance ?? points.household_user.points_balance,
+          weeklyPoints: points.weekly_points,
           minPoints: points.min_points,
+          spendablePoints: points.spendable_points,
           role: points.household_user.role,
+          graceDaysLeft: points.grace_days_left ?? 0,
         }
       : null,
-    taskInstances: query.data?.taskInstances ?? EMPTY_INSTANCES,
-    completedIds: completions.points,
-    isLoading: query.isLoading,
-    isRefreshing: query.isRefreshing,
-    error: query.error,
-    claimingId,
-    completingId,
-    weightingTaskId,
-    refresh: query.refresh,
-    claim,
-    claimAndComplete,
+    taskInstances: instances.data ?? EMPTY_INSTANCES,
+    completedIds,
+    isLoading: me.isLoading || instances.isLoading,
+    error: me.error ?? instances.error,
+    refetch: () => Promise.all([me.refetch(), instances.refetch()]),
+    claimingId: claim.pending ?? claimAndComplete.pending,
+    completingId: completion.pending,
+    claim: claim.run,
+    claimAndComplete: claimAndComplete.run,
     complete,
-    setWeight,
+    requestBusyId: request.pending?.taskInstanceId ?? null,
+    requestGraceDay: (taskInstanceId: number) =>
+      runRequest({
+        taskInstanceId,
+        send: (h, token) => dashboardService.requestGraceDay(h, taskInstanceId, token),
+        successKey: "request.graceGranted",
+      }),
+    createOffer: (taskInstanceId: number, dto: CreateTaskOfferDto) =>
+      runRequest({
+        taskInstanceId,
+        send: (h, token) => dashboardService.createOffer(h, taskInstanceId, dto, token),
+        successKey: "request.offerCreated",
+      }),
+    cancelOffer: (taskInstanceId: number, offerId: number) =>
+      runRequest({
+        taskInstanceId,
+        send: (h, token) => dashboardService.cancelOffer(h, offerId, token),
+        successKey: "request.offerCancelled",
+      }),
+    acceptOffer: (taskInstanceId: number, offerId: number) =>
+      runRequest({
+        taskInstanceId,
+        send: (h, token) => dashboardService.acceptOffer(h, offerId, token),
+        successKey: "request.offerAccepted",
+      }),
   };
 }

@@ -15,6 +15,7 @@ import { SegmentedControl } from "@/components/ui/segmented-control";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Text } from "@/components/ui/text";
 import { useChores } from "@/hooks/use-chores";
+import { usePullToRefresh } from "@/hooks/use-household-query";
 import { formatRecurrence } from "@/lib/format";
 import { Category, HouseholdTask } from "@/types/task";
 import { useRouter } from "expo-router";
@@ -44,7 +45,8 @@ interface Row {
 export default function ChoresScreen() {
   const { t } = useTranslation();
   const router = useRouter();
-  const { canManage, tasks, isLoading, isRefreshing, error, busyTaskId, refresh, deleteTask, setWeight } = useChores();
+  const { canManage, tasks, isLoading, error, busyTaskId, refetch, deleteTask, setWeight } = useChores();
+  const { refreshing, onRefresh } = usePullToRefresh(refetch);
   const [actionsTarget, setActionsTarget] = useState<TaskActionsTarget | null>(null);
   const [view, setView] = useState<ChoreView>("automated");
   const [query, setQuery] = useState("");
@@ -59,7 +61,7 @@ export default function ChoresScreen() {
       meta: task.is_recurring
         ? formatRecurrence(true, task.recurrence_interval, task.recurrence_unit, t)
         : t("chores.oneOff"),
-      points: task.base_points,
+      points: task.points ?? task.base_points,
       footer: t("chores.duration", { count: task.duration_minutes }),
       needsWeight: !task.user_weights?.length,
     }),
@@ -108,7 +110,7 @@ export default function ChoresScreen() {
   const closeActions = () => setActionsTarget(null);
 
   return (
-    <TabScreen refreshing={isRefreshing} onRefresh={refresh}>
+    <TabScreen refreshing={refreshing} onRefresh={onRefresh}>
       <View className="flex-row items-start justify-between gap-3">
         <View className="flex-1 gap-1">
           <Text className="text-headline-lg">{t("chores.title")}</Text>

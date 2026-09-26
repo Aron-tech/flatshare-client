@@ -1,4 +1,5 @@
 import { User } from "./auth";
+import { MemberDeparture } from "./member-departure";
 
 export type HouseholdRole = "admin" | "user" | "child" | string;
 
@@ -49,4 +50,8 @@ export interface IHouseholdUserService {
     token: string
   ): Promise<HouseholdUser>;
   remove(householdUserId: number, token: string): Promise<void>;
+  /** A távozott tagok, akiknek a feladatairól dönteni kell – csak admin. */
+  getDepartures(householdId: number, token: string): Promise<MemberDeparture[]>;
+  /** Törli a kiválasztott feladatokat (üres lista: mind marad), és lezárja a döntést. */
+  resolveDeparture(householdId: number, departureId: number, taskIds: number[], token: string): Promise<number>;
 }

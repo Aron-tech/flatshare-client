@@ -9,19 +9,24 @@ import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Text } from "@/components/ui/text";
 import { Elevation } from "@/constants/theme";
+import { usePullToRefresh } from "@/hooks/use-household-query";
 import { useStats } from "@/hooks/use-stats";
 import { daysUntil } from "@/lib/cycle";
-import { showToast } from "@/lib/toast";
+import { useAuth } from "@/context/AuthContext";
+import { useRouter } from "expo-router";
 import { CircleAlert, Hourglass } from "lucide-react-native";
 import { useTranslation } from "react-i18next";
 import { View } from "react-native";
 
 export default function StatsScreen() {
   const { t } = useTranslation();
-  const { stats, isLoading, isRefreshing, error, refresh } = useStats();
+  const { stats, isLoading, error, refetch } = useStats();
+  const { refreshing, onRefresh } = usePullToRefresh(refetch);
+  const { user } = useAuth();
+  const router = useRouter();
 
   return (
-    <TabScreen refreshing={isRefreshing} onRefresh={refresh}>
+    <TabScreen refreshing={refreshing} onRefresh={onRefresh}>
       {error && (
         <Alert icon={CircleAlert} variant="destructive">
           <AlertTitle>{t("home.errorTitle")}</AlertTitle>
@@ -54,7 +59,11 @@ export default function StatsScreen() {
                   </Text>
                 </View>
                 <Progress
-                  value={Math.round((stats.cycle.total_points / stats.cycle.target_points) * 100)}
+                  value={
+                    stats.cycle.target_points > 0
+                      ? Math.min(100, Math.round((stats.cycle.total_points / stats.cycle.target_points) * 100))
+                      : 0
+                  }
                   indicatorClassName="bg-primary"
                 />
                 <View className="flex-row items-center gap-1.5">
@@ -75,7 +84,12 @@ export default function StatsScreen() {
             </View>
           </View>
 
-          <PenaltiesCard penalties={stats.penalties} onRequestSwap={() => showToast(t("stats.swapComingSoon"))} />
+          <PenaltiesCard
+            penalties={stats.penalties}
+            period={stats.cycle.period ?? "weekly"}
+            currentUserId={user?.id ?? null}
+            onRequestSwap={(taskInstanceId) => router.navigate({ pathname: "/", params: { request: String(taskInstanceId) } })}
+          />
           <ActivityCard activity={stats.activity} />
         </>
       )}

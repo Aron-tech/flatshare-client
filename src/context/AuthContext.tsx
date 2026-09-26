@@ -3,6 +3,7 @@ import { pushNotificationService } from "@/services/notifications/PushNotificati
 import { applyUserLanguage } from "@/i18n";
 import { tokenStorage } from "@/services/storage/TokenStorage";
 import { IAuthService, ITokenStorage, User } from "@/types/auth";
+import { useQueryClient } from "@tanstack/react-query";
 import React, {
   createContext,
   useCallback,
@@ -38,6 +39,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
   const [token, setToken] = useState<string | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  const queryClient = useQueryClient();
 
   useEffect(() => {
     let isMounted = true;
@@ -78,11 +80,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
   const login = useCallback(
     async (newToken: string, newUser: User) => {
       await storage.saveToken(newToken);
+      // Egy korábbi fiók gyorsítótárazott adatai nem látszhatnak.
+      queryClient.clear();
       setToken(newToken);
       setUser(newUser);
       applyUserLanguage(newUser.language);
     },
-    [storage]
+    [storage, queryClient]
   );
 
   const updateUser = useCallback((updatedUser: User) => {
@@ -96,9 +100,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
       await pushNotificationService.unregister(token).catch(() => undefined);
     }
     await storage.removeToken();
+    queryClient.clear();
     setToken(null);
     setUser(null);
-  }, [storage, token]);
+  }, [storage, token, queryClient]);
 
   const contextValue = useMemo(
     () => ({

@@ -29,19 +29,17 @@ import { SegmentedControl } from "@/components/ui/segmented-control";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Text } from "@/components/ui/text";
 import { Elevation, Gutter, MaxContentWidth } from "@/constants/theme";
-import { useAuth } from "@/context/AuthContext";
-import { useHousehold } from "@/context/HouseholdContext";
+import { useHouseholdMembers } from "@/hooks/use-household-members";
+import { useHouseholdQuery, useHouseholdSession, useInvalidateHousehold } from "@/hooks/use-household-query";
 import { filterByName, useTaskTemplates } from "@/hooks/use-task-templates";
 import { fieldErrorsOf } from "@/lib/errors";
-import { emitTasksChanged } from "@/lib/task-events";
-import { householdUserService } from "@/services/api/HouseholdUserService";
+import { HouseholdQueries } from "@/lib/queries";
 import { taskService } from "@/services/api/TaskService";
-import type { HouseholdMember } from "@/types/household-user";
 import { HouseholdTask, TaskRecurrenceDto, TaskTemplate } from "@/types/task";
 import type { TFunction } from "i18next";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { X } from "lucide-react-native";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -97,12 +95,11 @@ function fromTask(task: HouseholdTask): {
 export default function AddTaskScreen() {
   const { t } = useTranslation();
   const router = useRouter();
-  const { token } = useAuth();
-  const { activeHousehold } = useHousehold();
+  const { householdId, token } = useHouseholdSession();
+  const invalidateHousehold = useInvalidateHousehold();
   const params = useLocalSearchParams<{ mode?: string; taskId?: string }>();
   const editedTaskId = params.taskId ? Number(params.taskId) : null;
   const isEditing = editedTaskId !== null;
-  const [isLoadingTask, setIsLoadingTask] = useState(isEditing);
 
   const [mode, setMode] = useState<Mode>(params.mode === "custom" || isEditing ? "custom" : "template");
   const { templates, categories } = useTaskTemplates();
@@ -118,54 +115,28 @@ export default function AddTaskScreen() {
 
   const [recurrence, setRecurrence] = useState<RecurrenceValue>(DEFAULT_RECURRENCE);
   const [assignment, setAssignment] = useState<AssignmentValue>(DEFAULT_ASSIGNMENT);
-  const [members, setMembers] = useState<HouseholdMember[]>([]);
+  const members = useHouseholdMembers();
 
-  const householdId = activeHousehold?.id ?? null;
+  // Szerkesztésnél a feladat a Chores lista cache-éből jön (onnan nyílik), különben betöltődik.
+  const tasks = useHouseholdQuery(HouseholdQueries.tasks, { enabled: isEditing });
+  const editedTask = tasks.data?.find((task) => task.id === editedTaskId) ?? null;
+  const [loadedTaskId, setLoadedTaskId] = useState<number | null>(null);
+  if (editedTask && loadedTaskId !== editedTask.id) {
+    const values = fromTask(editedTask);
+    setLoadedTaskId(editedTask.id);
+    setCustom(values.custom);
+    setRecurrence(values.recurrence);
+    setAssignment(values.assignment);
+  }
+  const isLoadingTask = isEditing && loadedTaskId === null;
 
+  // A feladatot közben törölték, vagy nem tölthető be (a hibát a HttpClient már toastban jelezte).
+  const taskMissing = isEditing && (tasks.error !== null || (tasks.data !== null && editedTask === null));
   useEffect(() => {
-    if (editedTaskId === null || !token || householdId === null) return;
-    let cancelled = false;
-    taskService
-      .getHouseholdTasks(householdId, token)
-      .then((list) => {
-        const task = list.find((candidate) => candidate.id === editedTaskId);
-        if (cancelled) return;
-        if (!task) {
-          router.back();
-          return;
-        }
-        const values = fromTask(task);
-        setCustom(values.custom);
-        setRecurrence(values.recurrence);
-        setAssignment(values.assignment);
-        setIsLoadingTask(false);
-      })
-      .catch(() => {
-        // A hibát a HttpClient már toastban megjelenítette.
-        if (!cancelled) router.back();
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [editedTaskId, token, householdId, router]);
+    if (taskMissing) router.back();
+  }, [taskMissing, router]);
 
-  useEffect(() => {
-    if (!token || householdId === null) return;
-    let cancelled = false;
-    householdUserService
-      .getMembers(householdId, token)
-      .then((list) => {
-        if (!cancelled) setMembers(list);
-      })
-      .catch(() => {
-        // A hibát a HttpClient már toastban megjelenítette.
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [token, householdId]);
-
-  const visibleTemplates = useMemo(() => filterByName(templates ?? [], query), [templates, query]);
+  const visibleTemplates = filterByName(templates ?? [], query);
 
   const changeMode = (next: Mode) => {
     setMode(next);
@@ -181,7 +152,7 @@ export default function AddTaskScreen() {
       return;
     }
 
-    if (!token || !activeHousehold) return;
+    if (!token || householdId === null) return;
 
     const fields = toCustomTaskDto(custom, t);
     const recurrenceResult = toRecurrenceDto(recurrence, t);
@@ -202,19 +173,19 @@ export default function AddTaskScreen() {
       if (editedTaskId !== null) {
         const { task_template_id: _templateId, ...dto } = fields.dto;
         await taskService.updateTask(
-          activeHousehold.id,
+          householdId,
           editedTaskId,
           { ...recurrenceResult.dto, ...assignmentDto, ...dto },
           token
         );
       } else {
         await taskService.createTask(
-          activeHousehold.id,
+          householdId,
           { ...recurrenceResult.dto, ...assignmentDto, ...fields.dto },
           token
         );
       }
-      emitTasksChanged();
+      void invalidateHousehold();
       router.back();
     } catch (e) {
       // Egyéb hibát a HttpClient már toastban megjelenített.

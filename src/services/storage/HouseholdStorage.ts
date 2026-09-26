@@ -43,21 +43,6 @@ export class HouseholdStorageService implements IHouseholdStorage {
       );
     }
   }
-
-  public async clearActiveHouseholdId(): Promise<void> {
-    try {
-      if (Platform.OS === "web") {
-        await AsyncStorage.removeItem(this.storageKey);
-        return;
-      }
-      await SecureStore.deleteItemAsync(this.storageKey, this.options);
-    } catch (error) {
-      console.error(
-        "[HouseholdStorageService.clearActiveHouseholdId] Failed to delete:",
-        error
-      );
-    }
-  }
 }
 
 export const householdStorage = new HouseholdStorageService();

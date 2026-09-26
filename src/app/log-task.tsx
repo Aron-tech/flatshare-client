@@ -15,17 +15,16 @@ import { SegmentedControl } from "@/components/ui/segmented-control";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Text } from "@/components/ui/text";
 import { Elevation, Gutter, MaxContentWidth } from "@/constants/theme";
-import { useAuth } from "@/context/AuthContext";
-import { useHousehold } from "@/context/HouseholdContext";
+import { useHouseholdQuery, useHouseholdSession, useInvalidateHousehold } from "@/hooks/use-household-query";
 import { filterByName, useTaskTemplates } from "@/hooks/use-task-templates";
 import { fieldErrorsOf } from "@/lib/errors";
-import { emitTasksChanged } from "@/lib/task-events";
+import { HouseholdQueries } from "@/lib/queries";
 import { showToast } from "@/lib/toast";
 import { taskService } from "@/services/api/TaskService";
 import { CustomTaskFieldsDto, OneOffHouseholdTask } from "@/types/task";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { X } from "lucide-react-native";
-import { useEffect, useMemo, useState } from "react";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ActivityIndicator, Alert, KeyboardAvoidingView, Platform, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -42,13 +41,15 @@ type Action = "log" | "create";
 export default function LogTaskScreen() {
   const { t } = useTranslation();
   const router = useRouter();
-  const { token } = useAuth();
-  const { activeHousehold } = useHousehold();
+  const { householdId, token } = useHouseholdSession();
+  const invalidateHousehold = useInvalidateHousehold();
   const params = useLocalSearchParams<{ mode?: string }>();
 
   const [mode, setMode] = useState<Mode>(params.mode === "custom" ? "custom" : "existing");
   const { templates, categories } = useTaskTemplates();
-  const [tasks, setTasks] = useState<OneOffHouseholdTask[] | null>(null);
+  const oneOffTasks = useHouseholdQuery(HouseholdQueries.oneOffTasks);
+  // Hibánál (a HttpClient már toastot mutatott) üres lista, hogy ne töltsön a végtelenségig.
+  const tasks = oneOffTasks.data ?? (oneOffTasks.error ? [] : null);
   const [submitting, setSubmitting] = useState<Action | null>(null);
   const [query, setQuery] = useState("");
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -59,26 +60,7 @@ export default function LogTaskScreen() {
   // Egyedi
   const [custom, setCustom] = useState<CustomTaskValue>(DEFAULT_CUSTOM_TASK);
 
-  const householdId = activeHousehold?.id ?? null;
-
-  useEffect(() => {
-    if (!token || householdId === null) return;
-    let cancelled = false;
-    taskService
-      .getOneOffTasks(householdId, token)
-      .then((list) => {
-        if (!cancelled) setTasks(list);
-      })
-      .catch(() => {
-        // A hibát a HttpClient már toastban megjelenítette.
-        if (!cancelled) setTasks([]);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [token, householdId]);
-
-  const visibleTasks = useMemo(() => filterByName(tasks ?? [], query), [tasks, query]);
+  const visibleTasks = filterByName(tasks ?? [], query);
 
   const changeMode = (next: Mode) => {
     setMode(next);
@@ -121,7 +103,7 @@ export default function LogTaskScreen() {
         }
         showToast(t("logTask.created"));
       }
-      emitTasksChanged();
+      void invalidateHousehold();
       router.back();
     } catch (e) {
       // Egyéb hibát a HttpClient már toastban megjelenített.

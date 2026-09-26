@@ -1,3 +1,5 @@
+import { ResetPeriod } from "@/types/household";
+
 import { HouseholdRole } from "./household-user";
 
 export interface StatsMember {
@@ -14,6 +16,8 @@ export type PenaltyStatus = "pending" | "resolved";
 export interface Penalty {
   /** `weekly-goal-{task_instance_user_id}`, `pending-{task_instance_user_id}` vagy `resolved-{point_transaction_id}`. */
   id: string;
+  /** Függő büntetésnél a feladat példánya (csere / türelmi nap kéréséhez); teljesítettnél null. */
+  task_instance_id: number | null;
   user_id: number;
   user_name: string;
   task_name: string;
@@ -35,6 +39,8 @@ export interface ActivityEntry {
 
 export interface HouseholdStats {
   cycle: {
+    period: ResetPeriod;
+    /** Heti ciklusnál ISO hét, havinál a kezdő hónap sorszáma. */
     number: number;
     starts_at: string;
     ends_at: string;

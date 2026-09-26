@@ -4,8 +4,10 @@ import { usePushNotifications } from "@/hooks/use-push-notifications";
 import { ToastHost } from "@/components/ui/toast";
 import { useNavTheme } from "@/hooks/use-theme";
 import { useApplyStoredTheme } from "@/hooks/use-theme-preference";
+import { queryClient } from "@/lib/query-client";
 import { FONT_ASSETS } from "@/theme/fonts";
 import { PortalHost } from "@rn-primitives/portal";
+import { QueryClientProvider } from "@tanstack/react-query";
 import { useFonts } from "expo-font";
 import { Stack, ThemeProvider, useRouter, useSegments } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
@@ -75,6 +77,7 @@ function RootNavigation() {
         <Stack.Screen name="add-task" options={{ presentation: "modal" }} />
         <Stack.Screen name="log-task" options={{ presentation: "modal" }} />
         <Stack.Screen name="reward-form" options={{ presentation: "modal" }} />
+        <Stack.Screen name="member-departures" options={{ presentation: "modal" }} />
       </Stack>
       <PortalHost />
       <ToastHost />
@@ -95,12 +98,14 @@ export default function RootLayout() {
 
   return (
     <ThemeProvider value={navTheme}>
-      <AuthProvider>
-        <HouseholdProvider>
-          <StatusBar style="auto" />
-          <RootNavigation />
-        </HouseholdProvider>
-      </AuthProvider>
+      <QueryClientProvider client={queryClient}>
+        <AuthProvider>
+          <HouseholdProvider>
+            <StatusBar style="auto" />
+            <RootNavigation />
+          </HouseholdProvider>
+        </AuthProvider>
+      </QueryClientProvider>
     </ThemeProvider>
   );
 }

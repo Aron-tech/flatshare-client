@@ -5,6 +5,7 @@ import {
   RewardDifficulty,
   RewardDto,
   RewardListResponse,
+  RewardRedemptionListResponse,
   RewardResponse,
 } from "@/types/reward";
 import { HttpClient } from "./HttpClient";
@@ -87,6 +88,23 @@ export class RewardService {
       token
     );
     return response.points_balance;
+  }
+
+  public getRedemptions(householdId: number, token: string): Promise<RewardRedemptionListResponse> {
+    return this.http.request<RewardRedemptionListResponse>(
+      `/households/${householdId}/reward-redemptions`,
+      { method: "GET" },
+      token
+    );
+  }
+
+  /** A feltöltő (átadta) vagy a beváltó (megkapta) jelöli teljesítettnek. */
+  public async fulfillRedemption(householdId: number, redemptionId: number, token: string): Promise<void> {
+    await this.http.request<unknown>(
+      `/households/${householdId}/reward-redemptions/${redemptionId}/fulfill`,
+      { method: "POST" },
+      token
+    );
   }
 }
 

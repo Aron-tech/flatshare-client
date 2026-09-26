@@ -8,6 +8,7 @@ import {
   IHouseholdService,
   JoinHouseholdDto,
   RenameHouseholdDto,
+  UpdateHouseholdSettingsDto,
 } from "@/types/household";
 import { HttpClient } from "./HttpClient";
 
@@ -68,6 +69,22 @@ export class HouseholdService implements IHouseholdService {
   ): Promise<Household> {
     const response = await this.http.request<HouseholdResponse>(
       `/households/${householdId}`,
+      {
+        method: "PUT",
+        body: JSON.stringify(dto),
+      },
+      token
+    );
+    return response.household;
+  }
+
+  public async updateSettings(
+    householdId: number,
+    dto: UpdateHouseholdSettingsDto,
+    token: string
+  ): Promise<Household> {
+    const response = await this.http.request<HouseholdResponse>(
+      `/households/${householdId}/settings`,
       {
         method: "PUT",
         body: JSON.stringify(dto),

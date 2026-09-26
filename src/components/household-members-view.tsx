@@ -4,68 +4,40 @@ import { SegmentedControl } from "@/components/ui/segmented-control";
 import { Text } from "@/components/ui/text";
 import { useAuth } from "@/context/AuthContext";
 import { useHousehold } from "@/context/HouseholdContext";
+import { householdKey, HouseholdQueries } from "@/lib/queries";
 import { householdUserService } from "@/services/api/HouseholdUserService";
 import { HouseholdRole, HouseholdUser } from "@/types/household-user";
-import { useEffect, useState } from "react";
+import { skipToken, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ActivityIndicator, Alert, FlatList, View } from "react-native";
 
 const ROLES = ["admin", "user", "child"] as const;
 
-export type MembersEntry = {
-  data?: HouseholdUser[];
-  promise: Promise<HouseholdUser[]>;
-};
-
 type Props = {
   householdId: number;
-  getMembers: () => MembersEntry;
-  onMembersChange: (members: HouseholdUser[]) => void;
   onBack: () => void;
 };
 
-export function HouseholdMembersView({
-  householdId,
-  getMembers,
-  onMembersChange,
-  onBack,
-}: Props) {
+/** Tagkezelés (admin): szerepkör módosítása, tag eltávolítása. A lista a váltó képernyő előtöltött cache-éből jön. */
+export function HouseholdMembersView({ householdId, onBack }: Props) {
   const { t } = useTranslation();
   const { user, token } = useAuth();
   const { households } = useHousehold();
+  const queryClient = useQueryClient();
+  const household = households.find((h) => h.id === householdId);
 
-  const parsedHouseholdId = householdId;
-  const household = households.find((h) => h.id === parsedHouseholdId);
-
-  const [initialEntry] = useState(getMembers);
-  const [members, setMembers] = useState<HouseholdUser[]>(
-    initialEntry.data ?? [],
-  );
-  const [loading, setLoading] = useState(!initialEntry.data);
+  const membersKey = HouseholdQueries.householdUsers.key(householdId);
+  const { data: members = [], isPending } = useQuery({
+    queryKey: membersKey,
+    queryFn: token ? () => HouseholdQueries.householdUsers.fetch(householdId, token) : skipToken,
+  });
   const [busyUserId, setBusyUserId] = useState<number | null>(null);
 
-  useEffect(() => {
-    if (initialEntry.data) return;
-    let cancelled = false;
-    initialEntry.promise
-      .then((list) => {
-        if (!cancelled) setMembers(list);
-      })
-      .catch((error) => {
-        if (cancelled) return;
-        alertError(error, t("members.loadFailed"));
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [initialEntry, t]);
-
-  const updateMembers = (next: HouseholdUser[]) => {
-    setMembers(next);
-    onMembersChange(next);
+  /** Azonnal frissíti a listát, majd a háztartás többi adatát (pontok, statisztika…) is. */
+  const updateMembers = (update: (current: HouseholdUser[]) => HouseholdUser[]) => {
+    queryClient.setQueryData<HouseholdUser[]>(membersKey, (current) => update(current ?? []));
+    void queryClient.invalidateQueries({ queryKey: householdKey(householdId) });
   };
 
   const handleRoleChange = async (member: HouseholdUser, role: HouseholdRole) => {
@@ -74,9 +46,7 @@ export function HouseholdMembersView({
       setBusyUserId(member.user_id);
       const updated = await householdUserService.update(member.id, { role }, token);
       // A válasz nem tölti be a `user` relációt, ezért csak a szerepkört vesszük át.
-      updateMembers(
-        members.map((m) => (m.id === member.id ? { ...m, role: updated.role } : m)),
-      );
+      updateMembers((current) => current.map((m) => (m.id === member.id ? { ...m, role: updated.role } : m)));
     } catch (error) {
       alertError(error, t("members.roleFailed"));
     } finally {
@@ -100,7 +70,7 @@ export function HouseholdMembersView({
             try {
               setBusyUserId(member.user_id);
               await householdUserService.remove(member.id, token);
-              updateMembers(members.filter((m) => m.id !== member.id));
+              updateMembers((current) => current.filter((m) => m.id !== member.id));
             } catch (error) {
               alertError(error, t("members.removeFailed"));
             } finally {
@@ -156,7 +126,7 @@ export function HouseholdMembersView({
     );
   };
 
-  if (loading) {
+  if (isPending && token) {
     return (
       <View className="flex-1 items-center justify-center bg-background">
         <ActivityIndicator size="large" className="text-primary" />

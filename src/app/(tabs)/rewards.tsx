@@ -1,3 +1,4 @@
+import { RedemptionList } from "@/components/rewards/redemption-list";
 import { TabScreen } from "@/components/screen";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
@@ -8,6 +9,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Text } from "@/components/ui/text";
 import { Elevation } from "@/constants/theme";
 import { useAuth } from "@/context/AuthContext";
+import { usePullToRefresh } from "@/hooks/use-household-query";
 import { useRewards } from "@/hooks/use-rewards";
 import { Reward } from "@/types/reward";
 import { useRouter } from "expo-router";
@@ -19,8 +21,21 @@ export default function RewardsScreen() {
   const { t } = useTranslation();
   const router = useRouter();
   const { user } = useAuth();
-  const { rewards, pointsBalance, isAdmin, isLoading, isRefreshing, error, busyRewardId, refresh, redeem, remove } =
-    useRewards();
+  const {
+    rewards,
+    redemptions,
+    pointsBalance,
+    isAdmin,
+    isLoading,
+    error,
+    busyRewardId,
+    busyRedemptionId,
+    refetch,
+    redeem,
+    remove,
+    fulfillRedemption,
+  } = useRewards();
+  const { refreshing, onRefresh } = usePullToRefresh(refetch);
 
   // A szüneteltetett jutalmat csak a feltöltője látja, hogy újra aktiválhassa.
   const visibleRewards = rewards?.filter((reward) => reward.is_active || reward.user_id === user?.id) ?? [];
@@ -42,7 +57,7 @@ export default function RewardsScreen() {
     ]);
 
   return (
-    <TabScreen refreshing={isRefreshing} onRefresh={refresh}>
+    <TabScreen refreshing={refreshing} onRefresh={onRefresh}>
       <View className="flex-row items-start justify-between gap-3">
         <View className="flex-1 gap-1">
           <Text className="text-headline-lg">{t("tabs.rewards")}</Text>
@@ -61,6 +76,10 @@ export default function RewardsScreen() {
           <AlertTitle>{t("home.errorTitle")}</AlertTitle>
           <AlertDescription>{error}</AlertDescription>
         </Alert>
+      )}
+
+      {redemptions && (
+        <RedemptionList redemptions={redemptions} busyId={busyRedemptionId} onFulfill={(id) => void fulfillRedemption(id)} />
       )}
 
       {isLoading && !rewards ? (

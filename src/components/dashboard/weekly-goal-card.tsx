@@ -4,13 +4,19 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Text } from "@/components/ui/text";
 import { Elevation } from "@/constants/theme";
 import { cn } from "@/lib/utils";
+import { ResetPeriod } from "@/types/household";
 import { Target } from "lucide-react-native";
 import { useTranslation } from "react-i18next";
 import { View } from "react-native";
 
 interface WeeklyGoalCardProps {
-  balance: number | null;
+  /** Az e heti feladatokért kapott pont. */
+  weeklyPoints: number | null;
   minPoints: number | null;
+  /** Jutalomra költhető pont: a heti célig szerzett pontot a hét zárása levonja. */
+  spendablePoints: number | null;
+  /** A háztartás célidőszaka: ettől függ, hogy heti vagy havi célról beszélünk. */
+  period: ResetPeriod;
   daysLeft: number;
   /** A ciklusból eltelt rész (0–1) – ebből számoljuk az elvárt tempót. */
   elapsedFraction: number;
@@ -20,8 +26,10 @@ interface WeeklyGoalCardProps {
 }
 
 export function WeeklyGoalCard({
-  balance,
+  weeklyPoints,
   minPoints,
+  spendablePoints,
+  period,
   daysLeft,
   elapsedFraction,
   flatBalance,
@@ -29,7 +37,7 @@ export function WeeklyGoalCard({
 }: WeeklyGoalCardProps) {
   const { t } = useTranslation();
 
-  if (isLoading || balance === null || minPoints === null) {
+  if (isLoading || weeklyPoints === null || minPoints === null) {
     return (
       <View className="gap-4 rounded-card bg-card p-6" style={Elevation.level1}>
         <Skeleton className="h-4 w-48" />
@@ -39,10 +47,12 @@ export function WeeklyGoalCard({
     );
   }
 
-  const percent = minPoints > 0 ? Math.min(100, Math.round((balance / minPoints) * 100)) : 100;
-  const behind = Math.max(0, Math.round(minPoints * elapsedFraction) - balance);
-  const reached = balance >= minPoints;
+  const percent = minPoints > 0 ? Math.min(100, Math.round((weeklyPoints / minPoints) * 100)) : 100;
+  const behind = Math.max(0, Math.round(minPoints * elapsedFraction) - weeklyPoints);
+  const reached = weeklyPoints >= minPoints;
   const hasGoal = minPoints > 0;
+  // A cél feletti pont csak annyiban marad meg, amennyi ténylegesen költhető (pl. a már elköltött vagy még le nem zárt korábbi időszak miatt kevesebb is lehet).
+  const extra = Math.min(Math.max(0, weeklyPoints - minPoints), spendablePoints ?? 0);
 
   return (
     <View className="gap-4 rounded-card bg-card p-6" style={Elevation.level1}>
@@ -50,7 +60,7 @@ export function WeeklyGoalCard({
         <View className="shrink flex-row items-center gap-2">
           <Icon as={Target} size={18} className="text-primary" />
           <Text className="shrink text-label-md uppercase text-muted-foreground" numberOfLines={1}>
-            {hasGoal ? t("dashboard.weeklyGoal", { count: minPoints }) : t("dashboard.noWeeklyGoal")}
+            {hasGoal ? t("dashboard.weeklyGoal", { count: minPoints, context: period }) : t("dashboard.noWeeklyGoal", { context: period })}
           </Text>
         </View>
         <View className="rounded-full bg-primary-soft px-3 py-1">
@@ -62,7 +72,7 @@ export function WeeklyGoalCard({
 
       <View className="flex-row items-end justify-between gap-2">
         <View className="flex-row items-baseline gap-2">
-          <Text className="text-headline-xl">{balance}</Text>
+          <Text className="text-headline-xl">{weeklyPoints}</Text>
           {hasGoal && (
             <Text className="font-serif text-headline-sm font-normal text-muted-foreground">
               {t("dashboard.ofPoints", { count: minPoints })}
@@ -97,7 +107,7 @@ export function WeeklyGoalCard({
             )}
           >
             {reached
-              ? t("dashboard.goalReached")
+              ? t("dashboard.goalReached", { context: period })
               : behind > 0
                 ? t("dashboard.behindPace", { count: behind })
                 : t("dashboard.onPace")}
@@ -107,6 +117,17 @@ export function WeeklyGoalCard({
           <Text variant="muted">{t("dashboard.flatBalance", { percent: flatBalance })}</Text>
         )}
       </View>
+
+      {spendablePoints !== null && (
+        <View className="gap-1 border-t border-border pt-4">
+          <Text className="text-label-lg">{t("dashboard.spendable", { count: spendablePoints })}</Text>
+          {hasGoal && (
+            <Text variant="muted">
+              {extra > 0 ? t("dashboard.extraThisWeek", { count: extra, context: period }) : t("dashboard.spendableHint", { context: period })}
+            </Text>
+          )}
+        </View>
+      )}
     </View>
   );
 }

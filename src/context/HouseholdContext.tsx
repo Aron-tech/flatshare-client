@@ -1,18 +1,14 @@
+import { HOUSEHOLDS_KEY } from "@/lib/queries";
 import { householdService } from "@/services/api/HouseholdService";
 import { householdStorage } from "@/services/storage/HouseholdStorage";
 import {
   Household,
   IHouseholdService,
   IHouseholdStorage,
+  UpdateHouseholdSettingsDto,
 } from "@/types/household";
-import React, {
-  createContext,
-  useCallback,
-  useContext,
-  useEffect,
-  useMemo,
-  useState,
-} from "react";
+import { skipToken, useQuery, useQueryClient } from "@tanstack/react-query";
+import React, { createContext, useContext, useEffect, useMemo, useState } from "react";
 import { useAuth } from "./AuthContext";
 
 interface HouseholdContextType {
@@ -22,12 +18,14 @@ interface HouseholdContextType {
   selectHousehold: (householdId: number) => Promise<void>;
   refreshHouseholds: () => Promise<void>;
   renameHousehold: (householdId: number, name: string) => Promise<void>;
+  updateHouseholdSettings: (householdId: number, dto: UpdateHouseholdSettingsDto) => Promise<void>;
   leaveHousehold: (householdId: number) => Promise<void>;
   deleteHousehold: (householdId: number) => Promise<void>;
-  getHouseholdQrCode: (householdId: number) => Promise<string>;
 }
 
 const HouseholdContext = createContext<HouseholdContextType | null>(null);
+
+const NO_HOUSEHOLDS: Household[] = [];
 
 interface HouseholdProviderProps {
   children: React.ReactNode;
@@ -41,143 +39,68 @@ export const HouseholdProvider: React.FC<HouseholdProviderProps> = ({
   service = householdService,
 }) => {
   const { token } = useAuth();
-  const [households, setHouseholds] = useState<Household[]>([]);
-  const [activeHousehold, setActiveHousehold] = useState<Household | null>(
-    null
-  );
-  const [isLoading, setIsLoading] = useState<boolean>(!!token);
+  const queryClient = useQueryClient();
 
-  const syncActiveHousehold = useCallback(
-    async (items: Household[]) => {
-      if (items.length === 0) {
-        await storage.clearActiveHouseholdId();
-        setActiveHousehold(null);
-        return;
-      }
+  const householdsQuery = useQuery({
+    queryKey: HOUSEHOLDS_KEY,
+    queryFn: token ? () => service.getAll(token) : skipToken,
+  });
+  const households = householdsQuery.data ?? NO_HOUSEHOLDS;
 
-      const storedId = await storage.getActiveHouseholdId();
-      const matched = items.find((h) => h.id === storedId);
-
-      if (matched) {
-        setActiveHousehold(matched);
-      } else {
-        // Ha nincs korábbi választás vagy törölték, az első lesz az aktív
-        const fallback = items[0];
-        await storage.setActiveHouseholdId(fallback.id);
-        setActiveHousehold(fallback);
-      }
-    },
-    [storage]
-  );
-
-  /**
-   * Az `isLoading` csak a (tokenváltás utáni) első betöltésnél igaz: a gyökér
-   * navigáció ilyenkor spinnert mutat, ami egy későbbi frissítésnél az összes
-   * képernyőt újramountolná és újratöltetné.
-   */
-  const refreshHouseholds = useCallback(async () => {
-    if (!token) return;
-    try {
-      const list = await service.getAll(token);
-      setHouseholds(list);
-      await syncActiveHousehold(list);
-    } catch (error) {
-      console.error("[HouseholdProvider.refreshHouseholds] Failed:", error);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [token, service, syncActiveHousehold]);
-
-  // Tokenváltáskor (be-/kijelentkezés) a render közben állítjuk vissza az állapotot,
-  // így nem villan fel a régi fiók háztartása, és nincs effektbeli setState.
-  const [loadedToken, setLoadedToken] = useState(token);
-  if (loadedToken !== token) {
-    setLoadedToken(token);
-    setHouseholds([]);
-    setActiveHousehold(null);
-    setIsLoading(!!token);
-  }
+  /** A tárolt választás; `undefined`, amíg a tárolóból be nem olvastuk. */
+  const [selectedId, setSelectedId] = useState<number | null | undefined>(undefined);
 
   useEffect(() => {
-    refreshHouseholds();
-  }, [refreshHouseholds]);
+    let cancelled = false;
+    storage.getActiveHouseholdId().then((id) => {
+      if (!cancelled) setSelectedId(id);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [storage]);
 
-  const selectHousehold = useCallback(
-    async (householdId: number) => {
-      const selected = households.find((h) => h.id === householdId);
-      if (!selected) return;
+  // Ha nincs korábbi választás, vagy azt a háztartást azóta elhagyta / törölték, az első az aktív.
+  const activeHousehold = households.find((h) => h.id === selectedId) ?? households[0] ?? null;
 
-      await storage.setActiveHouseholdId(selected.id);
-      setActiveHousehold(selected);
-    },
-    [households, storage]
-  );
+  /**
+   * Csak az első betöltésnél igaz: a gyökér navigáció ilyenkor spinnert mutat, ami egy
+   * későbbi frissítésnél az összes képernyőt újramountolná.
+   */
+  const isLoading = selectedId === undefined || (token !== null && householdsQuery.isPending);
 
-  const renameHousehold = useCallback(
-    async (householdId: number, name: string) => {
-      if (!token) return;
-      await service.rename(householdId, { name }, token);
-      await refreshHouseholds();
-    },
-    [token, service, refreshHouseholds]
-  );
+  const contextValue = useMemo<HouseholdContextType>(() => {
+    const refreshHouseholds = () => queryClient.invalidateQueries({ queryKey: HOUSEHOLDS_KEY });
 
-  const leaveHousehold = useCallback(
-    async (householdId: number) => {
-      if (!token) return;
-      await service.leave(householdId, token);
-      await refreshHouseholds();
-    },
-    [token, service, refreshHouseholds]
-  );
+    const mutateAndRefresh =
+      <A extends unknown[]>(action: (token: string, ...args: A) => Promise<unknown>) =>
+      async (...args: A) => {
+        if (!token) return;
+        await action(token, ...args);
+        await refreshHouseholds();
+      };
 
-  const deleteHousehold = useCallback(
-    async (householdId: number) => {
-      if (!token) return;
-      await service.destroy(householdId, token);
-      await refreshHouseholds();
-    },
-    [token, service, refreshHouseholds]
-  );
-
-  const getHouseholdQrCode = useCallback(
-    async (householdId: number) => {
-      if (!token) throw new Error("Nincs bejelentkezve.");
-      return service.getQrCode(householdId, token);
-    },
-    [token, service]
-  );
-
-  const contextValue = useMemo(
-    () => ({
+    return {
       households,
       activeHousehold,
       isLoading,
-      selectHousehold,
+      selectHousehold: async (householdId) => {
+        setSelectedId(householdId);
+        await storage.setActiveHouseholdId(householdId);
+      },
       refreshHouseholds,
-      renameHousehold,
-      leaveHousehold,
-      deleteHousehold,
-      getHouseholdQrCode,
-    }),
-    [
-      households,
-      activeHousehold,
-      isLoading,
-      selectHousehold,
-      refreshHouseholds,
-      renameHousehold,
-      leaveHousehold,
-      deleteHousehold,
-      getHouseholdQrCode,
-    ]
-  );
+      renameHousehold: mutateAndRefresh((tk, householdId: number, name: string) =>
+        service.rename(householdId, { name }, tk)
+      ),
+      updateHouseholdSettings: mutateAndRefresh((tk, householdId: number, dto: UpdateHouseholdSettingsDto) =>
+        service.updateSettings(householdId, dto, tk)
+      ),
+      leaveHousehold: mutateAndRefresh((tk, householdId: number) => service.leave(householdId, tk)),
+      deleteHousehold: mutateAndRefresh((tk, householdId: number) => service.destroy(householdId, tk)),
+    };
+  }, [households, activeHousehold, isLoading, token, service, storage, queryClient]);
 
-  return (
-    <HouseholdContext.Provider value={contextValue}>
-      {children}
-    </HouseholdContext.Provider>
-  );
+  return <HouseholdContext.Provider value={contextValue}>{children}</HouseholdContext.Provider>;
 };
 
 export const useHousehold = (): HouseholdContextType => {

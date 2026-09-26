@@ -1,10 +1,7 @@
-import { statsService } from "@/services/api/StatsService";
 import { useHouseholdQuery } from "@/hooks/use-household-query";
-
-const fetchStats = (householdId: number, token: string) =>
-  statsService.getStats(householdId, token);
+import { HouseholdQueries } from "@/lib/queries";
 
 export function useStats() {
-  const { data, isLoading, isRefreshing, error, refresh } = useHouseholdQuery(fetchStats);
-  return { stats: data, isLoading, isRefreshing, error, refresh };
+  const { data, isLoading, error, refetch } = useHouseholdQuery(HouseholdQueries.stats);
+  return { stats: data, isLoading, error, refetch };
 }

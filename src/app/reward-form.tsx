@@ -8,11 +8,12 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Text } from "@/components/ui/text";
 import { Elevation, Gutter, MaxContentWidth } from "@/constants/theme";
 import { useAuth } from "@/context/AuthContext";
-import { useHousehold } from "@/context/HouseholdContext";
-import { emitRewardsChanged } from "@/lib/reward-events";
+import { useHouseholdSession } from "@/hooks/use-household-query";
+import { fetchHouseholdQuery, HouseholdQueries } from "@/lib/queries";
 import { showToast } from "@/lib/toast";
 import { rewardService } from "@/services/api/RewardService";
 import { RewardDifficulty } from "@/types/reward";
+import { useQueryClient } from "@tanstack/react-query";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { X } from "lucide-react-native";
 import { useEffect, useRef, useState } from "react";
@@ -35,11 +36,11 @@ function parseStock(value: string): number | null | undefined {
 export default function RewardFormScreen() {
   const { t } = useTranslation();
   const router = useRouter();
-  const { token, user } = useAuth();
-  const { activeHousehold } = useHousehold();
+  const { user } = useAuth();
+  const { householdId, token } = useHouseholdSession();
+  const queryClient = useQueryClient();
   const params = useLocalSearchParams<{ id?: string }>();
   const rewardId = params.id ? Number(params.id) : null;
-  const householdId = activeHousehold?.id ?? null;
 
   const [isLoaded, setIsLoaded] = useState(rewardId === null);
   const [submitting, setSubmitting] = useState(false);
@@ -68,7 +69,8 @@ export default function RewardFormScreen() {
 
     (async () => {
       try {
-        const reward = (await rewardService.getByHousehold(householdId, token)).find((item) => item.id === rewardId);
+        const rewards = await fetchHouseholdQuery(queryClient, HouseholdQueries.rewards, householdId, token);
+        const reward = rewards.find((item) => item.id === rewardId);
         if (cancelled) return;
         if (!reward || reward.user_id !== user?.id) {
           showToast(t("rewardForm.notEditable"));
@@ -95,11 +97,11 @@ export default function RewardFormScreen() {
       if (editing && !savedRef.current) {
         void rewardService
           .stopEditing(householdId, rewardId, token)
-          .then(emitRewardsChanged)
+          .then(() => queryClient.invalidateQueries({ queryKey: HouseholdQueries.rewards.key(householdId) }))
           .catch(() => {});
       }
     };
-  }, [rewardId, token, householdId, user?.id, router, t]);
+  }, [rewardId, token, householdId, user?.id, router, t, queryClient]);
 
   // Nehézség előnézet a pontár beírása közben.
   useEffect(() => {
@@ -154,7 +156,7 @@ export default function RewardFormScreen() {
         await rewardService.update(householdId, rewardId, dto, token);
         savedRef.current = true;
       }
-      emitRewardsChanged();
+      void queryClient.invalidateQueries({ queryKey: HouseholdQueries.rewards.key(householdId) });
       router.back();
     } catch {
       // A hibát a HttpClient már toastban megjelenítette.
