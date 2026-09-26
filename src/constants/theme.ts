@@ -79,30 +79,19 @@ export type ThemeName = keyof typeof THEME;
 export type ThemeColors = (typeof THEME)[ThemeName];
 
 /** React Navigation téma, hogy a stack / modal háttér ne villanjon fehéren-feketén. */
-export const NAV_THEME: Record<ThemeName, Theme> = {
-  light: {
-    ...DefaultTheme,
+export function buildNavTheme(name: ThemeName, colors: ThemeColors): Theme {
+  return {
+    ...(name === "dark" ? DarkTheme : DefaultTheme),
     colors: {
-      background: THEME.light.background,
-      border: THEME.light.border,
-      card: THEME.light.card,
-      notification: THEME.light.destructive,
-      primary: THEME.light.primary,
-      text: THEME.light.foreground,
+      background: colors.background,
+      border: colors.border,
+      card: colors.card,
+      notification: colors.destructive,
+      primary: colors.primary,
+      text: colors.foreground,
     },
-  },
-  dark: {
-    ...DarkTheme,
-    colors: {
-      background: THEME.dark.background,
-      border: THEME.dark.border,
-      card: THEME.dark.card,
-      notification: THEME.dark.destructive,
-      primary: THEME.dark.primary,
-      text: THEME.dark.foreground,
-    },
-  },
-};
+  };
+}
 
 /**
  * Elevation – "sun-diffused ambient illumination" (DESIGN.md → Elevation & Depth).

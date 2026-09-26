@@ -1,6 +1,6 @@
 import { useThemeColors } from '@/hooks/use-theme';
 import { cn } from '@/lib/utils';
-import { resolveFontFamily } from '@/theme/fonts';
+import { useFontFamily } from '@/theme/fonts';
 import * as React from 'react';
 import { Platform, TextInput, type TextInputProps } from 'react-native';
 
@@ -25,13 +25,15 @@ function Input({
     className
   );
 
+  const fontFamily = useFontFamily(mergedClassName);
+
   return (
     <TextInput
       className={mergedClassName}
       placeholderTextColor={colors.placeholder}
       selectionColor={colors.primary}
       cursorColor={colors.primary}
-      style={[{ fontFamily: resolveFontFamily(mergedClassName) }, style]}
+      style={[{ fontFamily }, style]}
       onFocus={(e) => {
         setFocused(true);
         onFocus?.(e);

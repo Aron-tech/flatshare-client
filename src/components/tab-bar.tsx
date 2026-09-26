@@ -1,10 +1,13 @@
 import { Icon } from "@/components/ui/icon";
 import { Text } from "@/components/ui/text";
 import { Elevation, MaxContentWidth } from "@/constants/theme";
+import { useThemeColors } from "@/hooks/use-theme";
 import { cn } from "@/lib/utils";
+import { withAlpha } from "@/theme/palettes";
 import type { BottomTabBarProps } from "expo-router/js-tabs";
 import { ChartColumn, Gift, House, ListChecks, type LucideIcon, Plus } from "lucide-react-native";
 import { useTranslation } from "react-i18next";
+import { useMemo } from "react";
 import { Pressable, View } from "react-native";
 
 const TAB_ICONS: Record<string, LucideIcon> = {
@@ -24,6 +27,11 @@ interface TabBarProps extends BottomTabBarProps {
 /** DESIGN: lebegő, lekerekített alsó sáv középen kiemelt terrakotta "+" gombbal. */
 export function TabBar({ state, descriptors, navigation, insets, onAddPress }: TabBarProps) {
   const { t } = useTranslation();
+  const { primaryActive } = useThemeColors();
+  const addShadow = useMemo(
+    () => ({ boxShadow: `0px 10px 24px -6px ${withAlpha(primaryActive, 0.55)}` }),
+    [primaryActive],
+  );
   const routes = state.routes.filter((route) => route.name in TAB_ICONS);
   const middle = Math.ceil(routes.length / 2);
 
@@ -81,7 +89,7 @@ export function TabBar({ state, descriptors, navigation, insets, onAddPress }: T
             accessibilityRole="button"
             accessibilityLabel={t("tabs.log")}
             className="-mt-9 h-16 w-16 items-center justify-center rounded-full bg-primary active:bg-primary-active"
-            style={{ boxShadow: "0px 10px 24px -6px rgba(198, 106, 77, 0.55)" }}
+            style={addShadow}
           >
             <Icon as={Plus} size={30} strokeWidth={2.5} className="text-primary-foreground" />
           </Pressable>

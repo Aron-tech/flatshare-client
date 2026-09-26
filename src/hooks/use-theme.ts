@@ -3,8 +3,10 @@
  * https://docs.expo.dev/guides/color-schemes/
  */
 
-import { NAV_THEME, THEME } from '@/constants/theme';
+import { buildNavTheme } from '@/constants/theme';
+import { PaletteContext, resolveThemeColors } from '@/theme/palettes';
 import { useColorScheme } from 'nativewind';
+import { useContext, useMemo } from 'react';
 
 /** Aktuális (light/dark) téma neve – ugyanaz a forrás, amit a Nativewind `dark:` is használ. */
 export function useThemeName() {
@@ -12,12 +14,14 @@ export function useThemeName() {
   return colorScheme === 'dark' ? 'dark' : 'light';
 }
 
-/** Hex színek natív propokhoz (placeholderTextColor, RefreshControl tintColor stb.). */
+/** Hex színek natív propokhoz a választott palettával (placeholderTextColor, RefreshControl tintColor stb.). */
 export function useThemeColors() {
-  return THEME[useThemeName()];
+  return resolveThemeColors(useContext(PaletteContext), useThemeName());
 }
 
 /** React Navigation téma a `ThemeProvider`-hez. */
 export function useNavTheme() {
-  return NAV_THEME[useThemeName()];
+  const name = useThemeName();
+  const colors = useThemeColors();
+  return useMemo(() => buildNavTheme(name, colors), [name, colors]);
 }

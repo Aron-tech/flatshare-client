@@ -1,5 +1,5 @@
 import { cn } from '@/lib/utils';
-import { resolveFontFamily } from '@/theme/fonts';
+import { useFontFamily } from '@/theme/fonts';
 import { Slot } from '@rn-primitives/slot';
 import { cva, type VariantProps } from 'class-variance-authority';
 import * as React from 'react';
@@ -79,7 +79,8 @@ function Text({
   const mergedClassName = cn(textVariants({ variant }), textClass, className);
   // Súlyonként külön fontfájl van (SDK 57), ezért a `font-semibold` stb. alapján
   // választjuk ki a pontos családot. A `code` variáns a rendszer mono fontját használja.
-  const fontFamily = variant === 'code' ? undefined : resolveFontFamily(mergedClassName);
+  const resolvedFamily = useFontFamily(mergedClassName);
+  const fontFamily = variant === 'code' ? undefined : resolvedFamily;
   return (
     <Component
       className={mergedClassName}

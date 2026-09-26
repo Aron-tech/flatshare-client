@@ -1,3 +1,4 @@
+import { AppearanceProvider } from "@/context/AppearanceContext";
 import { AuthProvider, useAuth } from "@/context/AuthContext";
 import { HouseholdProvider, useHousehold } from "@/context/HouseholdContext";
 import { usePushNotifications } from "@/hooks/use-push-notifications";
@@ -5,10 +6,8 @@ import { ToastHost } from "@/components/ui/toast";
 import { useNavTheme } from "@/hooks/use-theme";
 import { useApplyStoredTheme } from "@/hooks/use-theme-preference";
 import { queryClient } from "@/lib/query-client";
-import { FONT_ASSETS } from "@/theme/fonts";
 import { PortalHost } from "@rn-primitives/portal";
 import { QueryClientProvider } from "@tanstack/react-query";
-import { useFonts } from "expo-font";
 import { Stack, ThemeProvider, useRouter, useSegments } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
@@ -85,16 +84,9 @@ function RootNavigation() {
   );
 }
 
-export default function RootLayout() {
+function AppShell() {
   const navTheme = useNavTheme();
   useApplyStoredTheme();
-  const [fontsLoaded, fontError] = useFonts(FONT_ASSETS);
-
-  useEffect(() => {
-    if (fontsLoaded || fontError) SplashScreen.hideAsync();
-  }, [fontsLoaded, fontError]);
-
-  if (!fontsLoaded && !fontError) return null;
 
   return (
     <ThemeProvider value={navTheme}>
@@ -107,5 +99,16 @@ export default function RootLayout() {
         </AuthProvider>
       </QueryClientProvider>
     </ThemeProvider>
+  );
+}
+
+const hideSplash = () => SplashScreen.hideAsync();
+
+export default function RootLayout() {
+  // A tárolt kinézet (paletta, font, ikonkészlet) betöltéséig a splash marad.
+  return (
+    <AppearanceProvider onReady={hideSplash}>
+      <AppShell />
+    </AppearanceProvider>
   );
 }

@@ -1,4 +1,3 @@
-import { THEME } from "@/constants/theme";
 import { useThemeColors } from "@/hooks/use-theme";
 import { Text } from "@/components/ui/text";
 import Svg, { Circle } from "react-native-svg";
@@ -26,7 +25,7 @@ export function CycleRing({ value, target, size = 112 }: CycleRingProps) {
           cx={size / 2}
           cy={size / 2}
           r={radius}
-          stroke={THEME.light.primary}
+          stroke={colors.primary}
           strokeWidth={stroke}
           strokeLinecap="round"
           fill="none"
