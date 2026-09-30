@@ -1,0 +1,6 @@
+{
+  "ios": {
+    "CFBundleDisplayName": "FlatShare",
+    "NSCameraUsageDescription": "A kamerát a háztartás QR-kódjának beolvasására használjuk, hogy csatlakozhass. A képet nem tároljuk."
+  }
+}

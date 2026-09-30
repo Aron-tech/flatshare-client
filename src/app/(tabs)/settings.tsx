@@ -6,26 +6,30 @@ import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { SegmentedControl } from "@/components/ui/segmented-control";
 import { Text } from "@/components/ui/text";
+import { Config } from "@/config/env";
 import { Elevation } from "@/constants/theme";
 import { SUPPORTED_LANGUAGES, type AppLanguage } from "@/i18n";
 import { useAppearance } from "@/context/AppearanceContext";
 import { useAuth } from "@/context/AuthContext";
 import { type ThemePreference, useThemePreference } from "@/hooks/use-theme-preference";
+import { useThemeColors } from "@/hooks/use-theme";
 import { showToast } from "@/lib/toast";
 import { DEFAULT_FONT_SET, FONT_SET_IDS, type FontSetId } from "@/theme/fonts";
 import { DEFAULT_ICON_SET, ICON_SET_IDS } from "@/theme/icon-sets";
 import { DEFAULT_PALETTE, PALETTES, PALETTE_IDS } from "@/theme/palettes";
+import * as WebBrowser from "expo-web-browser";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { View } from "react-native";
+import { Alert, Switch, View } from "react-native";
 
 export default function SettingsScreen() {
-  const { user, token, updateUser, authService } = useAuth();
+  const { user, token, updateUser, authService, deleteAccount } = useAuth();
   const { t } = useTranslation();
   const [nickname, setNickname] = useState(user?.nickname ?? "");
   const [saving, setSaving] = useState(false);
   const { preference, setPreference } = useThemePreference();
   const appearance = useAppearance();
+  const colors = useThemeColors();
   // A font betöltéséig is azonnal a kattintott chip látszik kiválasztottnak.
   const [pendingFont, setPendingFont] = useState<FontSetId | null>(null);
 
@@ -52,6 +56,31 @@ export default function SettingsScreen() {
     } finally {
       setSavingLanguage(false);
     }
+  };
+
+  const [deletingAccount, setDeletingAccount] = useState(false);
+
+  const openPrivacyPolicy = () =>
+    WebBrowser.openBrowserAsync(`${Config.WEB_URL}/privacy?lang=${language}`);
+
+  const confirmDeleteAccount = () => {
+    Alert.alert(t("settings.deleteAccountConfirmTitle"), t("settings.deleteAccountConfirmMessage"), [
+      { text: t("common.cancel"), style: "cancel" },
+      {
+        text: t("settings.deleteAccountConfirm"),
+        style: "destructive",
+        onPress: async () => {
+          setDeletingAccount(true);
+          try {
+            // Sikeres törlés után a kijelentkezett állapot a bejelentkező képernyőre visz.
+            await deleteAccount();
+          } catch {
+            // A hibát a HttpClient már toastban megjelenítette.
+            setDeletingAccount(false);
+          }
+        },
+      },
+    ]);
   };
 
   const themeOptions: ThemePreference[] = ["system", "light", "dark"];
@@ -163,6 +192,23 @@ export default function SettingsScreen() {
           />
         </View>
 
+        <Separator />
+
+        <View className="flex-row items-center justify-between gap-3">
+          <View className="flex-1 gap-0.5">
+            <Text className="text-body-md">{t("settings.stickerWaveAnimation")}</Text>
+            <Text variant="muted" className="text-body-sm">
+              {t("settings.stickerWaveAnimationHint")}
+            </Text>
+          </View>
+          <Switch
+            value={appearance.stickerWaves}
+            onValueChange={(stickerWaves) => appearance.setAppearance({ stickerWaves })}
+            trackColor={{ true: colors.primary }}
+            accessibilityLabel={t("settings.stickerWaveAnimation")}
+          />
+        </View>
+
         <Button variant="ghost" onPress={appearance.reset}>
           <Text>{t("settings.resetAppearance")}</Text>
         </Button>
@@ -175,6 +221,20 @@ export default function SettingsScreen() {
           value={language}
           onChange={changeLanguage}
         />
+      </View>
+
+      <View className="gap-3 rounded-card bg-card p-5" style={Elevation.level1}>
+        <Text className="text-label-md uppercase text-muted-foreground">{t("settings.account")}</Text>
+        <Button variant="secondary" onPress={openPrivacyPolicy}>
+          <Text>{t("settings.privacyPolicy")}</Text>
+        </Button>
+        <Separator />
+        <Text variant="muted" className="text-body-sm">
+          {t("settings.deleteAccountHint")}
+        </Text>
+        <Button variant="destructive" onPress={confirmDeleteAccount} disabled={deletingAccount}>
+          <Text>{t("settings.deleteAccount")}</Text>
+        </Button>
       </View>
     </TabScreen>
   );

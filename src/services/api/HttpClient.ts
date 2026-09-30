@@ -1,3 +1,4 @@
+import { Config } from "@/config/env";
 import i18n from "@/i18n";
 import { showToast } from "@/lib/toast";
 
@@ -42,6 +43,7 @@ export class HttpClient {
       Accept: "application/json",
       // Bejelentkezés előtt ebből tudja a backend a válaszok nyelvét.
       "Accept-Language": i18n.language,
+      "X-App-Key": Config.APP_KEY,
       ...(options.headers as Record<string, string>),
     };
 

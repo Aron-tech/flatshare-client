@@ -3,6 +3,7 @@ import {
   ITaskCompletionService,
   TaskCompletionResponse,
 } from "@/types/dashboard";
+import { announceSticker } from "@/lib/sticker-events";
 import { HttpClient } from "./HttpClient";
 
 export class TaskCompletionService implements ITaskCompletionService {
@@ -12,16 +13,18 @@ export class TaskCompletionService implements ITaskCompletionService {
     this.http = http ?? new HttpClient(Config.BACKEND_URL);
   }
 
-  public complete(
+  public async complete(
     householdId: number,
     taskInstanceId: number,
     token: string
   ): Promise<TaskCompletionResponse> {
-    return this.http.request<TaskCompletionResponse>(
+    const result = await this.http.request<TaskCompletionResponse>(
       `/households/${householdId}/task-instances/${taskInstanceId}/complete`,
       { method: "POST" },
       token
     );
+    announceSticker(result.new_sticker);
+    return result;
   }
 }
 

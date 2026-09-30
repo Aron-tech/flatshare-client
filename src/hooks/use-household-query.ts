@@ -2,7 +2,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useHousehold } from "@/context/HouseholdContext";
 import i18n from "@/i18n";
 import { householdKey, HouseholdQuery } from "@/lib/queries";
-import { skipToken, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { keepPreviousData, skipToken, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 
 /** Az aktív háztartás azonosítója és a bejelentkezési token. */
@@ -24,13 +24,18 @@ export function useInvalidateHousehold() {
  * Az aktív háztartáshoz tartozó adat. Háztartásváltáskor a másik kulcs miatt nem a régi
  * háztartás adatát mutatja. `enabled: false` mellett nem tölt (pl. csak adminnak elérhető végpont).
  */
-export function useHouseholdQuery<T>(query: HouseholdQuery<T>, { enabled = true }: { enabled?: boolean } = {}) {
+export function useHouseholdQuery<T>(
+  query: HouseholdQuery<T>,
+  { enabled = true, keepPrevious = false }: { enabled?: boolean; keepPrevious?: boolean } = {}
+) {
   const { householdId, token } = useHouseholdSession();
   const canFetch = enabled && token !== null && householdId !== null;
 
   const result = useQuery({
     queryKey: query.key(householdId ?? 0),
     queryFn: canFetch ? () => query.fetch(householdId, token) : skipToken,
+    // Lapozásnál (pl. naptár) az új időszak betöltéséig a régi adat marad látható.
+    placeholderData: keepPrevious ? keepPreviousData : undefined,
   });
 
   return {
@@ -39,6 +44,8 @@ export function useHouseholdQuery<T>(query: HouseholdQuery<T>, { enabled = true 
     isLoading: result.isPending && !result.isError,
     error: result.error ? result.error.message || i18n.t("dashboard.loadFailed") : null,
     refetch: result.refetch,
+    /** Háttérben tölt (pl. az előző időszak adata látszik). */
+    isFetching: result.isFetching,
   };
 }
 

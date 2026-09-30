@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Icon } from "@/components/ui/icon";
+import { SegmentedControl } from "@/components/ui/segmented-control";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Text } from "@/components/ui/text";
 import { Elevation } from "@/constants/theme";
@@ -14,8 +15,12 @@ import { useRewards } from "@/hooks/use-rewards";
 import { Reward } from "@/types/reward";
 import { useRouter } from "expo-router";
 import { CircleAlert, Pencil, Plus, Trash2 } from "lucide-react-native";
+import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ActivityIndicator, Alert as NativeAlert, View } from "react-native";
+
+/** Elérhető: mástól, aktív jutalom, amit be tudunk váltani; sajátjaim: amit mi hoztunk létre. */
+type RewardsView = "available" | "mine";
 
 export default function RewardsScreen() {
   const { t } = useTranslation();
@@ -36,9 +41,18 @@ export default function RewardsScreen() {
     fulfillRedemption,
   } = useRewards();
   const { refreshing, onRefresh } = usePullToRefresh(refetch);
+  const [view, setView] = useState<RewardsView>("available");
 
-  // A szüneteltetett jutalmat csak a feltöltője látja, hogy újra aktiválhassa.
-  const visibleRewards = rewards?.filter((reward) => reward.is_active || reward.user_id === user?.id) ?? [];
+  const availableRewards = useMemo(
+    () => rewards?.filter((reward) => reward.user_id !== user?.id && reward.is_active) ?? [],
+    [rewards, user?.id]
+  );
+  const mineRewards = useMemo(
+    () => rewards?.filter((reward) => reward.user_id === user?.id) ?? [],
+    [rewards, user?.id]
+  );
+
+  const visibleRewards = view === "available" ? availableRewards : mineRewards;
 
   const confirmRedeem = (reward: Reward) =>
     NativeAlert.alert(
@@ -81,6 +95,16 @@ export default function RewardsScreen() {
       {redemptions && (
         <RedemptionList redemptions={redemptions} busyId={busyRedemptionId} onFulfill={(id) => void fulfillRedemption(id)} />
       )}
+
+      <SegmentedControl
+        activeTone="primary"
+        value={view}
+        onChange={setView}
+        options={[
+          { value: "available" as const, label: t("rewards.available", { count: availableRewards.length }) },
+          { value: "mine" as const, label: t("rewards.myRewards", { count: mineRewards.length }) },
+        ]}
+      />
 
       {isLoading && !rewards ? (
         <Skeleton className="h-40 w-full rounded-card" />

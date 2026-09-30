@@ -5,9 +5,10 @@ import { Text } from "@/components/ui/text";
 import { Elevation } from "@/constants/theme";
 import { cn } from "@/lib/utils";
 import { ResetPeriod } from "@/types/household";
-import { Target } from "lucide-react-native";
+import { Info, Target } from "lucide-react-native";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { View } from "react-native";
+import { Pressable, View } from "react-native";
 
 interface WeeklyGoalCardProps {
   /** Az e heti feladatokért kapott pont. */
@@ -36,6 +37,7 @@ export function WeeklyGoalCard({
   isLoading,
 }: WeeklyGoalCardProps) {
   const { t } = useTranslation();
+  const [showSpendableInfo, setShowSpendableInfo] = useState(false);
 
   if (isLoading || weeklyPoints === null || minPoints === null) {
     return (
@@ -119,12 +121,37 @@ export function WeeklyGoalCard({
       </View>
 
       {spendablePoints !== null && (
-        <View className="gap-1 border-t border-border pt-4">
-          <Text className="text-label-lg">{t("dashboard.spendable", { count: spendablePoints })}</Text>
-          {hasGoal && (
-            <Text variant="muted">
-              {extra > 0 ? t("dashboard.extraThisWeek", { count: extra, context: period }) : t("dashboard.spendableHint", { context: period })}
-            </Text>
+        <View className="border-t border-border pt-4">
+          <View className="flex-row items-center gap-1.5">
+            <Text className="text-label-lg">{t("dashboard.spendable", { count: spendablePoints })}</Text>
+            {hasGoal && (
+              <Pressable
+                onPress={() => setShowSpendableInfo((prev) => !prev)}
+                hitSlop={8}
+                accessibilityRole="button"
+                accessibilityLabel={t("dashboard.spendableInfoLabel")}
+              >
+                <Icon as={Info} size={15} className="text-muted-foreground" />
+              </Pressable>
+            )}
+          </View>
+          {hasGoal && showSpendableInfo && (
+            <>
+              <Pressable
+                className="absolute inset-x-0 -top-96 -bottom-96 z-10"
+                onPress={() => setShowSpendableInfo(false)}
+              />
+              <View
+                className="absolute left-0 top-full z-20 mt-1 max-w-[85%] rounded-md bg-foreground px-3 py-2"
+                style={Elevation.level2}
+              >
+                <Text className="text-body-sm text-background">
+                  {extra > 0
+                    ? t("dashboard.extraThisWeek", { count: extra, context: period })
+                    : t("dashboard.spendableHint", { context: period })}
+                </Text>
+              </View>
+            </>
           )}
         </View>
       )}

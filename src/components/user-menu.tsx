@@ -4,7 +4,7 @@ import { initials } from "@/lib/format";
 import { Elevation } from "@/constants/theme";
 import { useAuth } from "@/context/AuthContext";
 import { useRouter } from "expo-router";
-import { LogOut, Settings } from "lucide-react-native";
+import { CalendarDays, LogOut, Settings, Sticker } from "lucide-react-native";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Image, Modal, Pressable, View } from "react-native";
@@ -68,6 +68,26 @@ export function UserMenu() {
               </Text>
             </View>
             <View className="h-px bg-border" />
+            <Pressable
+              className="flex-row items-center gap-2 px-4 py-3 active:bg-secondary"
+              onPress={() => {
+                setOpen(false);
+                router.push("/calendar");
+              }}
+            >
+              <Icon as={CalendarDays} size={16} />
+              <Text>{t("menu.calendar")}</Text>
+            </Pressable>
+            <Pressable
+              className="flex-row items-center gap-2 px-4 py-3 active:bg-secondary"
+              onPress={() => {
+                setOpen(false);
+                router.push("/sticker-album");
+              }}
+            >
+              <Icon as={Sticker} size={16} />
+              <Text>{t("menu.stickerAlbum")}</Text>
+            </Pressable>
             <Pressable
               className="flex-row items-center gap-2 px-4 py-3 active:bg-secondary"
               onPress={() => {

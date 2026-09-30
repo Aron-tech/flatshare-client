@@ -1,4 +1,5 @@
 import { Config } from "@/config/env";
+import { announceSticker } from "@/lib/sticker-events";
 import { TaskCompletionResponse } from "@/types/dashboard";
 import {
   CreateTaskDto,
@@ -17,6 +18,12 @@ import { HttpClient, RequestOptions } from "./HttpClient";
 
 /** A feladat-űrlapok a validációs hibákat a mezők mellett jelenítik meg. */
 const INLINE_VALIDATION: RequestOptions = { inlineValidation: true };
+
+/** A rögzítéssel elért új matricát jelzi a felugró értesítésnek. */
+function withStickerAnnounced(result: TaskCompletionResponse): TaskCompletionResponse {
+  announceSticker(result.new_sticker);
+  return result;
+}
 
 export class TaskService implements ITaskService {
   private readonly http: HttpClient;
@@ -110,7 +117,7 @@ export class TaskService implements ITaskService {
       `/households/${householdId}/tasks/${taskId}/log`,
       { method: "POST" },
       token
-    );
+    ).then(withStickerAnnounced);
   }
 
   public logNewTask(
@@ -123,7 +130,7 @@ export class TaskService implements ITaskService {
       { method: "POST", body: JSON.stringify(dto) },
       token,
       INLINE_VALIDATION
-    );
+    ).then(withStickerAnnounced);
   }
 
   public logTaskFromTemplate(
@@ -136,7 +143,7 @@ export class TaskService implements ITaskService {
       `/households/${householdId}/tasks/templates/${templateId}/log`,
       { method: "POST", body: JSON.stringify(dto) },
       token
-    );
+    ).then(withStickerAnnounced);
   }
 
   public async deleteTask(

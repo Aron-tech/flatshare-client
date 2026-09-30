@@ -62,6 +62,10 @@ export class AuthService implements IAuthService {
     return response.user;
   }
 
+  public async deleteAccount(token: string): Promise<void> {
+    await this.http.request<unknown>("/user/me", { method: "DELETE" }, token);
+  }
+
   public async updateLanguage(token: string, language: string): Promise<User> {
     const response = await this.http.request<UserMeResponse>(
       "/user/me",

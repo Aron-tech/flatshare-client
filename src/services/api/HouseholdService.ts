@@ -116,6 +116,7 @@ export class HouseholdService implements IHouseholdService {
       {
         headers: {
           Accept: "image/svg+xml",
+          "X-App-Key": Config.APP_KEY,
           Authorization: `Bearer ${token}`,
         },
       }

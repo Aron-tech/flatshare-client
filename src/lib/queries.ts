@@ -1,8 +1,11 @@
+import { calendarService } from "@/services/api/CalendarService";
 import { dashboardService } from "@/services/api/DashboardService";
 import { householdUserService } from "@/services/api/HouseholdUserService";
 import { rewardService } from "@/services/api/RewardService";
 import { statsService } from "@/services/api/StatsService";
+import { stickerAlbumService } from "@/services/api/StickerAlbumService";
 import { taskService } from "@/services/api/TaskService";
+import type { CalendarScope } from "@/types/calendar";
 import type { QueryClient, QueryKey } from "@tanstack/react-query";
 
 /** Egy háztartás összes lekérdezésének közös kulcs-előtagja (érvénytelenítéshez). */
@@ -37,7 +40,19 @@ export const HouseholdQueries = {
   householdUsers: householdQuery("household-users", (h, token) => householdUserService.getByHousehold(h, token)),
   /** Csak adminnak. */
   departures: householdQuery("member-departures", (h, token) => householdUserService.getDepartures(h, token)),
+  /** A saját matricaalbum (a lekérés pótolja a korábbi elvégzések matricáit). */
+  stickerAlbum: householdQuery("sticker-album", (h, token) => stickerAlbumService.getAlbum(h, token)),
+  /** A naptár-feed linkjei (az első kérés hozza létre őket). */
+  calendarSubscription: householdQuery("calendar-subscription", (h, token) => calendarService.getSubscription(h, token)),
 } as const;
+
+/** A naptár eseményei a nézet időszakára; a kulcs a háztartás alatt van, így műveletek után ez is frissül. */
+export function calendarEventsQuery(scope: CalendarScope, from: Date, to: Date) {
+  return {
+    key: (householdId: number) => [...householdKey(householdId), "calendar", scope, from.toISOString(), to.toISOString()],
+    fetch: (householdId: number, token: string) => calendarService.getEvents(householdId, scope, from, to, token),
+  } satisfies HouseholdQuery<unknown>;
+}
 
 /** Cache-ből adja az adatot, ha friss; különben lekéri (pl. szerkesztő űrlap előtöltéséhez). */
 export function fetchHouseholdQuery<T>(

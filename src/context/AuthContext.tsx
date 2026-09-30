@@ -20,6 +20,8 @@ interface AuthContextType {
   login: (token: string, user: User) => Promise<void>;
   updateUser: (user: User) => void;
   logout: () => Promise<void>;
+  /** Véglegesen törli a fiókot a backenden (App Store / Google Play követelmény), majd kijelentkeztet. */
+  deleteAccount: () => Promise<void>;
   authService: IAuthService;
 }
 
@@ -105,6 +107,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
     setUser(null);
   }, [storage, token, queryClient]);
 
+  const deleteAccount = useCallback(async () => {
+    if (!token) return;
+    // A backend a push- és API-tokeneket is törli, ezért itt csak a helyi állapotot kell üríteni.
+    await service.deleteAccount(token);
+    await storage.removeToken();
+    queryClient.clear();
+    setToken(null);
+    setUser(null);
+  }, [service, storage, token, queryClient]);
+
   const contextValue = useMemo(
     () => ({
       token,
@@ -113,9 +125,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
       login,
       updateUser,
       logout,
+      deleteAccount,
       authService: service,
     }),
-    [token, user, isLoading, login, updateUser, logout, service]
+    [token, user, isLoading, login, updateUser, logout, deleteAccount, service]
   );
 
   return (

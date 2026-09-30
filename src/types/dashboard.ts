@@ -1,5 +1,6 @@
 import { HouseholdUser } from "./household-user";
 import { Category, TaskDifficulty, TaskUserWeight } from "./task";
+import type { UnlockedSticker } from "./sticker-album";
 
 export interface TaskInstanceTask {
   id: number;
@@ -130,6 +131,8 @@ export interface TaskCompletionResponse {
   weekly_points: number;
   /** Jutalomra költhető pont a teljesítés után. */
   spendable_points: number;
+  /** A teljesítéssel elért mérföldkő matricája (10 / 25 / 50 / 100 elvégzés), különben `null`. */
+  new_sticker: UnlockedSticker | null;
 }
 
 export interface ITaskCompletionService {

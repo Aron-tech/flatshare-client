@@ -38,12 +38,15 @@ export interface Appearance {
   palette: PaletteId;
   font: FontSetId;
   icons: IconSetId;
+  /** Hullámzó (tenger-szerű) animáció a matricaalbum folyamatban lévő matricájának sávján. */
+  stickerWaves: boolean;
 }
 
 const DEFAULTS: Appearance = {
   palette: DEFAULT_PALETTE,
   font: DEFAULT_FONT_SET,
   icons: DEFAULT_ICON_SET,
+  stickerWaves: true,
 };
 
 const STORAGE_KEY = "appearance_preferences";
@@ -61,6 +64,7 @@ function parse(raw: string | null): Appearance {
     palette: pick(PALETTE_IDS, data.palette, DEFAULTS.palette),
     font: pick(FONT_SET_IDS, data.font, DEFAULTS.font),
     icons: pick(ICON_SET_IDS, data.icons, DEFAULTS.icons),
+    stickerWaves: typeof data.stickerWaves === "boolean" ? data.stickerWaves : DEFAULTS.stickerWaves,
   };
 }
 

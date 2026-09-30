@@ -1,0 +1,6 @@
+{
+  "ios": {
+    "CFBundleDisplayName": "FlatShare",
+    "NSCameraUsageDescription": "FlatShare uses the camera to scan a household's QR code so you can join it. The image is not stored."
+  }
+}

@@ -33,4 +33,5 @@ export interface IAuthService {
   getCurrentUser(token: string): Promise<User>;
   updateNickname(token: string, nickname: string | null): Promise<User>;
   updateLanguage(token: string, language: string): Promise<User>;
+  deleteAccount(token: string): Promise<void>;
 }
