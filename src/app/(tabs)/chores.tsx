@@ -20,7 +20,7 @@ import { formatRecurrence } from "@/lib/format";
 import { Category, HouseholdTask } from "@/types/task";
 import { useRouter } from "expo-router";
 import { CircleAlert, Plus, Search } from "lucide-react-native";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { View } from "react-native";
 
@@ -51,6 +51,7 @@ export default function ChoresScreen() {
   const [view, setView] = useState<ChoreView>("automated");
   const [query, setQuery] = useState("");
   const [categoryKey, setCategoryKey] = useState(ALL_CATEGORIES);
+  const isOpeningAddTaskRef = useRef(false);
 
   const toRow = useCallback(
     (task: HouseholdTask): Row => ({
@@ -138,7 +139,17 @@ export default function ChoresScreen() {
             returnKeyType="search"
           />
         </View>
-        <Button onPress={() => router.push("/add-task")} accessibilityLabel={t("tabs.add")}>
+        <Button
+          onPress={() => {
+            if (isOpeningAddTaskRef.current) return;
+            isOpeningAddTaskRef.current = true;
+            router.push("/add-task");
+            setTimeout(() => {
+              isOpeningAddTaskRef.current = false;
+            }, 800);
+          }}
+          accessibilityLabel={t("tabs.add")}
+        >
           <Icon as={Plus} size={18} className="text-primary-foreground" />
           <Text>{t("chores.new")}</Text>
         </Button>
