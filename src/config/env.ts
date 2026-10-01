@@ -12,4 +12,8 @@ export class Config {
   /** A nyilvános weboldal (adatvédelmi nyilatkozat, fióktörlés); a BACKEND_URL-ből, az `/api` nélkül. */
   public static readonly WEB_URL: string =
     process.env.EXPO_PUBLIC_WEB_URL ?? Config.BACKEND_URL.replace(/\/api\/?$/, "");
+
+  /** A Beállítások „Kapcsolat / Támogatás” gombjának címe (a backend APP_CONTACT_EMAIL értékével egyezik). */
+  public static readonly SUPPORT_EMAIL: string =
+    process.env.EXPO_PUBLIC_SUPPORT_EMAIL ?? "aron.papp2003@gmail.com";
 }

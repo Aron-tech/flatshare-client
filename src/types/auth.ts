@@ -19,6 +19,14 @@ export interface UserMeResponse {
   user: User;
 }
 
+/** A natív Apple ablak eredménye; a nevet az Apple csak az első bejelentkezéskor adja meg. */
+export interface AppleLoginPayload {
+  identityToken: string;
+  authorizationCode: string;
+  firstName: string | null;
+  lastName: string | null;
+}
+
 export type OAuthProvider = "GoogleOAuth" | "AppleOAuth";
 
 export interface ITokenStorage {
@@ -30,6 +38,10 @@ export interface ITokenStorage {
 export interface IAuthService {
   buildWorkOSAuthUrl(redirectUri: string, provider?: OAuthProvider): string;
   exchangeWorkOSCode(code: string, language: string): Promise<AuthResponse>;
+  authenticateWithApple(
+    payload: AppleLoginPayload,
+    language: string
+  ): Promise<AuthResponse>;
   getCurrentUser(token: string): Promise<User>;
   updateNickname(token: string, nickname: string | null): Promise<User>;
   updateLanguage(token: string, language: string): Promise<User>;

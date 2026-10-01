@@ -2,6 +2,7 @@ import { AppearanceProvider } from "@/context/AppearanceContext";
 import { AuthProvider, useAuth } from "@/context/AuthContext";
 import { HouseholdProvider, useHousehold } from "@/context/HouseholdContext";
 import { usePushNotifications } from "@/hooks/use-push-notifications";
+import { NotificationPermissionPrompt } from "@/components/notifications/notification-permission-prompt";
 import { StickerUnlockHost } from "@/components/sticker-album/sticker-unlock-host";
 import { ToastHost } from "@/components/ui/toast";
 import { useNavTheme } from "@/hooks/use-theme";
@@ -83,6 +84,7 @@ function RootNavigation() {
       </Stack>
       <PortalHost />
       <StickerUnlockHost />
+      <NotificationPermissionPrompt active={!!token && !!activeHousehold} authToken={token} />
       <ToastHost />
     </>
   );

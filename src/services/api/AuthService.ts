@@ -1,5 +1,6 @@
 import { Config } from "@/config/env";
 import {
+  AppleLoginPayload,
   AuthResponse,
   IAuthService,
   OAuthProvider,
@@ -38,6 +39,23 @@ export class AuthService implements IAuthService {
     return this.http.request<AuthResponse>("/auth/workos", {
       method: "POST",
       body: JSON.stringify({ code, language }),
+    });
+  }
+
+  /** Natív Sign in with Apple (iOS): a backend ellenőrzi az Apple tokent, és elteszi a törléskori visszavonáshoz. */
+  public async authenticateWithApple(
+    payload: AppleLoginPayload,
+    language: string
+  ): Promise<AuthResponse> {
+    return this.http.request<AuthResponse>("/auth/apple", {
+      method: "POST",
+      body: JSON.stringify({
+        identity_token: payload.identityToken,
+        authorization_code: payload.authorizationCode,
+        first_name: payload.firstName,
+        last_name: payload.lastName,
+        language,
+      }),
     });
   }
 

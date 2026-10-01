@@ -11,6 +11,7 @@ import { Elevation } from "@/constants/theme";
 import { SUPPORTED_LANGUAGES, type AppLanguage } from "@/i18n";
 import { useAppearance } from "@/context/AppearanceContext";
 import { useAuth } from "@/context/AuthContext";
+import { useNotificationPermissionStatus } from "@/hooks/use-notification-permission-prompt";
 import { type ThemePreference, useThemePreference } from "@/hooks/use-theme-preference";
 import { useThemeColors } from "@/hooks/use-theme";
 import { showToast } from "@/lib/toast";
@@ -20,7 +21,7 @@ import { DEFAULT_PALETTE, PALETTES, PALETTE_IDS } from "@/theme/palettes";
 import * as WebBrowser from "expo-web-browser";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Alert, Switch, View } from "react-native";
+import { Alert, Linking, Switch, View } from "react-native";
 
 export default function SettingsScreen() {
   const { user, token, updateUser, authService, deleteAccount } = useAuth();
@@ -59,9 +60,15 @@ export default function SettingsScreen() {
   };
 
   const [deletingAccount, setDeletingAccount] = useState(false);
+  const { status: notificationStatus, enable: enableNotifications } = useNotificationPermissionStatus(token);
 
   const openPrivacyPolicy = () =>
     WebBrowser.openBrowserAsync(`${Config.WEB_URL}/privacy?lang=${language}`);
+
+  const contactSupport = () =>
+    Linking.openURL(`mailto:${Config.SUPPORT_EMAIL}?subject=${encodeURIComponent("FlatShare")}`).catch(() =>
+      Alert.alert(t("settings.contactSupport"), Config.SUPPORT_EMAIL),
+    );
 
   const confirmDeleteAccount = () => {
     Alert.alert(t("settings.deleteAccountConfirmTitle"), t("settings.deleteAccountConfirmMessage"), [
@@ -223,10 +230,32 @@ export default function SettingsScreen() {
         />
       </View>
 
+      {notificationStatus && notificationStatus !== "loading" && (
+        <View className="gap-3 rounded-card bg-card p-5" style={Elevation.level1}>
+          <Text className="text-label-md uppercase text-muted-foreground">{t("settings.notifications")}</Text>
+          <Text variant="muted" className="text-body-sm">
+            {t(`settings.notifications_${notificationStatus}`)}
+          </Text>
+          {notificationStatus === "undetermined" && (
+            <Button variant="secondary" onPress={enableNotifications}>
+              <Text>{t("settings.notificationsEnable")}</Text>
+            </Button>
+          )}
+          {notificationStatus === "denied" && (
+            <Button variant="secondary" onPress={() => Linking.openSettings()}>
+              <Text>{t("settings.notificationsOpenSettings")}</Text>
+            </Button>
+          )}
+        </View>
+      )}
+
       <View className="gap-3 rounded-card bg-card p-5" style={Elevation.level1}>
         <Text className="text-label-md uppercase text-muted-foreground">{t("settings.account")}</Text>
         <Button variant="secondary" onPress={openPrivacyPolicy}>
           <Text>{t("settings.privacyPolicy")}</Text>
+        </Button>
+        <Button variant="secondary" onPress={contactSupport}>
+          <Text>{t("settings.contactSupport")}</Text>
         </Button>
         <Separator />
         <Text variant="muted" className="text-body-sm">

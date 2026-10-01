@@ -1,26 +1,14 @@
-import { useAuth } from "@/context/AuthContext";
-import { pushNotificationService } from "@/services/notifications/PushNotificationService";
 import * as Notifications from "expo-notifications";
 import { useRouter } from "expo-router";
 import { useEffect } from "react";
 
 /**
- * Bejelentkezett felhasználónál regisztrálja az eszköz push tokenjét,
- * és a értesítésre koppintáskor a payload `route` mezője szerint navigál.
+ * Az értesítésre koppintáskor a payload `route` mezője szerint navigál.
+ * A push token regisztrációja (és a rendszer engedélyablaka) nem itt, hanem a
+ * `NotificationPermissionPrompt` saját magyarázó képernyője után történik (App Review 2.1).
  */
 export function usePushNotifications() {
-  const { token } = useAuth();
   const router = useRouter();
-
-  useEffect(() => {
-    if (!token) return;
-
-    pushNotificationService
-      .register(token)
-      .catch((error) =>
-        console.error("[usePushNotifications] Regisztráció sikertelen:", error)
-      );
-  }, [token]);
 
   useEffect(() => {
     const navigate = (response: Notifications.NotificationResponse | null) => {
