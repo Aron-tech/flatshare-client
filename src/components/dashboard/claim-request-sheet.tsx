@@ -15,12 +15,12 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ActivityIndicator, Modal, Pressable, ScrollView, View } from "react-native";
 
-/** Egy türelmi nap ennyi órával tolja ki a határidőt (backend: `TaskInstanceUser::GRACE_HOURS`). */
+/** A grace day pushes the deadline by this many hours (backend: `TaskInstanceUser::GRACE_HOURS`). */
 const GRACE_HOURS = 24;
 const ANYONE = 0;
 
 interface ClaimRequestSheetProps {
-  /** A vállalt feladat; null, ha a sheet zárva van. */
+  /** The claimed task; null when the sheet is closed. */
   item: TaskInstance | null;
   graceDaysLeft: number;
   spendablePoints: number;
@@ -32,13 +32,13 @@ interface ClaimRequestSheetProps {
 }
 
 /**
- * Csere vagy türelmi nap kérése egy vállalt, határidős feladatra:
- * türelmi nap (jóváhagyás nélkül, ciklusonként 1) vagy átadás pont-ajánlattal (a pont zárolódik, az átvevő a teljesítéskor kapja meg).
+ * Request a swap or grace day on a claimed task with a deadline: a grace day (no approval, 1 per cycle)
+ * or a hand-over with a point offer (the points are held, the taker receives them on completion).
  */
 export function ClaimRequestSheet(props: ClaimRequestSheetProps) {
   return (
     <Modal visible={props.item !== null} transparent animationType="fade" onRequestClose={props.onClose}>
-      {/* A `key` miatt másik feladat megnyitásakor az űrlap alapállapotba kerül. */}
+      {/* Because of `key`, the form resets when another task opens. */}
       {props.item && <SheetBody key={props.item.id} {...props} item={props.item} />}
     </Modal>
   );

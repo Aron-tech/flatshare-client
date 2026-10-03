@@ -8,7 +8,6 @@ import { ChevronDown } from "lucide-react-native";
 import { useTranslation } from "react-i18next";
 import { Pressable, View } from "react-native";
 
-/** Közös fejléc: embléma, háztartásváltó pill, profil. */
 export function AppHeader() {
   const { t } = useTranslation();
   const { activeHousehold } = useHousehold();

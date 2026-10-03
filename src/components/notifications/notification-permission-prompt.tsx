@@ -8,16 +8,16 @@ import { useTranslation } from "react-i18next";
 import { ActivityIndicator, Modal, View } from "react-native";
 
 interface NotificationPermissionPromptProps {
-  /** Csak akkor induljon a döntés, ha a felhasználó már túl van a bejelentkezésen/háztartás-választáson. */
+  /** Only start the decision once the user is past sign-in / household selection. */
   active: boolean;
   authToken: string | null;
 }
 
 /**
- * Saját magyarázó képernyő a rendszer push-engedélyablaka előtt (App Review javaslat: a puszta
- * bejelentkezés utáni, magyarázat nélküli kérés kevesebb elfogadást hoz). Legfeljebb egyszer jelenik meg.
- * Egyetlen semleges „Tovább” gombja van, ami mindig a rendszer ablakához visz: kilépő gomb vagy
- * háttérre koppintás nem lehet, mert az App Review 5.1.1(iv) ezt elutasítja.
+ * Own explainer screen before the system push permission dialog (App Review suggestion: a bare request right
+ * after sign-in, without an explanation, gets less acceptance). Shown at most once. It has a single neutral
+ * "Continue" button which always leads to the system dialog: there can be no dismiss button or tap on the
+ * backdrop, because App Review 5.1.1(iv) rejects that.
  */
 export function NotificationPermissionPrompt({ active, authToken }: NotificationPermissionPromptProps) {
   const { t } = useTranslation();

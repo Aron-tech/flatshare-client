@@ -4,7 +4,7 @@ import { createContext } from "react";
 type ColorTokens = { -readonly [K in keyof ThemeColors]: string };
 type Overrides = Partial<ColorTokens>;
 
-/** Egy akcenttónusból építi fel az összes, a palettától függő tokent. */
+/** Builds every palette-dependent token from one accent tone. */
 const accent = (primary: string, active: string, soft: string, softForeground: string): Overrides => ({
   primary,
   primaryActive: active,
@@ -16,9 +16,9 @@ const accent = (primary: string, active: string, soft: string, softForeground: s
 });
 
 /**
- * Választható színkészletek. Mindegyiknek külön világos és sötét változata van;
- * a nem felülírt tokenek (háttér, kártya, siker, hiba…) az alap témából jönnek.
- * Az `terracotta` az eredeti megjelenés → nincs felülírás, a `global.css` érvényes.
+ * Selectable color sets. Each has a separate light and dark variant; tokens that are not overridden
+ * (background, card, success, error…) come from the base theme.
+ * `terracotta` is the original look → no override, `global.css` applies.
  */
 export const PALETTES = {
   terracotta: { swatch: "#D87758", light: {}, dark: {} },
@@ -43,10 +43,10 @@ export type PaletteId = keyof typeof PALETTES;
 export const PALETTE_IDS = Object.keys(PALETTES) as PaletteId[];
 export const DEFAULT_PALETTE: PaletteId = "terracotta";
 
-/** Az aktív paletta (csak váltáskor renderel újra). */
+/** The active palette (re-renders only on a switch). */
 export const PaletteContext = createContext<PaletteId>(DEFAULT_PALETTE);
 
-/** "#RRGGBB" + átlátszóság → "rgba(…)" (pl. palettához igazodó árnyékokhoz). */
+/** "#RRGGBB" + opacity → "rgba(…)" (e.g. for palette-matching shadows). */
 export function withAlpha(hex: string, alpha: number): string {
   const [r, g, b] = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16));
   return `rgba(${r}, ${g}, ${b}, ${alpha})`;
@@ -54,7 +54,7 @@ export function withAlpha(hex: string, alpha: number): string {
 
 const kebab = (key: string) => key.replace(/[A-Z]/g, (c) => `-${c.toLowerCase()}`);
 
-/** "#RRGGBB" → "h s% l%" (a `global.css` shadcn HSL-triplet formátuma). */
+/** "#RRGGBB" → "h s% l%" (the shadcn HSL triplet format of `global.css`). */
 function hexToHslTriplet(hex: string): string {
   const [r, g, b] = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16) / 255);
   const max = Math.max(r, g, b);
@@ -76,7 +76,7 @@ function hexToHslTriplet(hex: string): string {
 
 const colorCache = new Map<string, ThemeColors>();
 
-/** A téma hex színei a választott palettával összefésülve (natív propokhoz; stabil referencia). */
+/** The theme's hex colors merged with the chosen palette (for native props; stable reference). */
 export function resolveThemeColors(palette: PaletteId, scheme: ThemeName): ThemeColors {
   const key = `${palette}:${scheme}`;
   let colors = colorCache.get(key);
@@ -87,7 +87,7 @@ export function resolveThemeColors(palette: PaletteId, scheme: ThemeName): Theme
   return colors;
 }
 
-/** Az összes token, amit bármelyik paletta felülír (így minden palettánál ugyanaz a kulcskészlet). */
+/** Every token any palette overrides (so every palette has the same key set). */
 const PALETTE_KEYS = [
   ...new Set(
     Object.values(PALETTES).flatMap((p) => [...Object.keys(p.light), ...Object.keys(p.dark)]),
@@ -97,9 +97,9 @@ const PALETTE_KEYS = [
 const varsCache = new Map<string, Record<string, string>>();
 
 /**
- * Nativewind `vars()`-nak átadható CSS változók. Az alap palettánál is a teljes
- * kulcskészletet adja (a global.css-szel egyező értékekkel): ha egy komponens csak
- * később kap változókat, a Nativewind az egész alatta lévő fát újramountolja.
+ * CSS variables to pass to Nativewind's `vars()`. For the base palette it also gives the full key set
+ * (with values matching global.css): if a component only gets variables later, Nativewind remounts
+ * the whole tree below it.
  */
 export function paletteCssVars(palette: PaletteId, scheme: ThemeName): Record<string, string> {
   const key = `${palette}:${scheme}`;

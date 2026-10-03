@@ -23,15 +23,15 @@ type AlbumItem =
   | { kind: "contents" }
   | { kind: "task"; page: StickerAlbumPage };
 
-/** A borító és a tartalomjegyzék után jönnek a feladatok oldalai. */
+/** The task pages come after the cover and the table of contents. */
 const FIRST_TASK_PAGE = 2;
 
-/** Az új matricák animációja után ennyivel jelöli őket látottnak (ms). */
+/** The new stickers are marked seen this long after their animation (ms). */
 const SEEN_AFTER_ANIMATION_MS = 900;
 
 /**
- * A user matricaalbuma: lapozható könyv, borítóval, tartalomjegyzékkel és feladatonként egy oldallal,
- * amelyen a 10 / 25 / 50 / 100 elvégzés matricái gyűlnek. `?task_id=` esetén annál az oldalnál nyílik ki.
+ * The user's sticker album: a pageable book with a cover, a table of contents and one page per task,
+ * where the stickers for 10 / 25 / 50 / 100 completions collect. With `?task_id=` it opens at that task's page.
  */
 export default function StickerAlbumScreen() {
   const { t } = useTranslation();
@@ -50,7 +50,7 @@ export default function StickerAlbumScreen() {
   const list = useRef<FlatList<AlbumItem>>(null);
   const [{ width, height }, setSize] = useState({ width: 0, height: 0 });
   const [current, setCurrent] = useState<number | null>(null);
-  /** Azok a feladatok, amelyek új matricái ebben a megnyitásban már felkerültek. */
+  /** Tasks whose new stickers were already placed in this opening. */
   const [stuck, setStuck] = useState<ReadonlySet<number>>(new Set());
 
   const items = useMemo<AlbumItem[]>(
@@ -70,7 +70,7 @@ export default function StickerAlbumScreen() {
   const currentIndex = current ?? initialIndex;
   const currentItem = items[currentIndex];
 
-  // Az aktuális oldal új matricái felkerülnek, majd látottnak jelölődnek.
+  // The current page's new stickers are placed, then marked seen.
   const currentTask = currentItem?.kind === "task" ? currentItem.page : null;
   const pendingNew = currentTask && !stuck.has(currentTask.task_id) ? currentTask.stickers.filter((slot) => slot.is_new).length : 0;
   useEffect(() => {
@@ -81,10 +81,10 @@ export default function StickerAlbumScreen() {
       void markSeen.run(taskId);
     }, stickerDelay(pendingNew - 1) + SEEN_AFTER_ANIMATION_MS);
     return () => clearTimeout(timer);
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- a `markSeen` minden rendernél új objektum
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- `markSeen` is a new object on every render
   }, [currentTask, pendingNew]);
 
-  // Bezáráskor frissül az album, így a következő megnyitáskor már nem újak a látott matricák.
+  // The album refreshes on close, so the seen stickers are not new on the next open.
   useEffect(
     () => () => {
       if (householdId !== null) void queryClient.invalidateQueries({ queryKey: HouseholdQueries.stickerAlbum.key(householdId) });

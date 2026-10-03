@@ -4,7 +4,7 @@ import { Slot } from '@rn-primitives/slot';
 import { cva, type VariantProps } from 'class-variance-authority';
 import { Platform, View } from 'react-native';
 
-// DESIGN.md → Chips & Filter Pills: pill forma, tónusos kitöltés, keret nélkül.
+// DESIGN.md → Chips & Filter Pills: pill shape, tonal fill, no border.
 const badgeVariants = cva(
   cn(
     'group shrink-0 flex-row items-center justify-center gap-1 overflow-hidden rounded-full border border-transparent px-3 py-1',
@@ -15,11 +15,11 @@ const badgeVariants = cva(
   {
     variants: {
       variant: {
-        /** Aktív / figyelmet kérő – terrakotta tint */
+        /** Active / needs attention – terracotta tint */
         default: 'bg-primary-soft',
-        /** Inaktív chip – soft sand */
+        /** Inactive chip – soft sand */
         secondary: 'bg-secondary',
-        /** Pozitív visszajelzés (kész, elért) – sage tint */
+        /** Positive feedback (done, reached) – sage tint */
         success: 'bg-success-soft',
         destructive: 'bg-destructive/10',
         outline: cn('border-border', Platform.select({ web: '[a&]:hover:bg-accent' })),

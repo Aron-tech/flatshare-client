@@ -11,13 +11,13 @@ import { useTranslation } from "react-i18next";
 import { ActivityIndicator, Alert, View } from "react-native";
 
 interface OfferedTaskCardProps {
-  /** Az `offered` lista eleme: az `offer` mindig ki van töltve. */
+  /** An item of the `offered` list: `offer` is always set. */
   item: TaskInstance;
   isBusy: boolean;
   onAccept: () => void;
 }
 
-/** Egy másik tag által átadásra felajánlott feladat: átvéve a feladat pontján felül a felajánlott jutalom is jár. */
+/** A task another member offered for hand-over: taking it earns the offered reward on top of the task's points. */
 export function OfferedTaskCard({ item, isBusy, onAccept }: OfferedTaskCardProps) {
   const { t } = useTranslation();
   const offer = item.offer!;

@@ -1,14 +1,14 @@
 import type { HouseCompletion } from "@/types/house";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
-/** Egy megnyitáskor legfeljebb ennyi takarítás játszódik le (a legújabbak). */
+/** At most this many cleanings play per open (the newest ones). */
 const MAX_REPLAYS = 3;
-/** Az első megnyitáskor csak az utóbbi egy nap teljesítései játszódnak le. */
+/** On the first open only the last day's completions play. */
 const FIRST_VISIT_WINDOW_MS = 24 * 60 * 60 * 1000;
 
 const storageKey = (householdId: number) => `house_last_completion_${householdId}`;
 
-/** Az utoljára lejátszott teljesítés azonosítója ebben a háztartásban (eszközönként). */
+/** Id of the last played completion in this household (per device). */
 export async function readLastReplayed(householdId: number): Promise<number | null> {
   try {
     const value = await AsyncStorage.getItem(storageKey(householdId));
@@ -22,11 +22,11 @@ export async function saveLastReplayed(householdId: number, completionId: number
   try {
     await AsyncStorage.setItem(storageKey(householdId), String(completionId));
   } catch {
-    // Legfeljebb a következő megnyitáskor újra lejátszódik.
+    // At worst it plays again on the next open.
   }
 }
 
-/** A legutóbbi megnyitás óta történt teljesítések, időrendben (a lejátszás sorrendje). */
+/** Completions since the last open, in chronological order (the playback order). */
 export function pendingReplays(
   completions: readonly HouseCompletion[],
   lastReplayed: number | null,

@@ -25,13 +25,11 @@ import { RefreshControl, ScrollView, useWindowDimensions, View } from "react-nat
 import { useReducedMotion } from "react-native-reanimated";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-/** Tagonként a lejátszásra váró takarítások sora. */
 type JobQueues = Record<number, HouseJob[]>;
 
 /**
- * A háztartás háza: a feladatok állapota rendetlenségként látszik a szobában, a tagok állatai
- * a közös hangulat szerint viselkednek. A legutóbbi megnyitás óta elvégzett feladatoknál
- * a teljesítő állata odamegy és rendet rak (eszközönként egyszer).
+ * The household's house: task state shows as mess in the room, the members' pets behave according to the
+ * shared mood. For tasks completed since the last open, the completer's pet walks over and tidies up (once per device).
  */
 export default function HouseScreen() {
   const { t } = useTranslation();
@@ -48,14 +46,14 @@ export default function HouseScreen() {
   const replayedFor = useRef<number | null>(null);
   const scene = useRef<HouseSceneHandle>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
-  // A jelenet fix magasságú (nem görög), hogy a forgatás ne akadjon össze a görgetéssel.
+  // The scene has a fixed height (it does not scroll) so rotating does not conflict with scrolling.
   const sceneHeight = Math.round(Math.min(width * 0.95, window.height * 0.48));
 
   const { levels, summaries } = useMemo(() => summarizeZones(house?.zones ?? []), [house]);
   const unlockedRooms = unlockedRoomKeys(house?.rooms);
   const layout = useMemo(() => houseLayout(unlockedRooms), [unlockedRooms]);
 
-  // Egyszer, az első betöltéskor: a legutóbbi megnyitás óta történt teljesítések lejátszása.
+  // Once, on the first load: replays the completions since the last open.
   useEffect(() => {
     if (!house || householdId === null || replayedFor.current === householdId) return;
     replayedFor.current = householdId;
@@ -72,7 +70,7 @@ export default function HouseScreen() {
     });
   }, [house, householdId]);
 
-  /** Amíg egy zóna takarítása le nem játszódott, a zóna egy szinttel rendetlenebbnek látszik. */
+  /** Until a zone's cleaning has played, the zone looks one level messier. */
   const displayLevels = useMemo(() => {
     const result = { ...levels } as ZoneLevels;
     for (const queue of Object.values(queues)) {
@@ -89,7 +87,7 @@ export default function HouseScreen() {
   const finishJob = (userId: number, job: HouseJob) =>
     setQueues((current) => ({ ...current, [userId]: (current[userId] ?? []).filter((queued) => queued.id !== job.id) }));
 
-  /** A rendetlenséget a kezdőlap Azonnali listájában lehet elvállalni. */
+  /** Mess can be claimed in the Instant list of the home screen. */
   const openTasks = () => router.dismissTo({ pathname: "/", params: { view: "pool" } });
 
   const messyZones = HOUSE_ZONES.filter((zone) => levels[zone] > 0).length;

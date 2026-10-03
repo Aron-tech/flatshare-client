@@ -4,13 +4,13 @@ import { Category, TaskTemplate } from "@/types/task";
 import { skipToken, useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 
-/** A globális sablonok ritkán változnak. */
+/** The global templates rarely change. */
 const TEMPLATES_STALE_TIME = 60 * 60 * 1000;
 
-/** A globális feladatsablonok (`null`, amíg töltenek) és a bennük szereplő kategóriák. */
+/** The global task templates (`null` while loading) and the categories in them. */
 export function useTaskTemplates() {
   const { token } = useAuth();
-  // A backend a felhasználó nyelvén adja a neveket, ezért nyelvenként külön cache.
+  // The backend returns the names in the user's language, so there is a separate cache per language.
   const { i18n } = useTranslation();
 
   const { data, isError } = useQuery({
@@ -20,11 +20,11 @@ export function useTaskTemplates() {
     select: (templates) => ({ templates, categories: categoriesOf(templates) }),
   });
 
-  // Hibánál (a HttpClient már toastot mutatott) üres lista, hogy ne töltsön a végtelenségig.
+  // On an error (HttpClient already showed a toast) an empty list, so it does not load forever.
   return { templates: data?.templates ?? (isError ? [] : null), categories: data?.categories ?? [] };
 }
 
-/** A sablonokban szereplő kategóriák (külön kategória-végpont nincs). */
+/** The categories in the templates (there is no separate category endpoint). */
 function categoriesOf(templates: TaskTemplate[]): Category[] {
   const byId = new Map<number, Category>();
   for (const template of templates) {
@@ -33,7 +33,7 @@ function categoriesOf(templates: TaskTemplate[]): Category[] {
   return [...byId.values()].sort((a, b) => a.sort_order - b.sort_order);
 }
 
-/** Név szerinti, kis-nagybetű független szűrés. */
+/** Filter by name, case-insensitive. */
 export function filterByName<T extends { name: string }>(items: T[], query: string): T[] {
   const needle = query.trim().toLowerCase();
   return needle ? items.filter((item) => item.name.toLowerCase().includes(needle)) : items;

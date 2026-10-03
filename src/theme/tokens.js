@@ -1,18 +1,16 @@
 /**
- * Design tokenek (DESIGN.md – "Warm Organic Minimalist").
+ * Design tokens (DESIGN.md – "Warm Organic Minimalist").
  *
- * Ez a fájl az egyetlen forrás a tipográfiához, fontokhoz, lekerekítésekhez és
- * térközökhöz. A `tailwind.config.js` és a `Text` komponens is innen olvas.
- * A SZÍNEK a `global.css`-ben vannak (shadcn CSS változók), JS-ből pedig a
- * `src/constants/theme.ts` `THEME` objektumán keresztül érhetők el.
+ * This file is the single source for typography, fonts, radii and spacing. `tailwind.config.js` and
+ * the `Text` component both read from here. COLORS are in `global.css` (shadcn CSS variables) and are
+ * reachable from JS through the `THEME` object of `src/constants/theme.ts`.
  *
- * CommonJS, mert a `tailwind.config.js` `require`-rel tölti be.
+ * CommonJS, because `tailwind.config.js` loads it with `require`.
  */
 
 /**
- * Font-családok súlyonként. SDK 57-en egy családnév alá csak egy fájl
- * tölthető, ezért minden súly külön néven regisztrálódik (lásd `fonts.ts`).
- * A `Text` komponens a `font-*` súlyosztály alapján választja ki a megfelelőt.
+ * Font families per weight. On SDK 57 only one file can be loaded under a family name, so every weight
+ * is registered under its own name (see `fonts.ts`). `Text` picks the right one from the `font-*` weight class.
  */
 const fontFamilies = {
   sans: {
@@ -32,9 +30,8 @@ const fontFamilies = {
 };
 
 /**
- * Tipográfiai skála. Használat: `text-headline-md`, `text-body-sm`, `text-label-lg`…
- * A `family` határozza meg, hogy a `Text` melyik fontcsaládot válassza.
- * letterSpacing px-ben (em × fontSize), mert natívan az em nem támogatott.
+ * Typography scale. Usage: `text-headline-md`, `text-body-sm`, `text-label-lg`…
+ * `family` decides which font family `Text` picks. letterSpacing is in px (em × fontSize), because em is not supported natively.
  */
 const typography = {
   "headline-xl": { family: "serif", size: 40, lineHeight: 48, weight: 400, tracking: -0.4 },
@@ -50,7 +47,7 @@ const typography = {
   "label-sm": { family: "sans", size: 11, lineHeight: 16, weight: 500, tracking: 0.44 },
 };
 
-/** Lekerekítések. Szemantikus nevek a komponensekhez + a DESIGN.md skálája. */
+/** Radii. Semantic names for the components + the DESIGN.md scale. */
 const radius = {
   sm: "0.25rem",
   DEFAULT: "0.5rem",
@@ -62,7 +59,7 @@ const radius = {
   card: "1.25rem", // 20px – kártyák
 };
 
-/** Térközök a DESIGN.md-ből (a Tailwind 4px-es skálája mellett). */
+/** Spacing from DESIGN.md (alongside Tailwind's 4px scale). */
 const spacing = {
   gutter: "1.25rem", // 20px – mobil margó és gutter
   "gutter-desktop": "2rem",

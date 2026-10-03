@@ -16,8 +16,8 @@ import {
 import { View } from "react-native";
 
 /**
- * A backend `categories.icon` / `tasks.icon` szabad szöveg, ezért kulcsszavak
- * alapján választunk Lucide ikont (angol és magyar névre is), különben Sparkles.
+ * The backend `categories.icon` / `tasks.icon` is free text, so a Lucide icon is chosen by keywords
+ * (English and Hungarian names), falling back to Sparkles.
  */
 const KEYWORDS: [RegExp, LucideIcon][] = [
   [/kitchen|cook|konyh|főz|dish|mosogat/i, CookingPot],
@@ -36,7 +36,7 @@ export function resolveCategoryIcon(...hints: (string | null | undefined)[]): Lu
 }
 
 interface CategoryIconBadgeProps {
-  /** Kategória hex színe; ha nincs, semleges homok tónus. */
+  /** Category hex color; a neutral sand tone if missing. */
   color?: string | null;
   hints: (string | null | undefined)[];
   size?: number;
@@ -44,7 +44,6 @@ interface CategoryIconBadgeProps {
   className?: string;
 }
 
-/** Tónusos ikon-korong (dashboard kártyák bal oldala, chores kártyák). */
 export function CategoryIconBadge({
   color,
   hints,

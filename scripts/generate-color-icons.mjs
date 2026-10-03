@@ -1,13 +1,12 @@
-// Legenerálja a `src/theme/fluent-color-icons.ts`-t a Fluent UI System Color
-// készletből (MIT, @iconify-json/fluent-color). Csak a használt ikonok kerülnek
-// a bundle-be. Futtatás: `node scripts/generate-color-icons.mjs`
+// Generates `src/theme/fluent-color-icons.ts` from the Fluent UI System Color set (MIT, @iconify-json/fluent-color).
+// Only the used icons end up in the bundle. Run: `node scripts/generate-color-icons.mjs`
 import { readFileSync, writeFileSync } from "node:fs";
 import { createRequire } from "node:module";
 
 const require = createRequire(import.meta.url);
 const { icons } = JSON.parse(readFileSync(require.resolve("@iconify-json/fluent-color/icons.json"), "utf8"));
 
-// Az `icon-sets.ts` COLOR_MAP-jében hivatkozott nevek (24px-es változat).
+// Names referenced in COLOR_MAP of `icon-sets.ts` (24px variant).
 const NAMES = [
   "arrow-sync", "building-store", "calendar", "calendar-clock", "checkmark-circle",
   "clipboard-task", "clock", "clock-alarm", "data-bar-vertical-ascending", "edit",
@@ -24,8 +23,8 @@ const lines = NAMES.map((name) => {
 
 writeFileSync(
   new URL("../src/theme/fluent-color-icons.ts", import.meta.url),
-  `// GENERÁLT FÁJL – ne szerkeszd kézzel: node scripts/generate-color-icons.mjs
-// Fluent UI System Color Icons © Microsoft, MIT licenc.
+  `// GENERATED FILE – do not edit by hand: node scripts/generate-color-icons.mjs
+// Fluent UI System Color Icons © Microsoft, MIT license.
 export const FLUENT_COLOR_XML = {
 ${lines.join("\n")}
 } as const;

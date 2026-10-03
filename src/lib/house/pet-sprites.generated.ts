@@ -1,13 +1,13 @@
-// GENERÁLT FÁJL – ne szerkeszd kézzel. Forrás: scripts/house-assets (npm run render).
-// Modellek: Kenney Cube Pets (CC0, www.kenney.nl).
+// GENERATED FILE – do not edit by hand. Source: scripts/house-assets (npm run render).
+// Models: Kenney Cube Pets (CC0, www.kenney.nl).
 import type { ImageSourcePropType } from "react-native";
 import type { PetAnimation, PetId } from "./scene.generated";
 
 export type SpriteFacing = "se" | "ne" | "sw" | "nw";
 
 /**
- * Az állatok sprite-atlasza: `columns` oszlopos rács, képkockánként `frame` px; az (anchorX, anchorY)
- * pont áll a padlón. Az első `perFacing` kocka "se", a következő "ne" irányú (sw / nw = tükrözve).
+ * Pet sprite atlas: a grid with `columns` columns, `frame` px per frame; the (anchorX, anchorY)
+ * point sits on the floor. The first `perFacing` frames face "se", the next ones "ne" (sw / nw are mirrored).
  */
 export const PET_ATLAS = {
   frame: { width: 176, height: 176, anchorX: 88, anchorY: 137 },

@@ -11,8 +11,8 @@ type IconProps = LucideProps & {
 } & React.RefAttributes<LucideIcon>;
 
 function IconImpl({ as: IconComponent, color, style, ...props }: IconProps) {
-  // A `text-*` osztály színe a style-ba kerül; explicit `color` propként is átadjuk,
-  // mert nem minden készlet olvassa a style-t (a Phosphor alapból feketét rajzol).
+  // The `text-*` class color goes into the style; it is also passed as an explicit `color` prop because
+  // not every set reads the style (Phosphor draws black by default).
   const resolvedColor = color ?? (StyleSheet.flatten(style) as { color?: string } | undefined)?.color;
   return <IconComponent color={resolvedColor} style={style} {...props} />;
 }
@@ -50,7 +50,7 @@ cssInterop(IconImpl, {
 function Icon({ as: IconComponent, className, size = 14, strokeWidth, ...props }: IconProps) {
   const textClass = React.useContext(TextClassContext);
   const set = ICON_SETS[React.useContext(IconSetContext)];
-  // A beállított készlet ikonja; ha nincs megfelelője, marad a Lucide.
+  // The configured set's icon; if it has no counterpart, Lucide stays.
   const mapped = set.map?.get(IconComponent);
   return (
     <IconImpl

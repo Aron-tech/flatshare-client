@@ -6,13 +6,13 @@ import { MemberDeparture } from "@/types/member-departure";
 const NO_DEPARTURES: MemberDeparture[] = [];
 
 /**
- * A távozott tagok, akiknek a feladatairól az adminnak döntenie kell.
- * `enabled: false` mellett nem tölt (a végpont nem adminnak 403).
+ * Departed members whose tasks the admin has to decide about.
+ * With `enabled: false` it does not load (the endpoint returns 403 for non-admins).
  */
 export function useMemberDepartures({ enabled = true }: { enabled?: boolean } = {}) {
   const query = useHouseholdQuery(HouseholdQueries.departures, { enabled });
 
-  /** A törölt feladatok számát adja vissza, hiba esetén `null`-t. */
+  /** Returns the number of deleted tasks, `null` on an error. */
   const resolve = useHouseholdMutation(
     (h, token, { departureId, taskIds }: { departureId: number; taskIds: number[] }) =>
       householdUserService.resolveDeparture(h, departureId, taskIds, token)

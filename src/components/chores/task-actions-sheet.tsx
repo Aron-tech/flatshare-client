@@ -13,7 +13,7 @@ export interface TaskActionsTarget {
   name: string;
   category: Category | null;
   iconHint: string | null;
-  /** Gyerek szerepkör nem szerkesztheti és nem törölheti. */
+  /** A child role can neither edit nor delete. */
   canManage: boolean;
 }
 
@@ -22,7 +22,7 @@ interface TaskActionsSheetProps {
   isBusy: boolean;
   onClose: () => void;
   onWeight: (weight: TaskUserWeight) => void;
-  /** Nélkülük a szerkesztés/törlés gomb nem jelenik meg (pl. a kezdőlapi gyors súlyozásnál). */
+  /** Without them the edit/delete button is hidden (e.g. the quick weighting on the home screen). */
   onEdit?: () => void;
   onDelete?: () => void;
 }
@@ -31,13 +31,13 @@ const THUMB = 28;
 const NEUTRAL_INDEX = TASK_USER_WEIGHTS.indexOf("neutral");
 const LAST_STEP = TASK_USER_WEIGHTS.length - 1;
 
-/** Vízszintes, 5 állású csúszka; elengedéskor adja vissza a kiválasztott súlyt. */
+/** Horizontal 5-step slider; returns the selected weight on release. */
 function WeightSlider({ disabled, onChange }: { disabled: boolean; onChange: (weight: TaskUserWeight) => void }) {
   const { t } = useTranslation();
   const [index, setIndex] = useState(NEUTRAL_INDEX);
   const widthRef = useRef(0);
   const [width, setWidth] = useState(0);
-  // A PanResponder egyszer jön létre, ezért a friss propokat refen keresztül olvassa.
+  // The PanResponder is created once, so it reads the fresh props through a ref.
   const onChangeRef = useRef(onChange);
   const disabledRef = useRef(disabled);
   useLayoutEffect(() => {
@@ -45,7 +45,7 @@ function WeightSlider({ disabled, onChange }: { disabled: boolean; onChange: (we
     disabledRef.current = disabled;
   });
 
-  // A refeket csak a gesztus-callbackek olvassák, nem a render.
+  // The refs are only read by the gesture callbacks, not by render.
   // eslint-disable-next-line react-hooks/refs
   const [responder] = useState(() => {
     const update = (x: number) => {
@@ -100,10 +100,9 @@ function WeightSlider({ disabled, onChange }: { disabled: boolean; onChange: (we
   );
 }
 
-/** Feladat-műveletek: saját súlyozás (pontszorzó), szerkesztés és törlés. */
 export function TaskActionsSheet({ target, isBusy, onClose, onWeight, onEdit, onDelete }: TaskActionsSheetProps) {
   const { t } = useTranslation();
-  // Másik feladat megnyitásakor a súly semlegesre áll vissza (a csúszka is újramountol a `key` miatt).
+  // Opening another task resets the weight to neutral (the slider also remounts because of `key`).
   const [selection, setSelection] = useState<{ taskId?: number; weight: TaskUserWeight }>({ weight: "neutral" });
   const weight = selection.taskId === target?.taskId ? selection.weight : "neutral";
   const setWeight = useCallback(

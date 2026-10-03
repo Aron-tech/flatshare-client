@@ -20,7 +20,6 @@ function usePaper() {
   return PAPER[useThemeName()];
 }
 
-/** Egy albumlap: krémszínű papír, bal oldalt a gerinc árnyéka és a varrás, alul az oldalszám. */
 export function AlbumSheet({ pageNumber, children }: { pageNumber?: number; children: ReactNode }) {
   const paper = usePaper();
 
@@ -37,7 +36,6 @@ export function AlbumSheet({ pageNumber, children }: { pageNumber?: number; chil
         borderBottomRightRadius: 20,
       }}
     >
-      {/* A gerinc felé sötétedő árnyék. */}
       {[0.14, 0.08, 0.04, 0.02].map((opacity, index) => (
         <View
           key={opacity}
@@ -79,7 +77,6 @@ export function AlbumSheet({ pageNumber, children }: { pageNumber?: number; chil
   );
 }
 
-/** Borító: cím, gyűjtő, a gyűjtés állása. */
 export function CoverPage({ album, collectorName, householdName }: { album: StickerAlbum; collectorName: string; householdName: string }) {
   const { t } = useTranslation();
   const colors = useThemeColors();
@@ -134,7 +131,7 @@ export function CoverPage({ album, collectorName, householdName }: { album: Stic
   );
 }
 
-/** Tartalomjegyzék: feladatonként a megszerzett matricák és az oldalszám; koppintásra odalapoz. */
+/** Table of contents: tapping a task flips to its page. */
 export function ContentsPage({
   album,
   pageNumber,
@@ -222,12 +219,11 @@ function NewTag() {
   );
 }
 
-/** Az oldal n-edik új matricájának késleltetése: egymás után kerülnek fel. */
+/** Delay of the page's n-th new sticker: they go on one after the other. */
 export function stickerDelay(index: number): number {
   return 350 + 450 * index;
 }
 
-/** Egy feladat oldala: fejléc washi szalaggal, haladás, és a mérföldkövek matrica-helyei 2×2-es rácsban. */
 export function TaskPage({
   page,
   milestones,
@@ -238,7 +234,7 @@ export function TaskPage({
   page: StickerAlbumPage;
   milestones: number[];
   pageNumber: number;
-  /** Az új (még be nem ragasztott) matricák állapota: rejtve várnak, vagy most kerülnek fel. */
+  /** State of the new (not yet stuck) stickers: waiting hidden, or going on now. */
   newStickers: Exclude<StickerAppear, "static"> | null;
   width: number;
 }) {
@@ -255,7 +251,7 @@ export function TaskPage({
       ? 1
       : (page.completions - previousMilestone) / (page.next_milestone - previousMilestone);
 
-  // A lap belső szélessége (a papír és a margók nélkül) a 2 oszlophoz.
+  // The page's inner width (without the paper and margins) for 2 columns.
   const slotWidth = Math.floor((width - 56 - 12) / 2);
   const stickerSize = Math.min(118, Math.round(slotWidth * 0.78));
   let newIndex = 0;
@@ -263,7 +259,6 @@ export function TaskPage({
   return (
     <AlbumSheet pageNumber={pageNumber}>
       <View className="mb-4 items-start">
-        {/* Washi szalag a kategória színével. */}
         <View
           className="mb-2 flex-row items-center gap-1.5 px-3 py-1"
           style={{ backgroundColor: `${tint}55`, transform: [{ rotate: "-2deg" }], borderRadius: 2 }}
@@ -286,7 +281,7 @@ export function TaskPage({
             progress={progress}
             tint={tint}
             trackColor={paper.edge}
-            // A hullám csak a folyamatban lévő matricánál fut; kész oldalon a sáv úgyis tele van.
+            // The wave only runs for the sticker in progress; on a finished page the bar is full anyway.
             animated={stickerWaves && page.next_milestone !== null}
           />
           <Text className="text-body-sm" style={{ color: paper.ink, opacity: 0.75 }}>
@@ -330,7 +325,7 @@ export function TaskPage({
               <Text className="text-label-md" style={{ color: paper.ink }}>
                 {slot.unlocked_at ? t(`stickerAlbum.tiers.${tier}`) : t("stickerAlbum.slotLabel", { milestone: slot.milestone })}
               </Text>
-              {/* Üres helynél nincs dátum; a sor helye NBSP-vel marad meg, hogy a rács ne ugráljon. */}
+              {/* No date for an empty slot; the row's space is kept with an NBSP so the grid does not jump. */}
               <Text className="text-label-sm" style={{ color: paper.ink, opacity: 0.6 }}>
                 {slot.unlocked_at
                   ? new Date(slot.unlocked_at).toLocaleDateString(currentLocale(), { year: "numeric", month: "short", day: "numeric" })
@@ -344,7 +339,6 @@ export function TaskPage({
   );
 }
 
-/** Üres matrica-hely: szaggatott körvonal, halvány ikon és a szükséges elvégzések száma. */
 function EmptySlot({ milestone, size, hints }: { milestone: number; size: number; hints: (string | null | undefined)[] }) {
   const paper = usePaper();
   return (

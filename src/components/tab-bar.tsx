@@ -17,14 +17,13 @@ const TAB_ICONS: Record<string, LucideIcon> = {
   rewards: Gift,
 };
 
-/** A tab bar magassága a safe area nélkül – a képernyők alsó paddingjéhez. */
+/** Tab bar height without the safe area – for the screens' bottom padding. */
 export const TAB_BAR_HEIGHT = 84;
 
 interface TabBarProps extends BottomTabBarProps {
   onAddPress: () => void;
 }
 
-/** DESIGN: lebegő, lekerekített alsó sáv középen kiemelt terrakotta "+" gombbal. */
 export function TabBar({ state, descriptors, navigation, insets, onAddPress }: TabBarProps) {
   const { t } = useTranslation();
   const { primaryActive } = useThemeColors();

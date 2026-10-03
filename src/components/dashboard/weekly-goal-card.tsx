@@ -11,17 +11,16 @@ import { useTranslation } from "react-i18next";
 import { Pressable, View } from "react-native";
 
 interface WeeklyGoalCardProps {
-  /** Az e heti feladatokért kapott pont. */
   weeklyPoints: number | null;
   minPoints: number | null;
-  /** Jutalomra költhető pont: a heti célig szerzett pontot a hét zárása levonja. */
+  /** Points spendable on rewards: the points earned up to the weekly goal are deducted when the week closes. */
   spendablePoints: number | null;
-  /** A háztartás célidőszaka: ettől függ, hogy heti vagy havi célról beszélünk. */
+  /** The household's goal period: decides whether it is a weekly or a monthly goal. */
   period: ResetPeriod;
   daysLeft: number;
-  /** A ciklusból eltelt rész (0–1) – ebből számoljuk az elvárt tempót. */
+  /** Elapsed part of the cycle (0–1), used to compute the expected pace. */
   elapsedFraction: number;
-  /** A lakás összesített egyensúlya (%); null, ha még nincs adat. */
+  /** The flat's overall balance (%); null if there is no data yet. */
   flatBalance: number | null;
   isLoading: boolean;
 }
@@ -53,7 +52,7 @@ export function WeeklyGoalCard({
   const behind = Math.max(0, Math.round(minPoints * elapsedFraction) - weeklyPoints);
   const reached = weeklyPoints >= minPoints;
   const hasGoal = minPoints > 0;
-  // A cél feletti pont csak annyiban marad meg, amennyi ténylegesen költhető (pl. a már elköltött vagy még le nem zárt korábbi időszak miatt kevesebb is lehet).
+  // Points above the goal are only kept as far as they are actually spendable (it can be less, e.g. because of an already spent or not yet closed earlier period).
   const extra = Math.min(Math.max(0, weeklyPoints - minPoints), spendablePoints ?? 0);
 
   return (

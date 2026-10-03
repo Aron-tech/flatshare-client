@@ -17,10 +17,10 @@ export const ZONE_ICONS: Record<HouseZone, LucideIcon> = {
   bathroom: Bath,
 };
 
-/** A zónák szöveges állapota (a kép akadálymentes párja is). Koppintásra a feladatokhoz visz. */
+/** Text state of the zones (also the accessible counterpart of the image). Tapping leads to the tasks. */
 interface HouseZoneListProps {
   summaries: ZoneSummary[];
-  /** A zóna melyik megépült szobában van (a fő szobánál nincs felirat). */
+  /** Which built room the zone is in (the main room has no label). */
   zoneRooms?: Partial<Record<HouseZone, RoomKey>>;
   onPress: () => void;
 }

@@ -9,7 +9,6 @@ interface CycleRingProps {
   size?: number;
 }
 
-/** Ciklus-gyűrű: középen az összpont, alatta a százalék. */
 export function CycleRing({ value, target, size = 112 }: CycleRingProps) {
   const colors = useThemeColors();
   const stroke = 10;

@@ -33,10 +33,10 @@ type Mode = "existing" | "custom";
 type Action = "log" | "create";
 
 /**
- * Egyszeri feladat a háztartás egy nem ismétlődő feladatából, vagy egy egyedileg
- * (opcionálisan sablonból kitöltve) most felvett, nem ismétlődő feladatból:
- * - "Rögzítés elvégzettként" (megerősítés után): befejezett task instance, a pontokat egyből jóváírjuk;
- * - "Feladat létrehozása": nyitott, senki által el nem vállalt task instance, amit bárki elvállalhat.
+ * A one-off task from a non-recurring household task, or from a just-created custom non-recurring task
+ * (optionally prefilled from a template):
+ * - "Log as done" (after confirmation): a completed task instance, the points are credited immediately;
+ * - "Create task": an open task instance nobody has claimed, which anyone can claim.
  */
 export default function LogTaskScreen() {
   const { t } = useTranslation();
@@ -48,13 +48,12 @@ export default function LogTaskScreen() {
   const [mode, setMode] = useState<Mode>(params.mode === "custom" ? "custom" : "existing");
   const { templates, categories } = useTaskTemplates();
   const oneOffTasks = useHouseholdQuery(HouseholdQueries.oneOffTasks);
-  // Hibánál (a HttpClient már toastot mutatott) üres lista, hogy ne töltsön a végtelenségig.
+  // On error (HttpClient already showed a toast) an empty list, so it does not load forever.
   const tasks = oneOffTasks.data ?? (oneOffTasks.error ? [] : null);
   const [submitting, setSubmitting] = useState<Action | null>(null);
   const [query, setQuery] = useState("");
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  // Meglévő feladatból
   const [selectedTask, setSelectedTask] = useState<OneOffHouseholdTask | null>(null);
 
   // Egyedi
@@ -68,7 +67,7 @@ export default function LogTaskScreen() {
     setErrors({});
   };
 
-  /** Meglévő módban a kiválasztott feladat, egyedi módban a validált mezők (vagy `null`, ha hibás). */
+  /** In existing mode the selected task, in custom mode the validated fields (or `null` if invalid). */
   const target = (): { task: OneOffHouseholdTask } | { dto: CustomTaskFieldsDto } | null => {
     if (mode === "existing") return selectedTask ? { task: selectedTask } : null;
     const fields = toCustomTaskDto(custom, t);
@@ -106,7 +105,7 @@ export default function LogTaskScreen() {
       void invalidateHousehold();
       router.back();
     } catch (e) {
-      // Egyéb hibát a HttpClient már toastban megjelenített.
+      // HttpClient already showed any other error toast.
       setErrors(fieldErrorsOf(e));
     } finally {
       setSubmitting(null);

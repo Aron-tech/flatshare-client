@@ -8,7 +8,7 @@ import { Pressable, View } from "react-native";
 const MAX_DOTS = 3;
 
 interface MonthGridProps {
-  /** A rács első napja (a hónap előtti hét eleje). */
+  /** First day of the grid (start of the week before the month). */
   from: Date;
   to: Date;
   month: number;
@@ -17,7 +17,6 @@ interface MonthGridProps {
   onSelect: (day: Date) => void;
 }
 
-/** Havi rács: napok számmal és a feladatok kategóriaszínű pöttyeivel. */
 export function MonthGrid({ from, to, month, selected, eventsByDay, onSelect }: MonthGridProps) {
   const today = new Date();
   const days: Date[] = [];

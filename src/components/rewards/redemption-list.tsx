@@ -15,8 +15,8 @@ interface RedemptionListProps {
 }
 
 /**
- * A nyitott beváltások: amelyeket a usernek kell teljesítenie (a saját jutalmai), és amelyekre ő vár.
- * A nem teljesített beváltás a feltöltő távozásakor visszatérítődik, ezért érdemes lezárni.
+ * Open redemptions: the ones the user has to fulfil (their own rewards) and the ones they are waiting for.
+ * An unfulfilled redemption is refunded when the uploader leaves, so it is worth closing.
  */
 export function RedemptionList({ redemptions, busyId, onFulfill }: RedemptionListProps) {
   const { t } = useTranslation();

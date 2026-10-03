@@ -13,9 +13,9 @@ import { ScrollView, View } from "react-native";
 
 const DAYS_OF_MONTH = Array.from({ length: 28 }, (_, index) => index + 1);
 
-/** ISO napok (1 = hétfő) a jelenlegi nyelv rövid napneveivel. */
+/** ISO days (1 = Monday) with the short day names of the current language. */
 function weekdayOptions() {
-  // 2024-01-01 hétfőre esett, innen lépkedünk előre.
+  // 2024-01-01 was a Monday, we step forward from there.
   return Array.from({ length: 7 }, (_, index) => ({
     value: index + 1,
     label: new Date(2024, 0, 1 + index).toLocaleDateString(currentLocale(), {

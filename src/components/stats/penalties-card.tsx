@@ -13,12 +13,12 @@ import { Pressable, View } from "react-native";
 interface PenaltiesCardProps {
   penalties: Penalty[];
   period: ResetPeriod;
-  /** A bejelentkezett user: csak a saját függő büntetésére kérhet cserét / türelmi napot. */
+  /** The signed-in user: they can only request a swap / grace day for their own pending penalty. */
   currentUserId: number | null;
   onRequestSwap: (taskInstanceId: number) => void;
 }
 
-/** Saját, még nem lejárt függő büntetés: erre kérhető csere vagy türelmi nap. */
+/** Own, not yet expired pending penalty: a swap or grace day can be requested for it. */
 function isRequestable(penalty: Penalty, currentUserId: number | null): boolean {
   return (
     penalty.status === "pending" &&

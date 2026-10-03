@@ -8,7 +8,7 @@ const STORAGE_KEY = "theme_preference";
 const isPreference = (v: unknown): v is ThemePreference =>
   v === "system" || v === "light" || v === "dark";
 
-/** Elmentett témabeállítás betöltése és a Nativewindre alkalmazása (app indulásakor). */
+/** Loads the saved theme setting and applies it to Nativewind (at app start). */
 export function useApplyStoredTheme() {
   const { setColorScheme } = useColorScheme();
   useEffect(() => {
@@ -20,7 +20,7 @@ export function useApplyStoredTheme() {
   }, [setColorScheme]);
 }
 
-/** Téma választása a Beállításokban; a választás tárolódik. */
+/** Choosing the theme in Settings; the choice is stored. */
 export function useThemePreference() {
   const { setColorScheme } = useColorScheme();
   const [preference, setPreference] = useState<ThemePreference>("system");

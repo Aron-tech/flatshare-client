@@ -28,7 +28,7 @@ i18n.use(initReactI18next).init({
   returnNull: false,
 });
 
-/** A bejelentkezett felhasználó `language` értéke alapján állítja be a nyelvet. */
+/** Sets the language from the signed-in user's `language` value. */
 export async function applyUserLanguage(language: string | null | undefined) {
   const code = language?.slice(0, 2).toLowerCase();
   if (isSupportedLanguage(code) && code !== i18n.language) {
@@ -36,7 +36,7 @@ export async function applyUserLanguage(language: string | null | undefined) {
   }
 }
 
-/** Aktuális nyelvhez tartozó BCP 47 locale a dátumformázáshoz. */
+/** BCP 47 locale of the current language for date formatting. */
 export function currentLocale(): string {
   return i18n.language === "en" ? "en-US" : "hu-HU";
 }

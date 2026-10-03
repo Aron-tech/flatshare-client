@@ -16,11 +16,11 @@ import Svg, { Circle, Defs, Ellipse, LinearGradient, Path, Stop } from "react-na
 export type StickerTier = "bronze" | "silver" | "gold" | "legendary";
 
 interface TierStyle {
-  /** A rozetta színátmenete (holo matricánál szivárvány). */
+  /** Rosette gradient (rainbow for a holo sticker). */
   stops: string[];
-  /** A belső korong színe. */
+  /** Color of the inner disc. */
   inner: string;
-  /** Ikon és felirat színe. */
+  /** Icon and label color. */
   ink: string;
   ribbon: string;
 }
@@ -41,19 +41,19 @@ export type StickerAppear = "static" | "hidden" | "animate";
 
 const TIER_ORDER: StickerTier[] = ["bronze", "silver", "gold", "legendary"];
 
-/** A mérföldkő helye a sorban adja a szintet: 1. bronz, 2. ezüst, 3. arany, 4. legendás. */
+/** The milestone's position in the row gives the level: 1st bronze, 2nd silver, 3rd gold, 4th legendary. */
 export function stickerTier(milestone: number, milestones: number[]): StickerTier {
   const index = Math.max(0, milestones.indexOf(milestone));
   return TIER_ORDER[Math.min(index, TIER_ORDER.length - 1)];
 }
 
-/** Stabil, enyhe dőlés (−6…6 fok), mintha kézzel ragasztották volna be. */
+/** Stable, slight tilt (−6…6 degrees), as if stuck on by hand. */
 export function stickerTilt(seed: number): number {
   const x = Math.sin(seed * 12.9898) * 43758.5453;
   return Math.round((x - Math.floor(x)) * 12 - 6);
 }
 
-/** Csipkés szélű rozetta (a matrica kivágott formája) egy 100×100-as nézetben. */
+/** Scalloped-edge rosette (the sticker's die-cut shape) in a 100×100 view. */
 function rosettePath(radius: number, scallops = 18): string {
   const center = 50;
   const base = radius * 0.92;
@@ -78,18 +78,17 @@ interface StickerProps {
   tier: StickerTier;
   categoryHints: (string | null | undefined)[];
   size?: number;
-  /** Fok; a beragasztott matrica enyhén ferde. */
+  /** Degrees; a stuck-on sticker is slightly tilted. */
   tilt?: number;
   /**
-   * `static`: a helyén van; `hidden`: még nem ragasztották be (új matrica, az oldal nem látszik);
-   * `animate`: most kerül fel ("rácsapás").
+   * `static`: in place; `hidden`: not stuck on yet (new sticker, the page is not visible);
+   * `animate`: going on now ("slap").
    */
   appear?: StickerAppear;
-  /** Az animáció késleltetése (ms), hogy egy oldalon egymás után kerüljenek fel. */
+  /** Animation delay (ms) so the stickers on a page go on one after the other. */
   delay?: number;
 }
 
-/** Egy megszerzett matrica: fehér kivágott szél, szint szerinti csillogó rozetta, a kategória ikonja és a mérföldkő. */
 export function Sticker({ milestone, tier, categoryHints, size = 112, tilt = 0, appear = "static", delay = 0 }: StickerProps) {
   const style = TIERS[tier];
   const gradientId = `sticker-${useId().replace(/:/g, "")}`;
@@ -102,7 +101,7 @@ export function Sticker({ milestone, tier, categoryHints, size = 112, tilt = 0, 
     if (appear === "hidden") {
       opacity.value = 0;
     } else if (appear === "animate") {
-      // Nagyban, elforgatva indul, és rugósan a helyére "csapódik".
+      // Starts large and rotated, and springs ("slaps") into place.
       const instant = { duration: 0 };
       opacity.value = withSequence(withTiming(0, instant), withDelay(delay, withTiming(1, { duration: 180 })));
       scale.value = withSequence(
@@ -151,7 +150,6 @@ export function Sticker({ milestone, tier, categoryHints, size = 112, tilt = 0, 
         <Path d={INNER} fill={`url(#${gradientId})`} />
         <Circle cx={50} cy={50} r={27} fill={style.inner} />
         <Circle cx={50} cy={50} r={27} fill="none" stroke={style.ribbon} strokeOpacity={0.35} strokeWidth={1.5} />
-        {/* Fényes csillanás a bal felső részen. */}
         <Ellipse cx={36} cy={30} rx={16} ry={8} fill="#FFFFFF" opacity={0.45} transform="rotate(-35 36 30)" />
       </Svg>
 

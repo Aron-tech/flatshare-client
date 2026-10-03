@@ -13,13 +13,12 @@ import Animated, {
 } from "react-native-reanimated";
 import Svg, { Path } from "react-native-svg";
 
-/** A hullámminta vízszintes hullámhossza (px); egy teljes kör ennyivel tolja el a mintát, varratmentesen. */
+/** Horizontal wavelength of the wave pattern (px); one full cycle shifts the pattern by this much, seamlessly. */
 const WAVE_PERIOD = 34;
 
 /**
- * Sima, kerekded hullámgörbe (nyitott SVG path, `M`-mel kezdve): félperiódusonként egyetlen, a
- * csúcsra/völgybe húzott kubikus Bézier-vezérlőponttal – ez ad valódi, lekerekített szinusz-hatást
- * (nem a sok egyenes szakaszból álló, szögletes vonalat, ami korábban nem nézett ki jól).
+ * Smooth, rounded wave curve (open SVG path starting with `M`): one cubic Bézier control point pulled to
+ * the crest/trough per half period gives a real rounded sine effect (straight segments looked angular).
  */
 function waveCurve(width: number, midline: number, amplitude: number, crestFirst: boolean): string {
   const half = WAVE_PERIOD / 2;
@@ -36,25 +35,24 @@ function waveCurve(width: number, midline: number, amplitude: number, crestFirst
 }
 
 interface WaveLayerProps {
-  /** A sáv teljes szélessége (a réteg mindig ennyi + egy periódus szélesre rajzol, a szülő vágja a láthatóra). */
+  /** Total bar width (the layer always draws this plus one period, the parent clips it to the visible part). */
   width: number;
   height: number;
   midline: number;
   amplitude: number;
   color: string;
   opacity: number;
-  /** Egy hurok ideje (ms) – a két réteg más sebességgel fut, ettől érződik igazi hullámzásnak. */
+  /** Duration of one loop (ms) – the two layers run at different speeds, which makes it feel like real waves. */
   duration: number;
   reverse?: boolean;
   crestFirst?: boolean;
-  /** Fényes "tarajvonal" a hullám tetején – alacsony sávmagasságnál enélkül alig látszana a mozgás. */
+  /** Bright "crest line" on top of the wave – at low bar heights the motion would be barely visible without it. */
   foam?: boolean;
 }
 
 /**
- * Egy hullámréteg: a mintázat a teljes szélességre (és egy periódussal tovább) megrajzolva,
- * majd végtelenített, lineáris `translateX`-szel csúsztatva – így a görbét sosem kell újraszámolni,
- * csak a kompozitor tolja, ez indokolja a sima, akadásmentes mozgást natív száldeon is.
+ * One wave layer: the pattern is drawn across the full width (and one period more), then slid by an endless
+ * linear `translateX` – the curve never has to be recomputed, only the compositor moves it.
  */
 function WaveLayer({
   width,
@@ -94,7 +92,7 @@ function WaveLayer({
   );
 }
 
-/** Aprócska vitorlás, ami a haladás jelenlegi végén lovagolja a hullámokat – "ezt gyűjtjük épp". */
+/** A tiny sailboat riding the waves at the current end of the progress – "this is what we are collecting now". */
 function SeaBuoy({ x, tint, size }: { x: SharedValue<number>; tint: string; size: number }) {
   const bob = useSharedValue(0);
   const rock = useSharedValue(0);
@@ -122,20 +120,19 @@ function SeaBuoy({ x, tint, size }: { x: SharedValue<number>; tint: string; size
 interface WaveProgressBarProps {
   /** 0–1. */
   progress: number;
-  /** A kitöltés színe (kategória szín vagy elsődleges). */
+  /** Fill color (category color or primary). */
   tint: string;
-  /** A ki nem töltött rész (sáv háttér) színe. */
+  /** Color of the unfilled part (bar background). */
   trackColor: string;
-  /** Két hullámréteg + a haladás végén lovagló vitorlás; kikapcsolva a megszokott sima sáv marad. */
+  /** Two wave layers + the sailboat riding at the end of the progress; when off, the plain bar remains. */
   animated?: boolean;
   height?: number;
 }
 
 /**
- * Haladássáv a matricaalbum folyamatban lévő matricájához: a kitöltés két, eltérő sebességű és
- * fázisú hullámréteggel ténylegesen hullámzik (nem csak sávozott minta), a végén egy apró vitorlás
- * lovagolja a habokat, jelezve, hogy éppen ott tartunk. A kitöltés szélessége rugalmasan (`withSpring`)
- * követi a haladást, sosem ugrik. Kikapcsolva sima, statikus sáv (a vitorlás és a hullámok nélkül).
+ * Progress bar for the sticker in progress in the album: the fill ripples with two wave layers of different
+ * speed and phase, with a tiny sailboat at the end. The fill width follows the progress with a spring
+ * (`withSpring`), it never jumps. When off it is a plain static bar (no sailboat or waves).
  */
 export function WaveProgressBar({ progress, tint, trackColor, animated = true, height = 10 }: WaveProgressBarProps) {
   const [trackWidth, setTrackWidth] = useState(0);

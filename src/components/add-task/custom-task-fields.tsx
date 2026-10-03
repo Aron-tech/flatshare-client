@@ -8,7 +8,7 @@ import type { TFunction } from "i18next";
 import { useTranslation } from "react-i18next";
 
 export interface CustomTaskValue {
-  /** A kitöltéshez használt sablon (nem kötelező). */
+  /** Template used for prefilling (optional). */
   templateId: number | null;
   icon: string | null;
   name: string;
@@ -30,7 +30,7 @@ export const DEFAULT_CUSTOM_TASK: CustomTaskValue = {
   maxUser: "1",
 };
 
-/** A backend mezőnevei, amelyekhez az egyedi űrlap hibát tud mutatni. */
+/** Backend field names for which the custom form can show an error. */
 export const CUSTOM_TASK_ERROR_FIELDS = [
   "name",
   "description",
@@ -40,7 +40,6 @@ export const CUSTOM_TASK_ERROR_FIELDS = [
   "max_user",
 ] as const;
 
-/** Az egyedi űrlap értékei a sablon adataival kitöltve. */
 export function applyTemplate(value: CustomTaskValue, template: TaskTemplate): CustomTaskValue {
   return {
     ...value,
@@ -55,7 +54,7 @@ export function applyTemplate(value: CustomTaskValue, template: TaskTemplate): C
   };
 }
 
-/** Az egyedi feladat mezői a backend formátumában, vagy mezőnkénti hibák a backend mezőneveivel. */
+/** Custom task fields in the backend format, or per-field errors keyed by backend field names. */
 export function toCustomTaskDto(
   value: CustomTaskValue,
   t: TFunction
@@ -88,13 +87,12 @@ interface CustomTaskFieldsProps {
   value: CustomTaskValue;
   onChange: (value: CustomTaskValue) => void;
   categories: Category[];
-  /** Mezőnkénti hibák a backend mezőneveivel. */
+  /** Per-field errors keyed by backend field names. */
   errors?: Record<string, string>;
-  /** Ha meg van adva, felül megjelenik a sablonválasztó, ami kitölti a többi mezőt. */
+  /** If set, a template picker on top fills in the other fields. */
   templates?: TaskTemplate[] | null;
 }
 
-/** Egyedi feladat mezői: (opcionális sablon), név, leírás, kategória, időtartam, nehézség, vállalók száma. */
 export function CustomTaskFields({ value, onChange, categories, errors = {}, templates }: CustomTaskFieldsProps) {
   const { t } = useTranslation();
   const set = (patch: Partial<CustomTaskValue>) => onChange({ ...value, ...patch });
@@ -144,7 +142,7 @@ export function CustomTaskFields({ value, onChange, categories, errors = {}, tem
         <FormField label={t("addTask.category")} error={errors.category_id}>
           <ChipGroup
             value={value.categoryId}
-            // Az aktív kategóriára koppintva kategória nélküli lesz.
+            // Tapping the active category clears it.
             onChange={(id) => set({ categoryId: id === value.categoryId ? null : id })}
             options={categories.map((category) => ({ value: category.id, label: category.name }))}
           />

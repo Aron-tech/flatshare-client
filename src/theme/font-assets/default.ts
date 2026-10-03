@@ -1,5 +1,4 @@
-// Súlyonkénti al-útvonalról importálunk: a csomag főindexe mind a 14 vágást
-// (dőlteket is) behúzná a bundle-be.
+// Imported from the per-weight sub-path: the package's main index would pull all 14 cuts (italics too) into the bundle.
 import { Newsreader_400Regular } from "@expo-google-fonts/newsreader/400Regular";
 import { Newsreader_500Medium } from "@expo-google-fonts/newsreader/500Medium";
 import { Newsreader_600SemiBold } from "@expo-google-fonts/newsreader/600SemiBold";
@@ -13,7 +12,7 @@ import { PlusJakartaSans_800ExtraBold } from "@expo-google-fonts/plus-jakarta-sa
 
 import { fontFamilies } from "../tokens";
 
-/** Alapértelmezett készlet: Plus Jakarta Sans + Newsreader. */
+/** Default set: Plus Jakarta Sans + Newsreader. */
 export default {
   [fontFamilies.sans[400]]: PlusJakartaSans_400Regular,
   [fontFamilies.sans[500]]: PlusJakartaSans_500Medium,

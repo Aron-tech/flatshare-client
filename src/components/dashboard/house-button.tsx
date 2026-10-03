@@ -5,7 +5,7 @@ import { House } from "lucide-react-native";
 import { useTranslation } from "react-i18next";
 import { Pressable, View } from "react-native";
 
-/** A Ház nézet megnyitása; a színe a ház hangulatát jelzi (zsálya: rendben, terrakotta: baj van). */
+/** Opens the House view; its color shows the house mood (sage: fine, terracotta: trouble). */
 export function HouseButton({ band, onPress }: { band: HouseMoodBand | null; onPress: () => void }) {
   const { t } = useTranslation();
   const troubled = band === "grumpy" || band === "sad";

@@ -16,13 +16,13 @@ export type PenaltyStatus = "pending" | "resolved";
 export interface Penalty {
   /** `weekly-goal-{task_instance_user_id}`, `pending-{task_instance_user_id}` vagy `resolved-{point_transaction_id}`. */
   id: string;
-  /** Függő büntetésnél a feladat példánya (csere / türelmi nap kéréséhez); teljesítettnél null. */
+  /** For a pending penalty the task instance (for requesting a swap / grace day); null for a completed one. */
   task_instance_id: number | null;
   user_id: number;
   user_name: string;
   task_name: string;
   status: PenaltyStatus;
-  /** Esedékesség (pending esetén). */
+  /** Due date (for pending). */
   due_at: string | null;
 }
 
@@ -40,16 +40,16 @@ export interface ActivityEntry {
 export interface HouseholdStats {
   cycle: {
     period: ResetPeriod;
-    /** Heti ciklusnál ISO hét, havinál a kezdő hónap sorszáma. */
+    /** ISO week for a weekly cycle, the starting month's number for a monthly one. */
     number: number;
     starts_at: string;
     ends_at: string;
-    /** A háztartás összes pontja a ciklusban. */
+    /** The household's total points in the cycle. */
     total_points: number;
-    /** A háztartás közös célja a ciklusban. */
+    /** The household's shared goal in the cycle. */
     target_points: number;
   };
-  /** 0–100: mennyire egyenletes a tagok közötti eloszlás. */
+  /** 0–100: how even the distribution among members is. */
   balance_percent: number;
   members: StatsMember[];
   penalties: Penalty[];
@@ -58,7 +58,7 @@ export interface HouseholdStats {
 
 export interface ActivityPage {
   data: ActivityEntry[];
-  /** A következő oldal kurzora; null, ha nincs több teljesítés. */
+  /** Cursor of the next page; null if there are no more completions. */
   next_cursor: number | null;
 }
 

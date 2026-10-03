@@ -1,5 +1,5 @@
-// GENERÁLT FÁJL – ne szerkeszd kézzel. Forrás: scripts/house-assets (npm run export).
-// Modellek: Kenney Furniture Kit és Cube Pets (CC0, www.kenney.nl).
+// GENERATED FILE – do not edit by hand. Source: scripts/house-assets (npm run export).
+// Models: Kenney Furniture Kit and Cube Pets (CC0, www.kenney.nl).
 
 export const HOUSE_ZONES = ["kitchen","cleaning","trash","laundry","shopping","bathroom"] as const;
 export type HouseZone = (typeof HOUSE_ZONES)[number];
@@ -7,31 +7,31 @@ export type HouseZone = (typeof HOUSE_ZONES)[number];
 export const PET_IDS = ["cat","dog","bunny","fox","panda","penguin","koala","pig","monkey","lion","tiger","polar","chick","parrot","bee","beaver","deer","elephant","giraffe","cow","hog","crab","caterpillar"] as const;
 export type PetId = (typeof PET_IDS)[number];
 
-/** Az állat GLB-kben lévő animációk (a Kenney klipek átnevezve). */
+/** The animations in the pet GLBs (the Kenney clips renamed). */
 export type PetAnimation = "idle" | "walk" | "work" | "happy" | "cheer" | "sad";
 
-/** A fő szoba mindig megvan, a többit a tagok pontokból építik (backend: HouseRoomEnum). */
+/** The main room always exists, the others are built by members from points (backend: HouseRoomEnum). */
 export const ROOM_KEYS = ["main","kitchen","bathroom"] as const;
 export type RoomKey = (typeof ROOM_KEYS)[number];
 
 export interface RoomSpot {
   x: number;
   z: number;
-  /** Nézési irány: y körüli elforgatás (radián); 0 = +z felé. */
+  /** Facing: rotation around y in radians; 0 = towards +z. */
   yaw: number;
 }
 
 export interface RoomDefinition {
-  /** GLB: `furniture` csoport + `mess_<zóna>_<1..3>` csoportok (kumulatív szintek). */
+  /** GLB: `furniture` group + `mess_<zone>_<1..3>` groups (cumulative levels). */
   model: number;
-  /** A szoba helye a házban (világkoordináta, padlólapban); a szoba saját koordinátái ehhez adódnak. */
+  /** Room position in the house (world coordinates, in floor tiles); the room's own coordinates are added to it. */
   offset: { x: number; z: number };
   size: { x: number; z: number };
-  /** A padló teteje (ezen állnak az állatok). */
+  /** Top of the floor (pets stand on it). */
   floorY: number;
   bounds: { min: [number, number, number]; max: [number, number, number] };
   walkArea: { minX: number; maxX: number; minZ: number; maxZ: number };
-  /** A szoba zónáinak helye (ahova az állat rendet rakni megy). */
+  /** Zone positions in the room (where the pet goes to tidy up). */
   spots: Partial<Record<HouseZone, RoomSpot>>;
 }
 
@@ -65,14 +65,13 @@ export const ROOMS: Record<RoomKey, RoomDefinition> = {
   },
 };
 
-/** A mess csoport neve a szoba GLB-jében. */
 export const messNodeName = (zone: HouseZone, level: 1 | 2 | 3) => `mess_${zone}_${level}`;
 
 export const PET_SCALE = 0.3;
-/** A legmagasabb állat magassága (világegység), a név/buborék elhelyezéséhez. */
+/** Height of the tallest pet (world units), for placing the name/bubble. */
 export const PET_HEIGHT = 0.607;
 
-/** Közös textúra minden állathoz (a GLB-k anyagai textúra nélküliek). */
+/** One texture shared by all pets (the GLB materials have none). */
 export const PET_COLORMAP: number = require("../../../assets/house/3d/pets/colormap.png");
 
 export const PET_MODELS: Record<PetId, number> = {

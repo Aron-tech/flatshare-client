@@ -8,24 +8,23 @@ import { View } from "react-native";
 
 export interface RecurrenceValue {
   isRecurring: boolean;
-  /** Szövegmező tartalma; beküldéskor egésszé alakítjuk. */
+  /** Text field content; converted to an integer on submit. */
   interval: string;
   unit: RecurrenceUnit;
 }
 
 export const DEFAULT_RECURRENCE: RecurrenceValue = { isRecurring: false, interval: "1", unit: "week" };
 
-/** A backend mezőnevei, amelyekhez az ismétlődés űrlap hibát tud mutatni. */
+/** Backend field names for which the recurrence form can show an error. */
 export const RECURRENCE_ERROR_FIELDS = ["is_recurring", "recurrence_interval", "recurrence_unit"] as const;
 
 interface RecurrenceFieldsProps {
   value: RecurrenceValue;
   onChange: (value: RecurrenceValue) => void;
-  /** Mezőnkénti hibák a backend mezőneveivel. */
+  /** Per-field errors keyed by backend field names. */
   errors?: Record<string, string>;
 }
 
-/** Egyszeri / ismétlődő választó, ismétlődésnél gyakoriság és egység. */
 export function RecurrenceFields({ value, onChange, errors = {} }: RecurrenceFieldsProps) {
   const { t } = useTranslation();
 

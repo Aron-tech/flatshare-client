@@ -11,7 +11,7 @@ interface ActivityModalProps {
   onClose: () => void;
 }
 
-/** Az összes teljesítés, görgetéskor oldalanként (kurzorral) töltve. */
+/** All completions, loaded page by page (with a cursor) on scroll. */
 export function ActivityModal({ visible, onClose }: ActivityModalProps) {
   const { t } = useTranslation();
   const { entries, isLoading, isLoadingMore, error, loadMore } = useActivityFeed(visible);
@@ -19,7 +19,7 @@ export function ActivityModal({ visible, onClose }: ActivityModalProps) {
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
       <View className="flex-1 items-center justify-center p-6">
-        {/* Külön háttér-réteg: ha a kártyát egy Pressable fogná körbe, az elvenné az érintést a listától. */}
+        {/* A separate background layer: if a Pressable wrapped the card it would take the touch away from the list. */}
         <Pressable onPress={onClose} className="bg-black/40" style={StyleSheet.absoluteFill} />
         <View
           className="max-h-[85%] w-full max-w-md gap-4 rounded-card bg-popover p-6"
@@ -31,8 +31,8 @@ export function ActivityModal({ visible, onClose }: ActivityModalProps) {
             <ActivityIndicator className="py-8" />
           ) : (
             <FlatList
-              // Zsugorodás nélkül a lista a teljes tartalom magasságát venné fel (a kártya levágná),
-              // így nem görgethető, és az onEndReached sorra betöltené az összes oldalt.
+              // Without shrinking, the list would take the full content height (the card would clip it), so it would not
+              // scroll and onEndReached would load all the pages in a row.
               style={{ flexShrink: 1 }}
               data={entries}
               keyExtractor={(entry) => String(entry.id)}

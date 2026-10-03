@@ -3,9 +3,9 @@ import { HOUSE_ZONES, ROOMS, type HouseZone, type RoomKey, type RoomSpot } from 
 import { toWorld, type FloorPoint } from "./walk";
 import type { ZoneLevels } from "./zones";
 
-/** A ház aktuális alaprajza: a megépült szobák és hogy melyik zóna hol van. */
+/** The house's current floor plan: the built rooms and where each zone is. */
 export interface HouseLayout {
-  /** A fő szoba mindig az első. */
+  /** The main room is always the first. */
   rooms: RoomKey[];
   zoneRooms: Record<HouseZone, RoomKey>;
 }
@@ -15,7 +15,7 @@ export const MAIN_ONLY: HouseLayout = {
   zoneRooms: Object.fromEntries(HOUSE_ZONES.map((zone) => [zone, "main"])) as Record<HouseZone, RoomKey>,
 };
 
-/** A megépült szobák kulcsai (stabil szöveg, memoizáláshoz); az app által nem ismert szoba kimarad. */
+/** Keys of the built rooms (stable string, for memoization); a room this app does not know is left out. */
 export function unlockedRoomKeys(rooms: readonly HouseRoomState[] | undefined): string {
   return (rooms ?? [])
     .filter((room) => room.unlocked && room.key in ROOMS)
@@ -24,8 +24,8 @@ export function unlockedRoomKeys(rooms: readonly HouseRoomState[] | undefined): 
 }
 
 /**
- * A megépült szobák átveszik a zónáikat (a szoba modelljében lévő zónahelyek szerint, ugyanazok,
- * mint a backend HouseRoomEnum::zones()), a többi a fő szobában marad.
+ * The built rooms take over their zones (by the zone spots in the room's model, the same as the backend's
+ * HouseRoomEnum::zones()), the rest stay in the main room.
  */
 export function houseLayout(unlockedKeys: string): HouseLayout {
   const unlocked = unlockedKeys ? (unlockedKeys.split(",") as RoomKey[]) : [];
@@ -37,12 +37,12 @@ export function houseLayout(unlockedKeys: string): HouseLayout {
   return { rooms: ["main", ...unlocked], zoneRooms };
 }
 
-/** A szoba saját zónáinak szintjei (a máshova költözött zónák itt rendben vannak). */
+/** Levels of the room's own zones (zones moved elsewhere are tidy here). */
 export function roomLevels(room: RoomKey, levels: ZoneLevels, layout: HouseLayout): ZoneLevels {
   return Object.fromEntries(HOUSE_ZONES.map((zone) => [zone, layout.zoneRooms[zone] === room ? levels[zone] : 0])) as ZoneLevels;
 }
 
-/** A zóna helye (világkoordináta) és az állat nézési iránya ott. */
+/** The zone's position (world coordinates) and the pet's facing there. */
 export function zoneSpot(zone: HouseZone, layout: HouseLayout): (RoomSpot & { room: RoomKey }) | null {
   const room = layout.zoneRooms[zone];
   const spot = ROOMS[room].spots[zone];
@@ -50,7 +50,7 @@ export function zoneSpot(zone: HouseZone, layout: HouseLayout): (RoomSpot & { ro
   return { ...spot, ...toWorld(room, spot), room };
 }
 
-/** Melyik szobában van a pont (a szoba alapterülete szerint). */
+/** Which room the point is in (by the room's floor area). */
 export function roomAt(point: FloorPoint, rooms: readonly RoomKey[]): RoomKey {
   for (const key of rooms) {
     const { offset, size } = ROOMS[key];
@@ -59,17 +59,17 @@ export function roomAt(point: FloorPoint, rooms: readonly RoomKey[]): RoomKey {
   return "main";
 }
 
-/** A fő szoba közepe: két mellékszoba között ezen át vezet az út (a szobák sarka nem érintkezik). */
+/** The middle of the main room: the path between two side rooms goes through it (the rooms' corners do not touch). */
 const HUB: FloorPoint = toWorld("main", { x: 2.4, z: 2.4 });
 
-/** Útvonal `from`-ból `to`-ba: egyenesen, vagy két mellékszoba között a fő szobán át. */
+/** Path from `from` to `to`: straight, or between two side rooms through the main room. */
 export function pathBetween(from: FloorPoint, to: FloorPoint, rooms: readonly RoomKey[]): FloorPoint[] {
   const a = roomAt(from, rooms);
   const b = roomAt(to, rooms);
   return a !== b && a !== "main" && b !== "main" ? [HUB, to] : [to];
 }
 
-/** Véletlen sétacél: a megépült szobák egyikében (a nagyobb szoba gyakrabban). */
+/** Random walk target: in one of the built rooms (the larger room more often). */
 export function randomWalkTarget(rooms: readonly RoomKey[], random: () => number = Math.random): FloorPoint {
   const weights = rooms.map((key) => (key === "main" ? 2 : 1));
   let roll = random() * weights.reduce((sum, w) => sum + w, 0);

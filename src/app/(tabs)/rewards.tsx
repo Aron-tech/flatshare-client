@@ -19,7 +19,7 @@ import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ActivityIndicator, Alert as NativeAlert, View } from "react-native";
 
-/** Elérhető: mástól, aktív jutalom, amit be tudunk váltani; sajátjaim: amit mi hoztunk létre. */
+/** Available: from others, an active reward that can be redeemed; mine: created by me. */
 type RewardsView = "available" | "mine";
 
 export default function RewardsScreen() {

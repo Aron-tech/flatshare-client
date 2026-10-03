@@ -47,13 +47,12 @@ import {
   type Texture,
 } from "three";
 
-/** Koppintásnál ennyi pt-on belül a rendetlen zóna helye is elég (a kis tárgyakat nehéz eltalálni). */
+/** On tap, a messy zone's spot within this many pt also counts (small objects are hard to hit). */
 const TAP_RADIUS = 56;
-/** A zóna fölötti pont (a csillogáshoz és a koppintáshoz), világegységben. */
+/** The point above the zone (for the sparkle and the tap), in world units. */
 const ZONE_MARK_HEIGHT = 0.45;
 
 export interface HouseSceneHandle {
-  /** Animált visszaállás az alapnézetre. */
   resetCamera: () => void;
 }
 
@@ -64,22 +63,22 @@ interface HouseScene3DProps {
   levels: ZoneLevels;
   members: HouseMember[];
   mood: HouseMoodBand;
-  /** Tagonként a soron következő lejátszandó takarítás. */
+  /** Per member, the next cleaning to play. */
   jobs: Record<number, HouseJob | undefined>;
   onJobDone: (userId: number, job: HouseJob) => void;
-  /** A rendetlen zónára koppintva (a feladatokhoz visz). */
+  /** On tapping a messy zone (leads to the tasks). */
   onZonePress: (zone: HouseZone) => void;
-  /** A pontokból építhető szobák (a még nem megépültek szellemként látszanak). */
+  /** Rooms buildable from points (the not yet built ones show as ghosts). */
   rooms: HouseRoomState[];
-  /** Egy még meg nem épült szobára koppintva (a szobaboltot nyitja). */
+  /** On tapping a not yet built room (opens the room shop). */
   onRoomPress: (room: HouseRoomState["key"]) => void;
   reducedMotion: boolean;
   dark: boolean;
-  /** A jelenet háttere (a kártya színe). */
+  /** Scene background (the card color). */
   background: string;
 }
 
-/** A látható szobák közös befoglaló gömbje: ide néz a kamera, ebből jön az alaptávolság. */
+/** Shared bounding sphere of the visible rooms: the camera looks here, the base distance comes from it. */
 function houseBounds(rooms: readonly RoomKey[]) {
   const min = [Infinity, Infinity, Infinity];
   const max = [-Infinity, -Infinity, -Infinity];
@@ -91,7 +90,7 @@ function houseBounds(rooms: readonly RoomKey[]) {
       max[i] = Math.max(max[i], bounds.max[i] + shift[i]);
     }
   }
-  // A ház közepe kicsit a padló fölött (a bútorok magasságának harmadán).
+  // The middle of the house is slightly above the floor (a third of the furniture height).
   const target: [number, number, number] = [(min[0] + max[0]) / 2, (max[1] - min[1]) / 3, (min[2] + max[2]) / 2];
   const radius = Math.hypot(max[0] - min[0], max[1] - min[1], max[2] - min[2]) / 2;
   return { target, radius };
@@ -103,7 +102,6 @@ function zoneMark(zone: HouseZone, layout: HouseLayout): [number, number, number
   return [spot.x, ROOMS[spot.room].floorY + ZONE_MARK_HEIGHT, spot.z];
 }
 
-/** Egy még meg nem épült szoba helye: áttetsző padló és körvonal (koppintható). */
 function GhostRoom({ room, color }: { room: HouseRoomState["key"]; color: string }) {
   const { offset, size, floorY } = ROOMS[room];
   const box = useMemo(() => new BoxGeometry(size.x - 0.06, floorY, size.z - 0.06), [size.x, size.z, floorY]);
@@ -121,9 +119,7 @@ function GhostRoom({ room, color }: { room: HouseRoomState["key"]; color: string
   );
 }
 
-// ---------------------------------------------------------------- a Canvas belseje
-
-/** A kamera a `target` körül kering az `orbit` szerint (lendület, visszaállás). */
+/** The camera orbits around `target` per `orbit` (momentum, reset). */
 function CameraRig({ orbit, target, distance }: { orbit: OrbitState; target: [number, number, number]; distance: number }) {
   useFrame(({ camera }, delta) => placeCamera(camera, orbit, delta, distance, target));
   return null;
@@ -138,11 +134,11 @@ function placeCamera(camera: Camera, orbit: OrbitState, delta: number, distance:
 type TapTarget = { zone: HouseZone } | { room: HouseRoomState["key"] };
 
 interface SceneBridge {
-  /** A koppintott rendetlen zóna vagy meg nem épült szoba (`x`, `y`: pt a jelenet bal felső sarkától). */
+  /** The tapped messy zone or unbuilt room (`x`, `y`: pt from the scene's top-left corner). */
   targetAt: (x: number, y: number, levels: ZoneLevels, layout: HouseLayout) => TapTarget | null;
 }
 
-/** A gesztusok (a Canvason kívül) ebből olvassák a jelenetet és a legfrissebb propokat. */
+/** Gestures (outside the Canvas) read the scene and the latest props from this. */
 interface GestureInput {
   bridge: SceneBridge | null;
   levels: ZoneLevels;
@@ -179,7 +175,7 @@ function createBridge(camera: Camera, scene: Scene, size: { width: number; heigh
         if (zone && levels[zone] > 0 && layout.zoneRooms[zone] === roomOfObject(hit.object)) return { zone };
         ghost ??= ghostOf(hit.object);
       }
-      // Tartalék: a legközelebbi rendetlen zóna helye a koppintás körül.
+      // Fallback: the nearest messy zone's spot around the tap.
       let best: { zone: HouseZone; d: number } | null = null;
       for (const zone of HOUSE_ZONES) {
         const mark = zoneMark(zone, layout);
@@ -202,7 +198,6 @@ function updateInput(input: GestureInput, values: Omit<GestureInput, "bridge">) 
   Object.assign(input, values);
 }
 
-/** A Canvason kívülről (gesztusok) elérhető műveletek. */
 function Bridge({ input }: { input: GestureInput }) {
   const { camera, scene, size } = useThree();
   useEffect(() => {
@@ -212,7 +207,7 @@ function Bridge({ input }: { input: GestureInput }) {
   return null;
 }
 
-/** Egy ujj: forgatás (lendülettel), két ujj: nagyítás, koppintás: rendetlen zóna. */
+/** One finger: rotate (with momentum), two fingers: zoom, tap: messy zone. */
 function createGesture(orbit: OrbitState, input: GestureInput) {
   let pinchStart = 1;
   const pan = Gesture.Pan()
@@ -241,7 +236,7 @@ function createGesture(orbit: OrbitState, input: GestureInput) {
   return Gesture.Race(tap, Gesture.Simultaneous(pan, pinch));
 }
 
-/** Tagonként egy képernyő-horgony (lustán jön létre, utána ugyanaz marad). */
+/** One screen anchor per member (created lazily, then stays the same). */
 function anchorOf(anchors: Map<number, ScreenAnchor>, userId: number): ScreenAnchor {
   let anchor = anchors.get(userId);
   if (!anchor) {
@@ -257,7 +252,7 @@ function createPetMaterial(colormap: Texture) {
   return new MeshStandardMaterial({ map: colormap, roughness: 0.8, metalness: 0, side: DoubleSide });
 }
 
-/** Egyszer szól, amikor a modellek betöltődtek (a Suspense után). */
+/** Fires once when the models have loaded (after Suspense). */
 function Ready({ onReady }: { onReady: () => void }) {
   useEffect(onReady, [onReady]);
   return null;
@@ -283,7 +278,6 @@ function Lights({ dark, target, radius }: { dark: boolean; target: [number, numb
       >
         <object3D attach="target" position={target} />
       </directionalLight>
-      {/* Este ég az állólámpa. */}
       {dark && <pointLight position={[0.3, 1.05, 3.85]} color="#F3DFA2" intensity={2.2} distance={3.2} decay={1.6} />}
     </>
   );
@@ -322,15 +316,13 @@ function Pets({ members, mood, layout, jobs, onJobDone, onAnimationChange, ancho
   ));
 }
 
-// ---------------------------------------------------------------- RN overlay
-
 const BUBBLES: Partial<Record<PetAnimation, { icon: LucideIcon; className: string }>> = {
   happy: { icon: Heart, className: "bg-success-soft text-success-active" },
   sad: { icon: Frown, className: "bg-primary-soft text-primary" },
   work: { icon: Sparkles, className: "bg-card text-success-active" },
 };
 
-/** Az overlay elemek szélessége és magassága: a horgony az alsó szél közepén van. */
+/** Overlay element width and height: the anchor is at the middle of the bottom edge. */
 const LABEL_WIDTH = 180;
 const LABEL_HEIGHT = 120;
 
@@ -338,7 +330,7 @@ interface PetLabelProps {
   member: HouseMember;
   anchor: ScreenAnchor;
   animation: PetAnimation;
-  /** Amit éppen mond (szövegbuborék). */
+  /** What it is saying right now (speech bubble). */
   speech: string | null;
 }
 
@@ -389,7 +381,6 @@ function PetLabel({ member, anchor, animation, speech }: PetLabelProps) {
   );
 }
 
-/** Felvillanó csillogás a rendbe tett zóna fölött. */
 function SparkleBurst({ anchor }: { anchor: ScreenAnchor }) {
   const progress = useSharedValue(0);
   useEffect(() => {
@@ -410,8 +401,6 @@ function SparkleBurst({ anchor }: { anchor: ScreenAnchor }) {
   );
 }
 
-// ---------------------------------------------------------------- a jelenet
-
 interface Sparkle {
   key: number;
   anchor: ScreenAnchor;
@@ -419,9 +408,9 @@ interface Sparkle {
 }
 
 /**
- * A háztartás háza 3D-ben: a szoba a rendetlenséggel és a tagok állataival. Egy ujjal forgatható
- * (vízszintesen körbe, függőlegesen a felülnézet és 20° között), két ujjal nagyítható; a rendetlen
- * zónára koppintva `onZonePress`. A nevek és a buborékok RN overlayként követik az állatokat.
+ * The household's house in 3D: the room with the mess and the members' pets. One finger rotates
+ * (horizontally all around, vertically between the top view and 20°), two fingers zoom; tapping a messy
+ * zone calls `onZonePress`. Names and bubbles follow the pets as RN overlays.
  */
 export function HouseScene3D({
   ref,
@@ -447,7 +436,7 @@ export function HouseScene3D({
   const ghostColor = dark ? "#8A8FA8" : "#C9B89A";
   const distance = fitDistance(radius, width / height);
 
-  // Változtatható állapot a gesztusoknak és a képkockáknak (nem okoz újrarenderelést).
+  // Mutable state for the gestures and the frames (does not cause a re-render).
   const [orbit] = useState(initialOrbit);
   const [input] = useState<GestureInput>(() => ({ bridge: null, levels, layout, onZonePress, onRoomPress }));
   const [anchors] = useState(() => new Map<number, ScreenAnchor>());
@@ -471,7 +460,7 @@ export function HouseScene3D({
     []
   );
 
-  // Időnként egy állat elmondja, mit gondol a házról (egyszerre legfeljebb egy buborék).
+  // Now and then a pet says what it thinks of the house (at most one bubble at a time).
   const [speech, setSpeech] = useState<{ userId: number; text: string } | null>(null);
   const speechTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const say = useCallback((userId: number, text: string | null) => {

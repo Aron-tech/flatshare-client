@@ -1,4 +1,4 @@
-// Headless Chromium + helyi statikus szerver: a three.js jelenet a böngészőben (WebGL) renderel.
+// Headless Chromium + local static server: the three.js scene renders in the browser (WebGL).
 import { createReadStream, existsSync, statSync } from "node:fs";
 import { createServer } from "node:http";
 import { dirname, extname, join, normalize } from "node:path";
@@ -30,11 +30,10 @@ function serve() {
   return new Promise((resolve) => server.listen(0, "127.0.0.1", () => resolve(server)));
 }
 
-/** Megnyitja a `page.html`-t, és visszaadja a böngésző lapot (a `window.studio` API-val). */
 export async function openStudio() {
   const server = await serve();
   const browser = await chromium.launch({
-    // A Playwright gyorsítótárában lévő Chromium (`npx playwright install chromium`).
+    // Chromium from the Playwright cache (`npx playwright install chromium`).
     executablePath: process.env.CHROMIUM_PATH || undefined,
     args: ["--use-angle=swiftshader", "--enable-unsafe-swiftshader", "--ignore-gpu-blocklist"],
   });

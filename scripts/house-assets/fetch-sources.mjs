@@ -1,4 +1,4 @@
-// A Kenney CC0 csomagok letöltése a `.cache/` mappába (nincs verziókezelve, a render ebből dolgozik).
+// Downloads the Kenney CC0 packs into `.cache/` (not versioned, the render works from it).
 import { execFileSync } from "node:child_process";
 import { existsSync, mkdirSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
@@ -7,7 +7,7 @@ import { fileURLToPath } from "node:url";
 const root = dirname(fileURLToPath(import.meta.url));
 const cache = join(root, ".cache");
 
-/** https://kenney.nl/assets/cube-pets és https://kenney.nl/assets/furniture-kit (CC0). */
+/** https://kenney.nl/assets/cube-pets and https://kenney.nl/assets/furniture-kit (CC0). */
 const SOURCES = [
   {
     name: "cube-pets",

@@ -2,14 +2,14 @@ import { HouseholdSettings, ResetPeriod } from "@/types/household";
 
 const DAY = 24 * 60 * 60 * 1000;
 
-/** A háztartás célidőszaka; beállítás nélkül heti, hétfőn induló. */
+/** The household's goal period; weekly starting on Monday without a setting. */
 export function resetPeriodOf(settings?: HouseholdSettings | null): ResetPeriod {
   return settings?.reset?.period ?? "weekly";
 }
 
 /**
- * A pontszámítási ciklus a háztartás beállítása szerint heti vagy havi: a választott
- * napon (hét napja, ill. hónap napja) 00:00-tól a következő ilyen nap 00:00-ig tart.
+ * The point calculation cycle is weekly or monthly per the household setting: it lasts from 00:00 of the
+ * chosen day (day of the week, or day of the month) to 00:00 of the next such day.
  */
 export function currentCycle(settings?: HouseholdSettings | null, now: Date = new Date()) {
   const startsAt = new Date(now);
@@ -25,7 +25,7 @@ export function currentCycle(settings?: HouseholdSettings | null, now: Date = ne
     endsAt.setTime(startsAt.getTime());
     endsAt.setMonth(endsAt.getMonth() + 1);
   } else {
-    // ISO nap (1 = hétfő); getDay(): vasárnap = 0
+    // ISO day (1 = Monday); getDay(): Sunday = 0
     const resetDay = settings?.reset?.day_of_week ?? 1;
     const isoDay = ((startsAt.getDay() + 6) % 7) + 1;
     startsAt.setDate(startsAt.getDate() - ((isoDay - resetDay + 7) % 7));

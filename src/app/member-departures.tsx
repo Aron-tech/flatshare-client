@@ -18,8 +18,8 @@ import { Alert, Pressable, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 /**
- * Admin döntés a távozott tagok által létrehozott feladatokról: mind törlése, a kijelöltek törlése, vagy mind megtartása.
- * Push értesítésből `?household_id=` paraméterrel nyílik, ilyenkor arra a háztartásra vált.
+ * Admin decision about the tasks created by departed members: delete all, delete the selected, or keep all.
+ * Opens from a push notification with `?household_id=`, switching to that household.
  */
 export default function MemberDeparturesScreen() {
   const { t } = useTranslation();
@@ -99,7 +99,7 @@ function DepartureCard({
     }
   };
 
-  /** A törlés nem vonható vissza, ezért megerősítést kér. */
+  /** Deletion is irreversible, so it asks for confirmation. */
   const confirmDelete = (taskIds: number[]) =>
     Alert.alert(
       t("memberDepartures.confirmTitle"),

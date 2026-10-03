@@ -2,12 +2,12 @@ import { resetPeriodOf } from "@/lib/cycle";
 import { CalendarEvent, CalendarView } from "@/types/calendar";
 import { HouseholdSettings } from "@/types/household";
 
-/** Az alapnézet a háztartás pontszámítási időszaka szerint: heti → heti, havi → havi. */
+/** The default view per the household's point calculation period: weekly → weekly, monthly → monthly. */
 export function defaultCalendarView(settings?: HouseholdSettings | null): CalendarView {
   return resetPeriodOf(settings) === "monthly" ? "month" : "week";
 }
 
-/** A hét első napja (getDay() szerint, 0 = vasárnap): heti időszaknál a reset napja, különben hétfő. */
+/** First day of the week (per getDay(), 0 = Sunday): the reset day for a weekly period, otherwise Monday. */
 export function weekStartDay(settings?: HouseholdSettings | null): number {
   const isoDay = resetPeriodOf(settings) === "weekly" ? (settings?.reset?.day_of_week ?? 1) : 1;
   return isoDay % 7;
@@ -34,7 +34,7 @@ export function isSameDay(a: Date, b: Date): boolean {
   return dayKey(a) === dayKey(b);
 }
 
-/** Helyi naptári nap kulcsa (`YYYY-MM-DD`). */
+/** Key of a local calendar day (`YYYY-MM-DD`). */
 export function dayKey(date: Date): string {
   const month = String(date.getMonth() + 1).padStart(2, "0");
   const day = String(date.getDate()).padStart(2, "0");
@@ -42,8 +42,8 @@ export function dayKey(date: Date): string {
 }
 
 /**
- * A nézetben megjelenő időszak [from, to). A havi nézet teljes heteket mutat,
- * ezért a hónap előtti és utáni napokat is tartalmazza.
+ * The period shown in the view [from, to). The monthly view shows whole weeks,
+ * so it also contains the days before and after the month.
  */
 export function visibleRange(view: CalendarView, anchor: Date, firstDay: number): { from: Date; to: Date } {
   if (view === "day") {
@@ -61,14 +61,14 @@ export function visibleRange(view: CalendarView, anchor: Date, firstDay: number)
   return { from, to: addDays(from, weeks * 7) };
 }
 
-/** Előre/hátra lépés a nézet egységével. */
+/** Steps forward/back by the view's unit. */
 export function shiftAnchor(view: CalendarView, anchor: Date, direction: 1 | -1): Date {
   if (view === "day") return addDays(anchor, direction);
   if (view === "week") return addDays(anchor, 7 * direction);
   return new Date(anchor.getFullYear(), anchor.getMonth() + direction, 1);
 }
 
-/** Az események napok szerint (helyi idő), időrendben. */
+/** The events by day (local time), in chronological order. */
 export function groupByDay(events: CalendarEvent[]): Map<string, CalendarEvent[]> {
   const groups = new Map<string, CalendarEvent[]>();
   for (const event of events) {

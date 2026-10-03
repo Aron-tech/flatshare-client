@@ -16,7 +16,7 @@ interface RewardDifficultyHintProps {
   isLoading: boolean;
 }
 
-/** Mennyire nehéz a megadott pontot összegyűjteni a háztartás feladatai és súlyozásai alapján. */
+/** How hard it is to collect the given points based on the household's tasks and weightings. */
 export function RewardDifficultyHint({ difficulty, isLoading }: RewardDifficultyHintProps) {
   const { t } = useTranslation();
 

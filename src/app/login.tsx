@@ -18,7 +18,7 @@ export default function LoginScreen() {
   const { login, authService } = useAuth();
   const { colorScheme } = useColorScheme();
   const [loading, setLoading] = useState(false);
-  // iOS-en a natív Apple ablakot kell használni (App Review 4.8), máshol a WorkOS webes loginja marad.
+  // On iOS the native Apple sheet must be used (App Review 4.8), elsewhere the WorkOS web login stays.
   const [nativeAppleAvailable, setNativeAppleAvailable] = useState(false);
 
   useEffect(() => {

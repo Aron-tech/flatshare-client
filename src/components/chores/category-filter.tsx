@@ -17,7 +17,6 @@ interface CategoryFilterProps {
 
 export const ALL_CATEGORIES = "__all__";
 
-/** Vízszintesen görgethető zóna-szűrő pillek (aktív: terrakotta tint). */
 export function CategoryFilter({ options, value, onChange }: CategoryFilterProps) {
   const { t } = useTranslation();
   const all: CategoryFilterOption = {
@@ -31,7 +30,7 @@ export function CategoryFilter({ options, value, onChange }: CategoryFilterProps
       horizontal
       showsHorizontalScrollIndicator={false}
       contentContainerStyle={{ gap: 8 }}
-      // A képernyő gutterén túl is görgethető.
+      // Scrollable beyond the screen gutter.
       style={{ marginHorizontal: -20 }}
     >
       <View className="w-3" />

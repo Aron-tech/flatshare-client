@@ -1,5 +1,5 @@
-// A karakterválasztó sprite-atlaszai: `assets/house/pets/` + `src/lib/house/pet-sprites.generated.ts`.
-// (A Ház nézet maga 3D: `npm run export`.) Futtatás: `npm install && npm run fetch && npm run render`.
+// Sprite atlases for the character picker: `assets/house/pets/` + `src/lib/house/pet-sprites.generated.ts`.
+// (The House view itself is 3D: `npm run export`.) Run: `npm install && npm run fetch && npm run render`.
 import { mkdirSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { dirname, join, relative } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -17,7 +17,7 @@ const save = (file, dataUrl) => {
   return statSync(file).size;
 };
 
-/** Relatív útvonal a generált fájltól (a Metro statikus `require`-t vár). */
+/** Relative to the generated file (Metro needs a static `require`). */
 const asset = (file) => `require("${relative(dirname(generated), file)}")`;
 
 rmSync(assets, { recursive: true, force: true });
@@ -40,16 +40,16 @@ for (const name of PETS) {
 }
 await studio.close();
 
-const ts = `// GENERÁLT FÁJL – ne szerkeszd kézzel. Forrás: scripts/house-assets (npm run render).
-// Modellek: Kenney Cube Pets (CC0, www.kenney.nl).
+const ts = `// GENERATED FILE – do not edit by hand. Source: scripts/house-assets (npm run render).
+// Models: Kenney Cube Pets (CC0, www.kenney.nl).
 import type { ImageSourcePropType } from "react-native";
 import type { PetAnimation, PetId } from "./scene.generated";
 
 export type SpriteFacing = "se" | "ne" | "sw" | "nw";
 
 /**
- * Az állatok sprite-atlasza: \`columns\` oszlopos rács, képkockánként \`frame\` px; az (anchorX, anchorY)
- * pont áll a padlón. Az első \`perFacing\` kocka "se", a következő "ne" irányú (sw / nw = tükrözve).
+ * Pet sprite atlas: a grid with \`columns\` columns, \`frame\` px per frame; the (anchorX, anchorY)
+ * point sits on the floor. The first \`perFacing\` frames face "se", the next ones "ne" (sw / nw are mirrored).
  */
 export const PET_ATLAS = {
   frame: { width: ${frame.width}, height: ${frame.height}, anchorX: ${frame.width / 2}, anchorY: ${Math.round(frame.height * frame.anchorY)} },

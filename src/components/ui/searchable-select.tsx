@@ -10,23 +10,22 @@ import { Pressable, ScrollView, View } from "react-native";
 export interface SelectOption<T extends string | number> {
   value: T;
   label: string;
-  /** Kisebb, másodlagos sor a címke alatt. */
+  /** Smaller, secondary line below the label. */
   description?: string;
 }
 
 interface SearchableSelectProps<T extends string | number> {
   options: SelectOption<T>[];
   value: T | null;
-  /** `null`, ha a kijelölést törölték. */
+  /** `null` if the selection was cleared. */
   onChange: (value: T | null) => void;
   placeholder: string;
   searchPlaceholder: string;
   emptyText: string;
-  /** Töltés alatt (`options` még nincs meg) a lista nem nyílik meg. */
+  /** While loading (`options` not there yet) the list does not open. */
   disabled?: boolean;
 }
 
-/** Legördülő választó beépített kereséssel; a kijelölés törölhető (nem kötelező mező). */
 export function SearchableSelect<T extends string | number>({
   options,
   value,

@@ -7,10 +7,10 @@ import { AppState } from "react-native";
 const STORAGE_KEY = "notification_permission_prompt_shown";
 
 /**
- * A rendszer engedélyablaka helyett előbb egy saját képernyőn elmagyarázzuk, mire kell az értesítés
- * (App Review megjegyzés: a puszta bejelentkezés után, magyarázat nélkül feldobott kérés kevesebb
- * elfogadást hoz). A rendszer ablakát csak azután nyitjuk meg, hogy a felhasználó ezt jóváhagyta itt;
- * a saját képernyőt legfeljebb egyszer mutatjuk, utána a Beállításokból bármikor elérhető.
+ * Instead of the system permission dialog we first explain on our own screen what the notifications are for
+ * (App Review note: a request thrown up right after sign-in without an explanation gets less acceptance).
+ * The system dialog is only opened after the user approved here; our own screen is shown at most once,
+ * afterwards it is reachable from Settings at any time.
  */
 export function useNotificationPermissionPrompt(active: boolean, authToken: string | null) {
   const [visible, setVisible] = useState(false);
@@ -30,14 +30,14 @@ export function useNotificationPermissionPrompt(active: boolean, authToken: stri
       if (status === null) return; // nem támogatott eszköz/platform
 
       if (status === "granted") {
-        // Már engedélyezve van (pl. korábbi telepítésből), nincs mit magyarázni.
+        // Already allowed (e.g. from an earlier install), nothing to explain.
         await pushNotificationService.register(authToken, { askPermission: false }).catch(() => undefined);
         await AsyncStorage.setItem(STORAGE_KEY, "1").catch(() => {});
         return;
       }
 
       if (status === "denied") {
-        // A rendszer ablakát úgysem tudjuk újra megnyitni innen, a sajátunkat sem érdemes.
+        // We cannot reopen the system dialog from here anyway, so ours is not worth showing either.
         await AsyncStorage.setItem(STORAGE_KEY, "1").catch(() => {});
         return;
       }
@@ -70,10 +70,9 @@ export function useNotificationPermissionPrompt(active: boolean, authToken: stri
 }
 
 /**
- * Az aktuális rendszerengedély, a Beállítások képernyőnek: aki a saját ajánlatunkat elutasította,
- * vagy a rendszer ablakában tiltotta le, innen bármikor bekapcsolhatja (App Review javaslat).
- * `null`: nem támogatott eszköz/platform. Frissül, amikor az app előtérbe kerül (pl. a rendszer
- * beállításaiból visszatérve).
+ * The current system permission, for the Settings screen: whoever declined our offer or blocked it in the
+ * system dialog can turn it on here at any time (App Review suggestion). `null`: unsupported device/platform.
+ * Updates when the app comes to the foreground (e.g. returning from the system settings).
  */
 export function useNotificationPermissionStatus(authToken: string | null) {
   const [status, setStatus] = useState<PermissionStatus | null | "loading">("loading");

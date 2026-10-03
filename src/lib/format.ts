@@ -17,7 +17,7 @@ function formatTime(date: Date): string {
   });
 }
 
-/** Határidő emberi formában: "Ma, 21:00-ig", "Holnap, 08:00", "Szombat, 15:00"… */
+/** Deadline in human form: "Today, until 21:00", "Tomorrow, 08:00", "Saturday, 15:00"… */
 export function formatDue(dueAt: string | null, t: TFunction): string {
   if (!dueAt) return t("format.noDeadline");
   const date = new Date(dueAt);
@@ -42,7 +42,7 @@ export function isOverdue(dueAt: string | null): boolean {
   return !!dueAt && new Date(dueAt) < new Date();
 }
 
-/** "2 órája", "Ma, 09:15", "Tegnap, 18:40"… */
+/** "2 hours ago", "Today, 09:15", "Yesterday, 18:40"… */
 export function formatTimeAgo(iso: string, t: TFunction): string {
   const date = new Date(iso);
   const diffMin = Math.round((Date.now() - date.getTime()) / 60000);
@@ -68,7 +68,7 @@ export function formatRecurrence(
     : t(`format.recurrence.${unit}Interval`, { count });
 }
 
-/** A név első két szavának kezdőbetűi. */
+/** Initials of the first two words of the name. */
 export function initials(name?: string | null): string {
   return (name ?? "")
     .split(/\s+/)
@@ -79,7 +79,7 @@ export function initials(name?: string | null): string {
     .toUpperCase();
 }
 
-/** Napszak szerinti köszönés kulcsa. */
+/** Key of the time-of-day greeting. */
 export function greetingKey(date: Date = new Date()): "morning" | "afternoon" | "evening" {
   const hour = date.getHours();
   if (hour < 10) return "morning";

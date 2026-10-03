@@ -25,14 +25,14 @@ const DIFFICULTY_DEBOUNCE_MS = 400;
 
 type Availability = "active" | "paused";
 
-/** Nemnegatív egész a szövegmezőből; üresen `null` (korlátlan készlet), érvénytelenül `undefined`. */
+/** Non-negative integer from the text field; empty → `null` (unlimited stock), invalid → `undefined`. */
 function parseStock(value: string): number | null | undefined {
   if (value.trim() === "") return null;
   const parsed = Number.parseInt(value.trim(), 10);
   return Number.isInteger(parsed) && parsed >= 0 ? parsed : undefined;
 }
 
-/** Jutalom létrehozása, vagy `id` paraméterrel a saját jutalom szerkesztése. */
+/** Creates a reward, or with an `id` param edits one's own reward. */
 export default function RewardFormScreen() {
   const { t } = useTranslation();
   const router = useRouter();
@@ -50,18 +50,18 @@ export default function RewardFormScreen() {
   const [stock, setStock] = useState("");
   const [availability, setAvailability] = useState<Availability>("active");
 
-  /** Az utoljára lekért nehézség, és hogy melyik pontárra kértük. */
+  /** The last fetched difficulty and the point price it was requested for. */
   const [preview, setPreview] = useState<{ points: number; result: RewardDifficulty } | null>(null);
   const parsedPoints = parsePositiveInt(pointsCost);
-  // Betöltés közben az előző eredmény látszik, hogy ne villogjon.
+  // While loading, the previous result stays visible to avoid flicker.
   const difficulty = parsedPoints === null ? null : (preview?.result ?? null);
   const difficultyLoading = parsedPoints !== null && preview?.points !== parsedPoints;
 
-  /** Mentés után a backend már lezárta a szerkesztést, kilépéskor nem kell. */
+  /** After saving, the backend has already ended the editing; on leave it is not needed. */
   const savedRef = useRef(false);
 
-  // Szerkesztésnél betölti a jutalmat, és szerkesztés alá helyezi (is_editing = true),
-  // hogy közben senki ne válthassa be. Mentés nélküli kilépéskor visszaállítja.
+  // When editing, loads the reward and puts it in editing state (is_editing = true) so nobody can redeem it
+  // meanwhile. Restores it when leaving without saving.
   useEffect(() => {
     if (rewardId === null || !token || householdId === null) return;
     let cancelled = false;
@@ -87,7 +87,7 @@ export default function RewardFormScreen() {
         if (!cancelled) setIsLoaded(true);
         else void rewardService.stopEditing(householdId, rewardId, token).catch(() => {});
       } catch {
-        // A hibát a HttpClient már toastban megjelenítette.
+        // HttpClient already showed the error toast.
         if (!cancelled) router.back();
       }
     })();
@@ -103,7 +103,7 @@ export default function RewardFormScreen() {
     };
   }, [rewardId, token, householdId, user?.id, router, t, queryClient]);
 
-  // Nehézség előnézet a pontár beírása közben.
+  // Difficulty preview while typing the price.
   useEffect(() => {
     if (parsedPoints === null || !token || householdId === null) return;
     let cancelled = false;
@@ -159,7 +159,7 @@ export default function RewardFormScreen() {
       void queryClient.invalidateQueries({ queryKey: HouseholdQueries.rewards.key(householdId) });
       router.back();
     } catch {
-      // A hibát a HttpClient már toastban megjelenítette.
+      // HttpClient already showed the error toast.
     } finally {
       setSubmitting(false);
     }

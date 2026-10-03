@@ -26,7 +26,6 @@ export class RewardService {
     return response.rewards;
   }
 
-  /** Nehézség előnézet a pontár megadása közben. */
   public getDifficulty(householdId: number, pointsCost: number, token: string): Promise<RewardDifficulty> {
     return this.http.request<RewardDifficulty>(
       `/households/${householdId}/rewards/difficulty?points_cost=${pointsCost}`,
@@ -44,7 +43,7 @@ export class RewardService {
     return response.reward;
   }
 
-  /** Mentéskor a backend a szerkesztést is lezárja (`is_editing = false`). */
+  /** On save the backend also ends the editing (`is_editing = false`). */
   public async update(householdId: number, rewardId: number, dto: RewardDto, token: string): Promise<Reward> {
     const response = await this.http.request<RewardResponse>(
       `/households/${householdId}/rewards/${rewardId}`,
@@ -62,7 +61,7 @@ export class RewardService {
     );
   }
 
-  /** `is_editing = true`; a backend egy idő után magától visszaállítja. */
+  /** `is_editing = true`; the backend resets it by itself after a while. */
   public async startEditing(householdId: number, rewardId: number, token: string): Promise<Reward> {
     const response = await this.http.request<RewardResponse>(
       `/households/${householdId}/rewards/${rewardId}/editing`,
@@ -72,7 +71,6 @@ export class RewardService {
     return response.reward;
   }
 
-  /** Mentés nélküli kilépés a szerkesztésből. */
   public async stopEditing(householdId: number, rewardId: number, token: string): Promise<void> {
     await this.http.request<unknown>(
       `/households/${householdId}/rewards/${rewardId}/editing`,
@@ -98,7 +96,7 @@ export class RewardService {
     );
   }
 
-  /** A feltöltő (átadta) vagy a beváltó (megkapta) jelöli teljesítettnek. */
+  /** Marked fulfilled by the uploader (handed over) or the redeemer (received). */
   public async fulfillRedemption(householdId: number, redemptionId: number, token: string): Promise<void> {
     await this.http.request<unknown>(
       `/households/${householdId}/reward-redemptions/${redemptionId}/fulfill`,

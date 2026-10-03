@@ -55,8 +55,8 @@ export default function DashboardScreen() {
   const { stats, refetch: refetchStats } = useStats();
   const { data: house, refetch: refetchHouse } = useHouseholdQuery(HouseholdQueries.house);
   const { refreshing, onRefresh } = usePullToRefresh(refetch, refetchStats, refetchHouse);
-  // A Stats büntetés-kártyája `?request={task_instance_id}` paraméterrel nyitja meg a kérés-sheetet,
-  // a Ház nézet `?view=pool`-lal az Azonnali listát.
+  // The Stats penalty card opens the request sheet with `?request={task_instance_id}`,
+  // the House view opens the Instant list with `?view=pool`.
   const router = useRouter();
   const params = useLocalSearchParams<{ request?: string; view?: string }>();
   const [chosenView, setChosenView] = useState<DashboardView>("mine");
@@ -67,7 +67,7 @@ export default function DashboardScreen() {
   };
   const [requestId, setRequestId] = useState<number | null>(null);
   const activeRequestId = requestId ?? (params.request ? Number(params.request) : null);
-  /** A sheet mindig a friss (újratöltött) adatot mutatja, pl. a nyitott ajánlatot. */
+  /** The sheet always shows fresh (refetched) data, e.g. the open offer. */
   const requestItem: TaskInstance | null = taskInstances.claimed.find((i) => i.id === activeRequestId) ?? null;
   const closeRequest = () => {
     setRequestId(null);

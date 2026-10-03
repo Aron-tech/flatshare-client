@@ -4,9 +4,9 @@ export type ResetPeriod = (typeof RESET_PERIODS)[number];
 export interface HouseholdSettings {
   reset?: {
     period?: ResetPeriod;
-    /** ISO nap: 1 = hétfő, 7 = vasárnap. */
+    /** ISO day: 1 = Monday, 7 = Sunday. */
     day_of_week?: number;
-    /** A hónap napja (1–28). */
+    /** Day of the month (1–28). */
     day_of_month?: number;
   };
 }

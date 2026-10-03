@@ -17,7 +17,7 @@ export class StickerAlbumService implements IStickerAlbumService {
     );
   }
 
-  /** `taskId` nélkül a háztartás összes új matricáját látottnak jelöli. */
+  /** Without `taskId` marks all of the household's new stickers as seen. */
   public async markSeen(householdId: number, taskId: number | null, token: string): Promise<void> {
     await this.http.request<unknown>(
       `/households/${householdId}/sticker-album/seen`,

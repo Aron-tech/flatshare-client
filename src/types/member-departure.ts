@@ -1,6 +1,6 @@
 import { Category } from "./task";
 
-/** A távozott tag egy általa létrehozott, még meglévő feladata. */
+/** A still existing task created by the departed member. */
 export interface MemberDepartureTask {
   id: number;
   name: string;
@@ -8,11 +8,11 @@ export interface MemberDepartureTask {
   category: Category | null;
 }
 
-/** Egy tag távozása, amelynek feladatairól egy adminnak még döntenie kell. */
+/** A member's departure whose tasks an admin still has to decide about. */
 export interface MemberDeparture {
   id: number;
   user: { id: number; name: string };
-  /** Az admin user_id-ja, aki eltávolította; `null`, ha maga lépett ki. */
+  /** The admin's user_id who removed them; `null` if they left on their own. */
   removed_by: number | null;
   created_at: string;
   tasks: MemberDepartureTask[];

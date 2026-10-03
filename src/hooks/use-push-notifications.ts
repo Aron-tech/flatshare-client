@@ -3,9 +3,8 @@ import { useRouter } from "expo-router";
 import { useEffect } from "react";
 
 /**
- * Az értesítésre koppintáskor a payload `route` mezője szerint navigál.
- * A push token regisztrációja (és a rendszer engedélyablaka) nem itt, hanem a
- * `NotificationPermissionPrompt` saját magyarázó képernyője után történik (App Review 2.1).
+ * On tapping a notification, navigates by the payload's `route` field. The push token registration (and the
+ * system permission dialog) does not happen here but after the `NotificationPermissionPrompt` explainer screen (App Review 2.1).
  */
 export function usePushNotifications() {
   const router = useRouter();
@@ -18,7 +17,7 @@ export function usePushNotifications() {
       }
     };
 
-    // Hidegindításnál az értesítés, amivel megnyitották az appot.
+    // On a cold start, the notification the app was opened with.
     navigate(Notifications.getLastNotificationResponse());
 
     const subscription =

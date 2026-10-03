@@ -15,13 +15,13 @@ import { useState } from "react";
 const EMPTY_INSTANCES: TaskInstanceListResponse = { available: [], claimed: [], offered: [] };
 
 interface LocalCompletions {
-  /** A betöltött lista, amelyhez a teljesítések tartoznak; újratöltéskor érvénytelenek. */
+  /** The loaded list the completions belong to; invalid after a reload. */
   source: TaskInstanceListResponse | null;
-  /** Teljesített feladat → jóváírt pont (a kártya "kész" állapotához). */
+  /** Completed task → credited points (for the card's "done" state). */
   points: Record<number, number>;
 }
 
-/** Csere / türelmi nap kérés: a kártya azonosítója (a busy jelzéshez) és a művelet. */
+/** Swap / grace day request: the card's id (for the busy indicator) and the action. */
 interface RequestAction {
   taskInstanceId: number;
   send: (householdId: number, token: string) => Promise<unknown>;
@@ -35,8 +35,8 @@ export function useDashboard() {
   const instances = useHouseholdQuery(HouseholdQueries.taskInstances);
 
   /**
-   * A frissen teljesített feladatok "kész" állapotban maradnak a listában a
-   * következő újratöltésig; utána a backend már nem adja vissza őket.
+   * Freshly completed tasks stay in the list in the "done" state until the next reload;
+   * after that the backend no longer returns them.
    */
   const [local, setLocal] = useState<LocalCompletions>({ source: null, points: {} });
   const completedIds = local.source === instances.data ? local.points : {};
@@ -45,7 +45,7 @@ export function useDashboard() {
     dashboardService.claimTaskInstance(h, taskInstanceId, token)
   );
 
-  /** Azonnali elvégzés: vállalás, majd rögtön lezárás (a backend a lezáráshoz vállalást kér). */
+  /** Instant completion: claim, then close right away (the backend requires a claim for closing). */
   const claimAndComplete = useHouseholdMutation(async (h, token, taskInstanceId: number) => {
     await dashboardService.claimTaskInstance(h, taskInstanceId, token);
     await taskCompletionService.complete(h, taskInstanceId, token);
@@ -56,13 +56,13 @@ export function useDashboard() {
     showToast(i18n.t(successKey));
   });
 
-  // A lista szándékosan nem töltődik újra, hogy a teljesített kártya "kész" maradjon.
+  // The list is deliberately not reloaded, so the completed card stays "done".
   const completion = useHouseholdMutation(
     (h, token, taskInstanceId: number) => taskCompletionService.complete(h, taskInstanceId, token),
     { invalidate: false }
   );
 
-  /** A jóváírt pontot adja vissza, hiba esetén `null`-t. */
+  /** Returns the credited points, `null` on an error. */
   const complete = async (taskInstanceId: number): Promise<number | null> => {
     const result = await completion.run(taskInstanceId);
     if (!result || householdId === null) return null;
@@ -75,7 +75,7 @@ export function useDashboard() {
     queryClient.setQueryData<MyHouseholdPointsResponse>(HouseholdQueries.me.key(householdId), (current) =>
       current && { ...current, weekly_points: result.weekly_points, spendable_points: result.spendable_points }
     );
-    // A pont a statisztikát és a jutalmakat is érinti; a feladatlista és a friss pontállás marad.
+    // The points also affect the stats and rewards; the task list and the fresh point balance stay.
     const keep = [HouseholdQueries.taskInstances.key(householdId), HouseholdQueries.me.key(householdId)];
     void queryClient.invalidateQueries({
       queryKey: householdKey(householdId),

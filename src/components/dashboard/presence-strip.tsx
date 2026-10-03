@@ -9,7 +9,6 @@ import { View } from "react-native";
 const AVATAR_TONES = ["bg-primary-soft", "bg-success-soft"] as const;
 const AVATAR_TEXT = ["text-primary-soft-foreground", "text-success-soft-foreground"] as const;
 
-/** "Márton & Eszter ma aktívak" – a mai aktivitásból (más lakótársak). */
 export function PresenceStrip({ activity }: { activity: ActivityEntry[] }) {
   const { t } = useTranslation();
   const today = new Date().toDateString();

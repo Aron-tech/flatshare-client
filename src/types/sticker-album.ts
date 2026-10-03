@@ -1,21 +1,21 @@
-/** Egy matrica-hely az album oldalán; `unlocked_at` nélkül még üres. */
+/** A sticker slot on the album page; without `unlocked_at` it is still empty. */
 export interface StickerSlot {
-  /** Ennyi elvégzés adja a matricát (10 / 25 / 50 / 100). */
+  /** This many completions earn the sticker (10 / 25 / 50 / 100). */
   milestone: number;
   unlocked_at: string | null;
-  /** Még nem látta az albumban. */
+  /** Not seen in the album yet. */
   is_new: boolean;
 }
 
-/** Az album egy oldala: a háztartás egy feladata. */
+/** A page of the album: one of the household's tasks. */
 export interface StickerAlbumPage {
   task_id: number;
   task_name: string;
   is_recurring: boolean;
   category: { name: string; icon: string | null; color: string | null } | null;
-  /** A user eddigi elvégzései ebből a feladatból. */
+  /** The user's completions of this task so far. */
   completions: number;
-  /** A következő még meg nem szerzett matrica, ha van. */
+  /** The next sticker not earned yet, if any. */
   next_milestone: number | null;
   stickers: StickerSlot[];
 }
@@ -29,7 +29,7 @@ export interface StickerAlbum {
   pages: StickerAlbumPage[];
 }
 
-/** A teljesítés/rögzítés válaszában: az épp megszerzett matrica. */
+/** In the completion/logging response: the just-earned sticker. */
 export interface UnlockedSticker {
   task_id: number;
   task_name: string;

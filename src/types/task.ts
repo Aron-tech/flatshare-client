@@ -2,7 +2,7 @@ import type { TaskCompletionResponse } from "@/types/dashboard";
 
 export type RecurrenceUnit = "hour" | "day" | "week" | "month" | "year";
 
-/** Backend `TaskAssignmentModeEnum` – ki a felelős az ismétlődő feladat példányaiért. */
+/** Backend `TaskAssignmentModeEnum` – who is responsible for a recurring task's instances. */
 export type TaskAssignmentMode = "none" | "fixed" | "rotating";
 
 export const TASK_ASSIGNMENT_MODES: TaskAssignmentMode[] = ["none", "fixed", "rotating"];
@@ -13,22 +13,22 @@ export const TASK_DIFFICULTIES = ["easy", "medium", "hard"] as const;
 
 export const RECURRENCE_UNITS: RecurrenceUnit[] = ["hour", "day", "week", "month", "year"];
 
-/** Backend `TaskUserWeightEnum` – mennyire szereti a user a feladatot (pontszorzó). */
+/** Backend `TaskUserWeightEnum` – how much the user likes the task (point multiplier). */
 export type TaskUserWeight = "hate" | "dislike" | "neutral" | "like" | "love";
 
 export const TASK_USER_WEIGHTS: TaskUserWeight[] = ["hate", "dislike", "neutral", "like", "love"];
 
-/** Backend `categories` – a `name` a kérés nyelvén jön (spatie/translatable). */
+/** Backend `categories` – `name` comes in the request's language (spatie/translatable). */
 export interface Category {
   id: number;
   name: string;
   icon: string;
-  /** Hex szín, pl. `#D87758`. */
+  /** Hex color, e.g. `#D87758`. */
   color: string;
   sort_order: number;
 }
 
-/** A háztartás feladat-definíciója (`tasks` tábla). */
+/** The household's task definition (`tasks` table). */
 export interface HouseholdTask {
   id: number;
   task_template_id: number | null;
@@ -47,20 +47,20 @@ export interface HouseholdTask {
   max_user: number;
   assignment_mode: TaskAssignmentMode;
   fixed_user_id: number | null;
-  /** A rotáció tagjai sorrendben (csak rotáló feladatnál nem üres). */
+  /** The rotation's members in order (only non-empty for a rotating task). */
   rotations?: { user_id: number; rotation_order: number }[];
-  /** A bejelentkezett user súlyozása (üres, ha még nem adta meg). */
+  /** The signed-in user's weighting (empty if not given yet). */
   user_weights?: { weight: TaskUserWeight }[];
-  /** A háztartás közös ára a feladatért egy vállalónak (a tagok súlyainak átlagával). */
+  /** The household's shared price for the task per claimer (with the average of the members' weights). */
   points?: number;
 }
 
-/** `GET /households/{h}/tasks` – kategórianév szerint csoportosítva. */
+/** `GET /households/{h}/tasks` – grouped by category name. */
 export interface HouseholdTaskListResponse {
   tasks: Record<string, HouseholdTask[]>;
 }
 
-/** Globális feladatsablon (`task_templates`) – a `name`/`description` a kérés nyelvén jön. */
+/** Global task template (`task_templates`) – `name`/`description` come in the request's language. */
 export interface TaskTemplate {
   id: number;
   name: string;
@@ -74,7 +74,7 @@ export interface TaskTemplate {
   max_user: number;
 }
 
-/** `GET /task-templates` – kategórianév szerint csoportosítva. */
+/** `GET /task-templates` – grouped by category name. */
 export interface TaskTemplateListResponse {
   task_templates: Record<string, TaskTemplate[]>;
 }
@@ -88,18 +88,18 @@ export interface TaskRecurrenceDto {
 export interface TaskAssignmentDto {
   assignment_mode: TaskAssignmentMode;
   fixed_user_id: number | null;
-  /** Üres vagy hiányzó lista rotációnál az összes tagot jelenti. */
+  /** An empty or missing list means all members for a rotation. */
   rotation_user_ids: number[] | null;
 }
 
-/** Egyedi feladat alapmezői (ismétlődés nélkül). */
+/** Basic fields of a custom task (without recurrence). */
 export interface CustomTaskFieldsDto {
   name: string;
   description: string | null;
   category_id: number | null;
   duration_minutes: number;
   difficulty: TaskDifficulty;
-  /** A sablon, amiből az egyedi feladat adatai származnak (nem kötelező). */
+  /** The template the custom task's data comes from (optional). */
   task_template_id: number | null;
   icon: string | null;
   max_user: number;
@@ -111,14 +111,14 @@ export interface CreateTaskDto extends CustomTaskFieldsDto, TaskRecurrenceDto, P
 /** `PUT /households/{h}/tasks/{task}` */
 export type UpdateTaskDto = Omit<CreateTaskDto, "task_template_id">;
 
-/** `POST /households/{h}/tasks/{task_template}` – a sablon értékeit felülírja. */
+/** `POST /households/{h}/tasks/{task_template}` – overrides the template's values. */
 export interface CreateTaskFromTemplateDto extends TaskRecurrenceDto {
   max_user: number | null;
 }
 
-/** Nem ismétlődő háztartási feladat, amit bármelyik tag elvégzettként rögzíthet. */
+/** A non-recurring household task that any member can log as done. */
 export interface OneOffHouseholdTask extends HouseholdTask {
-  /** A user pontja a feladatért (súly nélkül a semleges súllyal számolva). */
+  /** The user's points for the task (without a weighting, computed with the neutral weight). */
   points: number;
 }
 
@@ -133,10 +133,10 @@ export interface LogTaskFromTemplateDto {
 }
 
 export interface ITaskService {
-  /** Bármelyik tag hívhatja; a user saját súlyozásával. */
+  /** Any member can call it; with the user's own weighting. */
   getHouseholdTasks(householdId: number, token: string): Promise<HouseholdTask[]>;
   createTask(householdId: number, dto: CreateTaskDto, token: string): Promise<void>;
-  /** Gyerek szerepkör nem szerkeszthet (403). */
+  /** A child role cannot edit (403). */
   updateTask(householdId: number, taskId: number, dto: UpdateTaskDto, token: string): Promise<void>;
   createTaskFromTemplate(
     householdId: number,
@@ -144,22 +144,21 @@ export interface ITaskService {
     dto: CreateTaskFromTemplateDto,
     token: string
   ): Promise<void>;
-  /** Bármelyik tag hívhatja. */
   getOneOffTasks(householdId: number, token: string): Promise<OneOffHouseholdTask[]>;
-  /** Új, senki által el nem vállalt task instance-t nyit a nem ismétlődő feladatból. */
+  /** Opens a new task instance nobody has claimed from the non-recurring task. */
   openTask(householdId: number, taskId: number, token: string): Promise<void>;
-  /** Új, befejezett task instance-t hoz létre a nem ismétlődő feladatból. */
+  /** Creates a new completed task instance from the non-recurring task. */
   logTask(householdId: number, taskId: number, token: string): Promise<TaskCompletionResponse>;
-  /** Nem ismétlődő egyedi feladatot vesz fel, és egyből befejezettként rögzíti. */
+  /** Adds a non-recurring custom task and logs it as completed right away. */
   logNewTask(householdId: number, dto: CustomTaskFieldsDto, token: string): Promise<TaskCompletionResponse>;
-  /** Nem ismétlődő feladatot vesz fel sablonból, és egyből befejezettként rögzíti. */
+  /** Adds a non-recurring task from a template and logs it as completed right away. */
   logTaskFromTemplate(
     householdId: number,
     templateId: number,
     dto: LogTaskFromTemplateDto,
     token: string
   ): Promise<TaskCompletionResponse>;
-  /** Gyerek szerepkör nem törölhet (403). */
+  /** A child role cannot delete (403). */
   deleteTask(householdId: number, taskId: number, token: string): Promise<void>;
   setUserWeight(
     householdId: number,

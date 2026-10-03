@@ -10,20 +10,20 @@ import { useTranslation } from "react-i18next";
 import { Pressable, View } from "react-native";
 import Animated, { FadeIn, FadeOut, ZoomIn } from "react-native-reanimated";
 
-/** A backend `TaskSticker::MILESTONES` sorrendje adja a matrica szintjét. */
+/** The order of the backend `TaskSticker::MILESTONES` gives the sticker's level. */
 const MILESTONES = [10, 25, 50, 100];
 
-/** A feladat rögzítésekor bezáródó modal után jelenjen meg (különben mögötte maradna). */
+/** Show after the modal that closes when a task is logged (otherwise it would stay behind it). */
 const SHOW_DELAY_MS = 600;
 
 /**
- * Felugró értesítés az épp megszerzett matricáról (nem push). Koppintásra az album
- * annál a feladatnál nyílik ki; több matrica esetén egymás után jönnek.
+ * Popup about the just-earned sticker (not a push). Tapping opens the album at that task;
+ * with several stickers they come one after the other.
  */
 export function StickerUnlockHost() {
   const { t } = useTranslation();
   const router = useRouter();
-  /** Az első a látható, a többi utána jön. */
+  /** The first is visible, the others follow. */
   const [queue, setQueue] = useState<UnlockedSticker[]>([]);
   const visible = queue[0];
 

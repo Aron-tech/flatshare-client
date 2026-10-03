@@ -11,16 +11,16 @@ import { Pressable, View } from "react-native";
 export interface AssignmentValue {
   mode: TaskAssignmentMode;
   fixedUserId: number | null;
-  /** A rotáció tagjai a kiválasztás sorrendjében; üresen mindenki rotál. */
+  /** Rotation members in selection order; empty means everyone rotates. */
   rotationUserIds: number[];
 }
 
 export const DEFAULT_ASSIGNMENT: AssignmentValue = { mode: "none", fixedUserId: null, rotationUserIds: [] };
 
-/** A backend mezőnevei, amelyekhez a felelős űrlap hibát tud mutatni. */
+/** Backend field names for which the assignee form can show an error. */
 export const ASSIGNMENT_ERROR_FIELDS = ["assignment_mode", "fixed_user_id", "rotation_user_ids"] as const;
 
-/** A felelős beállítás a backend formátumában; nem ismétlődő feladatnál nincs felelős. */
+/** Assignee setting in the backend format; a non-recurring task has no assignee. */
 export function toAssignmentDto(value: AssignmentValue, isRecurring: boolean): TaskAssignmentDto {
   if (!isRecurring || value.mode === "none" || (value.mode === "fixed" && value.fixedUserId === null)) {
     return { assignment_mode: "none", fixed_user_id: null, rotation_user_ids: null };
@@ -39,11 +39,11 @@ interface AssignmentFieldsProps {
   value: AssignmentValue;
   onChange: (value: AssignmentValue) => void;
   members: HouseholdMember[];
-  /** Mezőnkénti hibák a backend mezőneveivel. */
+  /** Per-field errors keyed by backend field names. */
   errors?: Record<string, string>;
 }
 
-/** Ismétlődő feladat felelőse (opcionális): nincs, fix tag vagy rotáció a tagok között. */
+/** Assignee of a recurring task (optional): none, a fixed member or a rotation among members. */
 export function AssignmentFields({ value, onChange, members, errors = {} }: AssignmentFieldsProps) {
   const { t } = useTranslation();
 

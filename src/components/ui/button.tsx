@@ -3,7 +3,7 @@ import { cn } from '@/lib/utils';
 import { cva, type VariantProps } from 'class-variance-authority';
 import { Platform, Pressable } from 'react-native';
 
-// DESIGN.md → Buttons: teljes pill forma, 0.75rem × 1.5rem padding, árnyék nélkül.
+// DESIGN.md → Buttons: full pill shape, 0.75rem × 1.5rem padding, no shadow.
 const buttonVariants = cva(
   cn(
     'group shrink-0 flex-row items-center justify-center gap-2 rounded-full',

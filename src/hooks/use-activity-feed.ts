@@ -7,8 +7,8 @@ import { skipToken, useInfiniteQuery } from "@tanstack/react-query";
 const PAGE_SIZE = 50;
 
 /**
- * A háztartás teljesítéseinek oldalankénti betöltése. Az első oldal a megnyitáskor
- * töltődik, a következők a `loadMore` hívásakor (görgetés a lista végére).
+ * Loads the household's completions page by page. The first page loads on open, the next ones on
+ * `loadMore` (scrolling to the end of the list).
  */
 export function useActivityFeed(enabled: boolean) {
   const { householdId, token } = useHouseholdSession();
@@ -29,7 +29,7 @@ export function useActivityFeed(enabled: boolean) {
     isLoadingMore: query.isFetchingNextPage,
     error: query.error ? query.error.message || i18n.t("dashboard.loadFailed") : null,
     loadMore: () => {
-      // Hiba után ne próbálkozzon végtelenül az onEndReached.
+      // After an error onEndReached must not retry endlessly.
       if (query.hasNextPage && !query.isFetching && !query.isError) void query.fetchNextPage();
     },
   };

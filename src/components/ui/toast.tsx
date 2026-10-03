@@ -42,7 +42,7 @@ export function ToastHost() {
     <View
       pointerEvents="none"
       className="absolute left-0 right-0 items-center px-4"
-      // Felül jelenik meg, hogy ne takarja a lebegő tab bart.
+      // Shown at the top so it does not cover the floating tab bar.
       style={{ top: insets.top + 12 }}
     >
       <Animated.View

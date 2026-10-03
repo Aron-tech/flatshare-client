@@ -33,8 +33,8 @@ import { Pressable, ScrollView, Switch, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 /**
- * A user naptára: az elvállalt feladatai és az ismétlődő feladatok rá eső, előre vetített példányai;
- * kapcsolóval a teljes háztartásé. Az alapnézet a háztartás időszaka szerint heti vagy havi.
+ * The user's calendar: claimed tasks and the projected instances of recurring tasks; a switch shows the
+ * whole household. The default view is weekly or monthly, per the household period.
  */
 export default function CalendarScreen() {
   const { t } = useTranslation();
@@ -65,7 +65,7 @@ export default function CalendarScreen() {
 
   const shift = (direction: 1 | -1) => {
     const next = shiftAnchor(view, date, direction);
-    // Havi lapozásnál a mai napra ugrik, ha az a megjelenő hónapba esik.
+    // When paging months, jumps to today if it falls in the displayed month.
     const today = startOfDay(new Date());
     setDate(view === "month" && next.getMonth() === today.getMonth() && next.getFullYear() === today.getFullYear() ? today : next);
   };

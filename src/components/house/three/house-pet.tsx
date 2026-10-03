@@ -9,22 +9,22 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { AnimationMixer, Group, LoopRepeat, Vector3, type AnimationAction, type Material, type Mesh } from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 
-/** Padló egység / mp. */
+/** Floor units / s. */
 const WALK_SPEED = 0.55;
 const WORK_MS = 2600;
 const CHEER_MS = 900;
-/** Animációváltás áttűnése (mp). */
+/** Animation switch crossfade (s). */
 const CROSSFADE = 0.2;
-/** Fordulás sebessége (1 / mp, exponenciális közelítés). */
+/** Turn speed (1 / s, exponential approach). */
 const TURN_RATE = 10;
 
-/** Egy lejátszandó takarítás: a zóna, ahova odamegy (`null`: csak örül a helyén). */
+/** A cleaning to play: the zone it walks to (`null`: it just rejoices in place). */
 export interface HouseJob {
   id: number;
   zone: HouseZone | null;
 }
 
-/** Szétszórt kezdőhelyek (a tagok sorrendjében), hogy a nevek ne takarják egymást. */
+/** Spread-out start positions (in member order) so the names do not cover each other. */
 const START_POINTS: readonly FloorPoint[] = [
   { x: 1.4, z: 1.5 },
   { x: 3.0, z: 1.6 },
@@ -38,7 +38,7 @@ const START_POINTS: readonly FloorPoint[] = [
 
 function startPoint(index: number, userId: number): FloorPoint {
   const base = START_POINTS[index % START_POINTS.length];
-  // Sok tagnál a második kör kicsit eltolva, mindig ugyanoda.
+  // With many members the second ring is slightly offset, always to the same place.
   const jitter = index >= START_POINTS.length ? 0.35 : 0.12;
   return toWorld("main", {
     x: base.x + (seeded(userId) - 0.5) * jitter,
@@ -46,7 +46,7 @@ function startPoint(index: number, userId: number): FloorPoint {
   });
 }
 
-/** Álldogálás közben a hangulat szerinti mozdulat. */
+/** Mood-dependent movement while idling. */
 function restingAnimation(mood: HouseMoodBand): PetAnimation {
   const roll = Math.random();
   switch (mood) {
@@ -70,31 +70,31 @@ interface Motion {
 
 interface HousePetProps {
   member: HouseMember;
-  /** A tag sorszáma (a kezdőhelyhez). */
+  /** The member's index (for the start position). */
   index: number;
   mood: HouseMoodBand;
-  /** A megépült szobák (séta) és a zónák helye (takarítás). */
+  /** The built rooms (walking) and the zone positions (cleaning). */
   layout: HouseLayout;
   job: HouseJob | null;
   onJobDone: (job: HouseJob) => void;
-  /** Az aktuális mozdulat (az overlay buborékjához). */
+  /** The current movement (for the overlay bubble). */
   onAnimationChange: (animation: PetAnimation) => void;
-  /** A név / buborék helye a képernyőn (a fej fölött). */
+  /** Name / bubble position on screen (above the head). */
   anchor: ScreenAnchor;
-  /** Közös anyag (a colormap textúrával) minden állathoz. */
+  /** Shared material (with the colormap texture) for all pets. */
   material: Material;
   reducedMotion: boolean;
 }
 
 /**
- * Egy tag állata a házban: sétálgat a bejárható padlón, a közös hangulat szerint mozdul,
- * és ha `job` van, odamegy a zónához, rendet rak, majd örül (`onJobDone`).
+ * A member's pet in the house: wanders on the walkable floor, moves per the shared mood, and with a `job`
+ * walks to the zone, tidies up, then rejoices (`onJobDone`).
  */
 export function HousePet({ member, index, mood, layout, job, onJobDone, onAnimationChange, anchor, material, reducedMotion }: HousePetProps) {
   const gltf = useLoader(GLTFLoader, assetUrl(PET_MODELS[member.character]));
   const floorY = ROOMS.main.floorY;
 
-  // Ugyanazt az állatot több tag is választhatja: mindegyik saját másolatot kap.
+  // Several members can choose the same pet: each gets its own copy.
   const { object, actions, mixer } = useMemo(() => {
     const clone = gltf.scene.clone(true);
     clone.traverse((child) => {
@@ -127,7 +127,6 @@ export function HousePet({ member, index, mood, layout, job, onJobDone, onAnimat
     onAnimationChangeRef.current = onAnimationChange;
   }, [onJobDone, onAnimationChange]);
 
-  // Animációváltás áttűnéssel.
   const current = useRef<AnimationAction | null>(null);
   useEffect(() => {
     const next = actions[animation];
@@ -198,7 +197,7 @@ export function HousePet({ member, index, mood, layout, job, onJobDone, onAnimat
     return () => {
       cancelled = true;
       clearTimeout(timer);
-      // Séta közben megszakítva onnan folytatja, ahol éppen áll (a useFrame már odaállította).
+      // When interrupted while walking it continues from where it stands (useFrame already placed it there).
       motion.current = null;
     };
   }, [job, layout, mood, reducedMotion]);
@@ -218,7 +217,7 @@ export function HousePet({ member, index, mood, layout, job, onJobDone, onAnimat
     yaw.current += angleDelta(yaw.current, targetYaw.current) * Math.min(1, delta * TURN_RATE);
     node.position.set(position.current.x, floorY, position.current.z);
     node.rotation.y = yaw.current;
-    // Csökkentett mozgásnál az első képkockán áll.
+    // With reduced motion it stands on the first frame.
     mixer.update(reducedMotion ? 0 : delta);
     head.set(position.current.x, floorY + PET_HEIGHT + 0.08, position.current.z);
     writeAnchor(anchor, head, camera, size);

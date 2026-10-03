@@ -6,7 +6,7 @@ import { useRouter } from "expo-router";
 import { UserMinus } from "lucide-react-native";
 import { useTranslation } from "react-i18next";
 
-/** Adminnak jelzi, ha egy távozott tag feladatairól még dönteni kell. Csak adminnál rendereld. */
+/** Tells an admin when a departed member's tasks still need a decision. Render only for admins. */
 export function MemberDepartureBanner() {
   const { t } = useTranslation();
   const router = useRouter();

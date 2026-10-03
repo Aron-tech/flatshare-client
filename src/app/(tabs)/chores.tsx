@@ -24,7 +24,7 @@ import { useCallback, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { View } from "react-native";
 
-/** Automatizált: ismétlődő, a rendszer ütemezi; társított: egyszeri, a háztartáshoz csatolt feladat. */
+/** Automated: recurring, scheduled by the system; attached: a one-off task attached to the household. */
 type ChoreView = "automated" | "attached";
 
 interface Row {
@@ -39,8 +39,8 @@ interface Row {
 }
 
 /**
- * A háztartás feladat-definíciói: itt csak csatolni (új feladat), szerkeszteni, törölni
- * és súlyozni lehet – az elvállalás a kezdőlapon, a rögzítés a "+" gombbal történik.
+ * Household task definitions: only attach (new task), edit, delete and weight here; claiming is on the home screen,
+ * logging via the "+" button.
  */
 export default function ChoresScreen() {
   const { t } = useTranslation();

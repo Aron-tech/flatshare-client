@@ -10,9 +10,9 @@ export interface TaskInstanceTask {
   difficulty: TaskDifficulty;
   max_user: number;
   icon?: string | null;
-  /** Csak akkor van, ha a backend betölti a `task.category` relációt. */
+  /** Only present if the backend loads the `task.category` relation. */
   category?: Category | null;
-  /** A bejelentkezett user súlyozása; üres, ha még nem adta meg a nehézséget. */
+  /** The signed-in user's weighting; empty if they have not given a difficulty yet. */
   user_weights?: { weight: TaskUserWeight }[];
 }
 
@@ -23,21 +23,21 @@ export interface TaskInstance {
   status: string;
   due_at: string | null;
   completed_at: string | null;
-  /** A bejelentkezett felhasználó része a pontból (a vállalók között megosztva); null, ha nincs súlyozás. */
+  /** The signed-in user's share of the points (split among the claimers); null if there is no weighting. */
   points: number | null;
-  /** Ennyien osztoznak a ponton (a bejelentkezett user is, ha még nem vállalta). */
+  /** This many share the points (the signed-in user too, if they have not claimed it yet). */
   claimers?: number;
-  /** A heti minimum elmulasztása miatt kiosztott büntető feladat: csak a hiányt fedező részen felüli pont jár érte (ez a `points`). */
+  /** A penalty task assigned for missing the weekly minimum: only the points above the part covering the shortfall are awarded (this is `points`). */
   is_penalty?: boolean;
-  /** Vállalt feladatnál: a saját nyitott átadási ajánlat. */
+  /** For a claimed task: the own open hand-over offer. */
   my_offer?: MyTaskOffer | null;
-  /** Vállalt feladatnál: az ajánlat minimuma (büntetésnél a lefedett hiány, különben 0). */
+  /** For a claimed task: the offer's minimum (the covered shortfall for a penalty, otherwise 0). */
   min_offer_points?: number;
-  /** Vállalt feladatnál: mikor kért rá türelmi napot (egyszer kérhető). */
+  /** For a claimed task: when a grace day was requested for it (it can be requested once). */
   grace_granted_at?: string | null;
-  /** Vállalt feladatnál: ajánlatból átvett feladatért a teljesítéskor járó jutalom. */
+  /** For a claimed task: the reward due on completion for a task taken over from an offer. */
   offer_points?: number;
-  /** Az `offered` listában: a másik tag ajánlata, amit átvehetsz. */
+  /** In the `offered` list: another member's offer you can take over. */
   offer?: IncomingTaskOffer;
   task: TaskInstanceTask;
 }
@@ -45,26 +45,26 @@ export interface TaskInstance {
 export interface MyTaskOffer {
   id: number;
   points: number;
-  /** null: bárki átveheti. */
+  /** null: anyone can take it over. */
   target_user_id: number | null;
   target_name: string | null;
 }
 
 export interface IncomingTaskOffer {
   id: number;
-  /** A teljesítéskor a feladat pontján felül járó jutalom. */
+  /** The reward due on completion on top of the task's points. */
   points: number;
   offered_by: number;
   offered_by_name: string;
   is_penalty: boolean;
-  /** Csak neked szól. */
+  /** Only for you. */
   is_targeted: boolean;
 }
 
 export interface TaskInstanceListResponse {
   available: TaskInstance[];
   claimed: TaskInstance[];
-  /** Mások ajánlatai, amelyeket a határidőig átvehetsz. */
+  /** Others' offers you can take over until the deadline. */
   offered: TaskInstance[];
 }
 
@@ -89,13 +89,13 @@ export interface MyHouseholdPointsResponse {
     HouseholdUser,
     "id" | "household_id" | "user_id" | "points_balance" | "role"
   >;
-  /** A bejelentkezett user e heti minimum pontszáma (a hét közben hozzáadott feladatok arányosan számítanak). */
+  /** The signed-in user's minimum points for this week (tasks added mid-week count proportionally). */
   min_points: number;
-  /** Az e heti feladatokért kapott pont, ezt mérjük a heti minimumhoz. */
+  /** Points earned for this week's tasks, measured against the weekly minimum. */
   weekly_points: number;
-  /** Jutalomra költhető pont: a még le nem zárt hét minimumát fedező pontok nélkül (azokat a hét zárása levonja). */
+  /** Points spendable on rewards: without the points covering the minimum of the not yet closed week (the week's closing deducts them). */
   spendable_points: number;
-  /** Az aktuális ciklusban még felhasználható türelmi napok. */
+  /** Grace days still usable in the current cycle. */
   grace_days_left: number;
 }
 
@@ -121,17 +121,16 @@ export interface IDashboardService {
 
 /** `POST /households/{h}/task-instances/{id}/complete` */
 export interface TaskCompletionResponse {
-  /** A teljesítésért jóváírt pont. */
   points: number;
-  /** Ajánlatból átvett feladatnál a kifizetett jutalom (a `points`-on felül). */
+  /** The reward paid for a task taken over from an offer (on top of `points`). */
   offer_points: number;
-  /** A felhasználó új pontállása a háztartásban. */
+  /** The user's new point balance in the household. */
   points_balance: number;
-  /** A felhasználó e heti pontja a teljesítés után. */
+  /** The user's points for this week after the completion. */
   weekly_points: number;
-  /** Jutalomra költhető pont a teljesítés után. */
+  /** Spendable points after the completion. */
   spendable_points: number;
-  /** A teljesítéssel elért mérföldkő matricája (10 / 25 / 50 / 100 elvégzés), különben `null`. */
+  /** The sticker of the milestone reached with the completion (10 / 25 / 50 / 100 completions), otherwise `null`. */
   new_sticker: UnlockedSticker | null;
 }
 

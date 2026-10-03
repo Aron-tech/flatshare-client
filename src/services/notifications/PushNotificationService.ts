@@ -20,8 +20,8 @@ export class PushNotificationService {
   ) {}
 
   /**
-   * A jelenlegi engedély állapota a rendszer ablakának megnyitása nélkül.
-   * `null`, ha az eszköz/platform egyáltalán nem támogatja a push értesítést (web, szimulátor).
+   * The current permission state without opening the system dialog.
+   * `null` if the device/platform does not support push at all (web, simulator).
    */
   public async getPermissionStatus(): Promise<Notifications.PermissionStatus | null> {
     if (!this.isSupported()) return null;
@@ -30,10 +30,9 @@ export class PushNotificationService {
   }
 
   /**
-   * Lekéri az Expo push tokent és regisztrálja a backendnél.
-   * `askPermission: true` esetén – ha még nem kérdeztük meg – felugrik a rendszer engedélyablaka;
-   * ezt csak azután hívjuk, hogy egy saját képernyőn elmagyaráztuk, mire kell (App Review 2.1).
-   * Visszaadja a tokent, vagy null-t, ha nem támogatott/nincs engedély.
+   * Fetches the Expo push token and registers it with the backend. With `askPermission: true` the system
+   * permission dialog pops up if we have not asked yet; call it only after our own screen explained
+   * what it is for (App Review 2.1). Returns the token, or null if unsupported / not allowed.
    */
   public async register(
     authToken: string,
@@ -57,7 +56,7 @@ export class PushNotificationService {
   }
 
   private isSupported(): boolean {
-    // Szimulátoron/emulátoron nincs valódi push token.
+    // No real push token on a simulator/emulator.
     return (Platform.OS === "ios" || Platform.OS === "android") && Device.isDevice;
   }
 

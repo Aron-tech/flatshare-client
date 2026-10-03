@@ -33,12 +33,12 @@ import {
 } from "react";
 import { View } from "react-native";
 
-/** A felhasználó által választott kinézet (a sötét/világos mód külön él: use-theme-preference). */
+/** The appearance chosen by the user (dark/light mode lives separately: use-theme-preference). */
 export interface Appearance {
   palette: PaletteId;
   font: FontSetId;
   icons: IconSetId;
-  /** Hullámzó (tenger-szerű) animáció a matricaalbum folyamatban lévő matricájának sávján. */
+  /** Wavy (sea-like) animation on the bar of the sticker album's sticker in progress. */
   stickerWaves: boolean;
 }
 
@@ -54,7 +54,7 @@ const STORAGE_KEY = "appearance_preferences";
 const pick = <T extends string>(ids: readonly T[], value: unknown, fallback: T): T =>
   ids.includes(value as T) ? (value as T) : fallback;
 
-/** Tárolt JSON → érvényes preferencia; az ismeretlen / hiányzó mező az alapértelmezett. */
+/** Stored JSON → valid preference; an unknown / missing field falls back to the default. */
 function parse(raw: string | null): Appearance {
   let data: Partial<Record<keyof Appearance, unknown>> = {};
   try {
@@ -68,7 +68,7 @@ function parse(raw: string | null): Appearance {
   };
 }
 
-/** Betölti (ha kell) a készlet fontjait; a már regisztrált készletet nem tölti újra. */
+/** Loads the set's fonts (if needed); an already registered set is not loaded again. */
 async function ensureFont(id: FontSetId) {
   const { assets } = FONT_SETS[id];
   if (!assets) return;
@@ -77,7 +77,7 @@ async function ensureFont(id: FontSetId) {
 }
 
 interface AppearanceValue extends Appearance {
-  /** Fonthiba esetén a promise elutasít, és a korábbi készlet marad. */
+  /** On a font error the promise rejects and the previous set stays. */
   setAppearance: (patch: Partial<Appearance>) => Promise<void>;
   reset: () => Promise<void>;
 }
@@ -90,11 +90,11 @@ export function useAppearance() {
   return value;
 }
 
-/** A választott paletta CSS változói a teljes fa fölött. */
+/** CSS variables of the chosen palette above the whole tree. */
 function PaletteRoot({ children }: { children: ReactNode }) {
   const palette = useContext(PaletteContext);
   const scheme = useThemeName();
-  // Mindig (az első rendertől) van `vars()` – lásd `paletteCssVars`.
+  // There is always (from the first render) a `vars()` – see `paletteCssVars`.
   const style = useMemo(() => vars(paletteCssVars(palette, scheme)), [palette, scheme]);
   return (
     <View className="flex-1" style={style}>
@@ -104,9 +104,8 @@ function PaletteRoot({ children }: { children: ReactNode }) {
 }
 
 /**
- * Betölti a tárolt kinézetet és a hozzá tartozó fontot, és csak utána renderel
- * (a splash addig marad) – így nincs villanás az alapértelmezett és a választott között.
- * Váltáskor a font előbb betöltődik, és csak utána cserélődik a készlet.
+ * Loads the stored appearance and its font, and only then renders (the splash stays until then) – so there
+ * is no flash between the default and the chosen one. On a change the font loads first, and only then is the set swapped.
  */
 export function AppearanceProvider({
   children,
@@ -120,7 +119,7 @@ export function AppearanceProvider({
   useEffect(() => {
     (async () => {
       const stored = parse(await AsyncStorage.getItem(STORAGE_KEY).catch(() => null));
-      // Hiba esetén (pl. hiányzó font) az alapértelmezett készlet marad.
+      // On an error (e.g. a missing font) the default set stays.
       await ensureFont(stored.font).catch(() => {
         stored.font = DEFAULTS.font;
         return ensureFont(stored.font).catch(() => {});

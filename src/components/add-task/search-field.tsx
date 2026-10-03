@@ -3,7 +3,6 @@ import { Input } from "@/components/ui/input";
 import { Search } from "lucide-react-native";
 import { View } from "react-native";
 
-/** Lekerekített keresőmező nagyító ikonnal. */
 export function SearchField({
   value,
   onChangeText,

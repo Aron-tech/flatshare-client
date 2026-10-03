@@ -4,8 +4,8 @@ import { useFontFamily } from '@/theme/fonts';
 import * as React from 'react';
 import { Platform, TextInput, type TextInputProps } from 'react-native';
 
-// DESIGN.md → Input Fields: sand kitöltés keret nélkül; fókuszban 1.5px terrakotta keret
-// és fehér felület. 12px sarok, 0.75rem × 1rem padding.
+// DESIGN.md → Input Fields: sand fill without a border; on focus a 1.5px terracotta border and a white surface.
+// 12px corners, 0.75rem × 1rem padding.
 function Input({
   className,
   style,

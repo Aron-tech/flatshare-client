@@ -5,11 +5,11 @@ export interface User {
   email: string;
   first_name: string;
   last_name: string;
-  /** Becenév, ennek hiányában a teljes név (backend számolja). */
+  /** Nickname, or the full name if missing (computed by the backend). */
   name: string;
   nickname: string | null;
   avatar: string | null;
-  /** A Ház nézetben választott állat; `null` = nem választott (az alapértelmezettet a backend adja). */
+  /** The pet chosen in the House view; `null` = none chosen (the backend gives the default). */
   character: PetId | null;
   language: string;
 }
@@ -23,7 +23,7 @@ export interface UserMeResponse {
   user: User;
 }
 
-/** A natív Apple ablak eredménye; a nevet az Apple csak az első bejelentkezéskor adja meg. */
+/** Result of the native Apple sheet; Apple only gives the name on the first sign-in. */
 export interface AppleLoginPayload {
   identityToken: string;
   authorizationCode: string;

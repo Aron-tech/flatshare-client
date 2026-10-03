@@ -12,11 +12,11 @@ type FamilyTable = Record<Family, Record<Weight, string>>;
 export type FontAssets = Record<string, number | { uri: string }>;
 
 export interface FontSet {
-  /** Nélküle (rendszerbetűk) nincs mit betölteni. */
+  /** Without it (system fonts) there is nothing to load. */
   families: FamilyTable | null;
   /**
-   * A `require`-elt fontok csak asset-azonosítók; a fájl ténylegesen csak
-   * `Font.loadAsync`-kor töltődik be, tehát csak a kiválasztott készleté.
+   * The `require`d fonts are only asset ids; the file is actually loaded only on `Font.loadAsync`,
+   * so only for the selected set.
    */
   assets: FontAssets | null;
 }
@@ -39,8 +39,8 @@ const withSuffix = (sans: string, serif: string, serifMax: Weight = 800): Family
 });
 
 /**
- * Választható betűkészletek. Az `default` az eredeti megjelenés; a kulcsok a
- * beállításokban (`settings.font_<id>`) és a tárolt preferenciában szerepelnek.
+ * Selectable font sets. `default` is the original look; the keys appear in the settings
+ * (`settings.font_<id>`) and in the stored preference.
  */
 export const FONT_SETS = {
   default: {
@@ -58,13 +58,13 @@ export type FontSetId = keyof typeof FONT_SETS;
 export const FONT_SET_IDS = Object.keys(FONT_SETS) as FontSetId[];
 export const DEFAULT_FONT_SET: FontSetId = "default";
 
-/** Rendszerbetűk: a súlyt a `fontWeight` (tipográfiai token / `font-*` osztály) adja. */
+/** System fonts: the weight comes from `fontWeight` (typography token / `font-*` class). */
 const SYSTEM_FAMILIES: Record<Family, string> = {
   sans: Platform.select({ ios: "System", android: "sans-serif", default: "system-ui" }),
   serif: Platform.select({ ios: "Georgia", android: "serif", default: "Georgia, serif" }),
 };
 
-/** A Text / Input ebből tudja, melyik készlet az aktív (csak váltáskor renderel újra). */
+/** Text / Input know from this which set is active (re-renders only on a switch). */
 export const FontSetContext = createContext<FontSetId>(DEFAULT_FONT_SET);
 
 const WEIGHT_CLASSES: Record<string, Weight> = {
@@ -82,11 +82,10 @@ const WEIGHT_CLASSES: Record<string, Weight> = {
 const TYPOGRAPHY = typography as Record<string, { family: Family; weight: number }>;
 
 /**
- * A (már összefésült) className alapján visszaadja a pontos fontfájl nevét.
- * Figyelembe veszi: `font-sans` / `font-serif`, `font-medium`…`font-extrabold`,
- * és a tipográfiai tokeneket (`text-headline-md` → serif 500).
- * Módosítós osztályokat (`dark:`, `active:`…) nem értékel ki.
- * Mint a CSS-ben: az explicit `font-*` osztály mindig nyer a token alapértékével szemben.
+ * Returns the exact font file name from the (already merged) className.
+ * Considers: `font-sans` / `font-serif`, `font-medium`…`font-extrabold`, and the typography tokens
+ * (`text-headline-md` → serif 500). Modifier classes (`dark:`, `active:`…) are not evaluated.
+ * As in CSS: an explicit `font-*` class always wins over the token's default.
  */
 export function resolveFontFamily(
   className: string | undefined,
@@ -116,7 +115,6 @@ export function resolveFontFamily(
   return table ? table[resolved][weight ?? tokenWeight] : SYSTEM_FAMILIES[resolved];
 }
 
-/** Az aktív készlethez igazított fontnév egy className-hez. */
 export function useFontFamily(className: string | undefined): string {
   return resolveFontFamily(className, useContext(FontSetContext));
 }

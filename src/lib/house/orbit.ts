@@ -1,38 +1,38 @@
 /**
- * A Ház nézet kamerája: a ház közepe körül kering (gömbi koordináták). A függőleges szög
- * (`polar`, a függőlegestől mérve) korlátos, így a padló alá nem lehet belátni.
+ * The House view camera: orbits around the middle of the house (spherical coordinates). The vertical angle
+ * (`polar`, measured from the vertical) is limited, so you cannot look under the floor.
  */
 export interface OrbitState {
-  /** Vízszintes szög (radián); 0 = a kamera a +z oldalon. */
+  /** Horizontal angle (radians); 0 = the camera is on the +z side. */
   azimuth: number;
-  /** A függőlegestől mért szög (radián). */
+  /** Angle from the vertical (radians). */
   polar: number;
-  /** Az alaptávolság szorzója (1 = a ház épp kitölti a képet). */
+  /** Multiplier of the base distance (1 = the house just fills the image). */
   zoom: number;
-  /** Elengedés utáni lendület (radián / mp). */
+  /** Momentum after release (radians / s). */
   velocityAzimuth: number;
   velocityPolar: number;
   dragging: boolean;
-  /** Animált visszaállás az alapnézetre. */
+  /** Animated reset to the default view. */
   resetting: boolean;
 }
 
 export const ORBIT = {
-  /** A kezdő nézet: a +x, +z sarok felől, 34°-os emelkedéssel (a korábbi izometrikus képhez hasonló). */
+  /** The initial view: from the +x, +z corner with a 34° elevation (similar to the earlier isometric image). */
   azimuth: Math.PI / 4,
   polar: (56 * Math.PI) / 180,
-  /** Majdnem felülnézet. */
+  /** Almost top-down. */
   minPolar: (12 * Math.PI) / 180,
-  /** 20°-kal a vízszintes fölött: a ház alja nem látszik. */
+  /** 20° above the horizontal: the bottom of the house is not visible. */
   maxPolar: (70 * Math.PI) / 180,
-  /** A közelítés / távolítás határa az alaptávolsághoz képest. */
+  /** Zoom in / out limit relative to the base distance. */
   minZoom: 0.45,
   maxZoom: 1.5,
-  /** Radián / húzott pont. */
+  /** Radians / dragged point. */
   rotateSpeed: 0.0085,
-  /** Az elengedéskori lendület aránya (a húzás sebességéhez képest). */
+  /** Share of the drag speed kept as momentum on release. */
   fling: 0.6,
-  /** A lendület lecsengése (1 / mp). */
+  /** Momentum decay (1 / s). */
   damping: 4.5,
   fov: 35,
 } as const;
@@ -42,8 +42,8 @@ export function clamp(value: number, min: number, max: number): number {
 }
 
 /**
- * Az a kameratávolság, amelyből a `radius` sugarú gömb (a ház) belefér a képbe,
- * álló és fekvő képarányon is.
+ * The camera distance from which a sphere of `radius` (the house) fits the image,
+ * in both portrait and landscape.
  */
 export function fitDistance(radius: number, aspect: number, fovDegrees: number = ORBIT.fov): number {
   const vertical = (fovDegrees * Math.PI) / 360;
@@ -63,7 +63,7 @@ export function initialOrbit(): OrbitState {
   };
 }
 
-/** A kamera helye a `target` körül, `distance` távolságban. */
+/** Camera position around `target` at `distance`. */
 export function orbitPosition(
   state: Pick<OrbitState, "azimuth" | "polar">,
   distance: number,
@@ -77,7 +77,7 @@ export function orbitPosition(
   ];
 }
 
-/** Egy képkocka: lendület vagy animált visszaállás az alapnézetre. */
+/** One frame: momentum or the animated reset to the default view. */
 export function stepOrbit(o: OrbitState, delta: number) {
   if (o.resetting) {
     const k = 1 - Math.exp(-6 * delta);
@@ -103,13 +103,13 @@ export function startDrag(o: OrbitState) {
   o.velocityPolar = 0;
 }
 
-/** Húzás `dx`, `dy` pontnyit: jobbra húzva a ház jobbra fordul, lefelé húzva felülről látszik. */
+/** Drag by `dx`, `dy` points: dragging right turns the house right, dragging down shows it from above. */
 export function dragBy(o: OrbitState, dx: number, dy: number) {
   o.azimuth -= dx * ORBIT.rotateSpeed;
   o.polar = clamp(o.polar - dy * ORBIT.rotateSpeed, ORBIT.minPolar, ORBIT.maxPolar);
 }
 
-/** Elengedés: a húzás sebességéből (pt / mp) lendület. */
+/** Release: momentum from the drag speed (pt / s). */
 export function release(o: OrbitState, velocityX: number, velocityY: number) {
   o.velocityAzimuth = -velocityX * ORBIT.rotateSpeed * ORBIT.fling;
   o.velocityPolar = -velocityY * ORBIT.rotateSpeed * ORBIT.fling;

@@ -12,11 +12,9 @@ interface ChoreCardProps {
   /** Pl. "Hetente", "Egyszeri". */
   meta: string;
   points: number | null;
-  /** Alsó sor bal oldala: időtartam. */
   footer: string;
-  /** Amíg a user nem súlyozta a feladatot, erre figyelmeztetünk. */
+  /** Warns until the user has weighted the task. */
   needsWeight?: boolean;
-  /** Koppintásra: feladat-műveletek (súlyozás, szerkesztés, törlés). */
   onPress?: () => void;
 }
 

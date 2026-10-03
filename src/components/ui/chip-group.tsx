@@ -7,9 +7,9 @@ import { Pressable, View } from "react-native";
 export interface ChipOption<T extends string | number> {
   value: T;
   label: string;
-  /** Opcionális színminta a felirat előtt (pl. paletta). */
+  /** Optional color swatch before the label (e.g. palette). */
   swatch?: string;
-  /** Alapértelmezett érték: a felirat után egy csillag jelzi. */
+  /** Default value: marked with a star after the label. */
   isDefault?: boolean;
 }
 
@@ -17,11 +17,10 @@ interface ChipGroupProps<T extends string | number> {
   options: ChipOption<T>[];
   value: T | null;
   onChange: (value: T) => void;
-  /** Az alapértelmezett-jelölő akadálymentes felirata. */
+  /** Accessible label of the default marker. */
   defaultLabel?: string;
 }
 
-/** Egyválasztós pill-csoport, tördelődő sorokban (aktív: terrakotta tint). */
 export function ChipGroup<T extends string | number>({
   options,
   value,

@@ -3,7 +3,7 @@ import { Elevation } from '@/constants/theme';
 import { cn } from '@/lib/utils';
 import { View } from 'react-native';
 
-// DESIGN.md → Cards: fehér felület, 20px sarok, 1px hairline, meleg ambient árnyék, 1.5rem belső padding.
+// DESIGN.md → Cards: white surface, 20px corners, 1px hairline, warm ambient shadow, 1.5rem inner padding.
 function Card({ className, style, ...props }: React.ComponentProps<typeof View> & React.RefAttributes<View>) {
   return (
     <TextClassContext.Provider value="text-card-foreground">

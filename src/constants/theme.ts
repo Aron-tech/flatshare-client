@@ -1,11 +1,11 @@
 /**
- * JS-oldali téma (DESIGN.md – "Warm Organic Minimalist").
+ * JS-side theme (DESIGN.md – "Warm Organic Minimalist").
  *
- * A komponensek elsősorban Nativewind osztályokkal (`bg-primary`, `text-muted-foreground`…)
- * dolgoznak, amik a `global.css` CSS változóiból jönnek. Ez a fájl azokhoz a helyekhez kell,
- * ahol natív prop vár színt (navigáció, RefreshControl, tab bar, placeholder stb.).
+ * Components mostly work with Nativewind classes (`bg-primary`, `text-muted-foreground`…) that come from the
+ * CSS variables in `global.css`. This file is for the places where a native prop expects a color
+ * (navigation, RefreshControl, tab bar, placeholder etc.).
  *
- * FONTOS: a `THEME` értékeinek egyezniük kell a `global.css` változóival.
+ * IMPORTANT: the `THEME` values must match the `global.css` variables.
  */
 
 import { DarkTheme, DefaultTheme, type Theme } from "expo-router";
@@ -78,7 +78,7 @@ export const THEME = {
 export type ThemeName = keyof typeof THEME;
 export type ThemeColors = (typeof THEME)[ThemeName];
 
-/** React Navigation téma, hogy a stack / modal háttér ne villanjon fehéren-feketén. */
+/** React Navigation theme so the stack / modal background does not flash white-black. */
 export function buildNavTheme(name: ThemeName, colors: ThemeColors): Theme {
   return {
     ...(name === "dark" ? DarkTheme : DefaultTheme),
@@ -95,22 +95,22 @@ export function buildNavTheme(name: ThemeName, colors: ThemeColors): Theme {
 
 /**
  * Elevation – "sun-diffused ambient illumination" (DESIGN.md → Elevation & Depth).
- * RN `boxShadow` stílus (New Architecture, iOS + Android).
+ * RN `boxShadow` style (New Architecture, iOS + Android).
  */
 export const Elevation = {
-  /** Kártyák, polcok */
+  /** Cards, shelves */
   level1: {
     boxShadow:
       "0px 4px 20px -2px rgba(198, 106, 77, 0.04), 0px 2px 6px -1px rgba(44, 43, 41, 0.03)",
   },
-  /** Lebegő gombok, aktív dialógusok, menük, toast */
+  /** Floating buttons, active dialogs, menus, toast */
   level2: {
     boxShadow:
       "0px 12px 32px -4px rgba(198, 106, 77, 0.08), 0px 4px 12px -2px rgba(44, 43, 41, 0.04)",
   },
 } as const;
 
-/** DESIGN.md mobil margó / gutter (1.25rem). Egyezik a `px-gutter` osztállyal. */
+/** DESIGN.md mobile margin / gutter (1.25rem). Matches the `px-gutter` class. */
 export const Gutter = 20;
 
 export const MaxContentWidth = 800;

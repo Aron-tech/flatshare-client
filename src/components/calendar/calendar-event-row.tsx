@@ -18,7 +18,6 @@ function formatTime(iso: string): string {
   return new Date(iso).toLocaleTimeString(currentLocale(), { hour: "2-digit", minute: "2-digit" });
 }
 
-/** Egy naptáresemény: ikon, név, idő, felelősök (háztartás nézetben) és állapot. */
 export function CalendarEventRow({ event, showAssignees }: { event: CalendarEvent; showAssignees: boolean }) {
   const { t } = useTranslation();
   const time = event.completed_at
@@ -51,7 +50,6 @@ export function CalendarEventRow({ event, showAssignees }: { event: CalendarEven
   );
 }
 
-/** Egy nap eseménylistája, üresen a megadott szöveggel. */
 export function CalendarEventList({
   events,
   showAssignees,

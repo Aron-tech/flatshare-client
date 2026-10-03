@@ -17,16 +17,15 @@ import { Pressable, ScrollView, View } from "react-native";
 import { useReducedMotion } from "react-native-reanimated";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-/** Egy cella mérete a rácsban (pt). */
 const CELL = 96;
 const SPRITE_SCALE = 84 / PET_ATLAS.frame.width;
 
-/** "Alapértelmezett" választás: a backend ad állatot (mindig ugyanazt). */
+/** "Default" choice: the backend assigns a pet (always the same one). */
 type Choice = PetId | null;
 
 /**
- * Karakterválasztás a Ház nézethez. Nem kötelező: választás nélkül a backend minden tagnak
- * ad egy állandó alapértelmezett állatot.
+ * Character picker for the House view. Optional: without a choice the backend gives every member
+ * a fixed default pet.
  */
 export default function CharacterScreen() {
   const { t } = useTranslation();
@@ -37,7 +36,7 @@ export default function CharacterScreen() {
   const { data: house } = useHouseholdQuery(HouseholdQueries.house);
   const [choice, setChoice] = useState<Choice>(user?.character ?? null);
   const [saving, setSaving] = useState(false);
-  /** Választás nélkül ezt az állatot kapja (a ház adataiból), előnézethez. */
+  /** Without a choice this pet is used (from the house data), for the preview. */
   const defaultPet = user?.character ? null : (house?.members.find((member) => member.is_me)?.character ?? null);
 
   const save = async () => {
@@ -45,11 +44,11 @@ export default function CharacterScreen() {
     setSaving(true);
     try {
       updateUser(await authService.updateCharacter(token, choice));
-      // A ház a háttérben töltődik újra, a választó azonnal bezárul.
+      // The house reloads in the background, the picker closes immediately.
       void invalidateHousehold();
       router.back();
     } catch {
-      // A hibát a HttpClient már toastban megjelenítette.
+      // HttpClient already showed the error toast.
     } finally {
       setSaving(false);
     }

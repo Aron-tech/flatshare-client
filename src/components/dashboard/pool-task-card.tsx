@@ -14,11 +14,10 @@ interface PoolTaskCardProps {
   item: TaskInstance;
   isClaiming: boolean;
   onClaim: () => void;
-  /** Vállalás és azonnali lezárás (megerősítés után). */
+  /** Claim and complete immediately (after confirmation). */
   onFinish: () => void;
 }
 
-/** Elvállalható (Instant Pool) feladat teljes szélességű vállalás gombbal. */
 export function PoolTaskCard({ item, isClaiming, onClaim, onFinish }: PoolTaskCardProps) {
   const { t } = useTranslation();
   const category = item.task.category;

@@ -17,7 +17,7 @@ const ROOM_ICONS: Record<HouseRoomState["key"], LucideIcon> = {
   bathroom: Bath,
 };
 
-/** A gyors összegek; a legnagyobb a hiányzó pont vagy az elkölthető pont (amelyik kisebb). */
+/** Quick amounts; the largest is the missing points or the spendable points, whichever is smaller. */
 const STEPS = [10, 50, 100] as const;
 
 interface ContributeVariables {
@@ -97,8 +97,8 @@ function RoomCard({ room, members, spendable }: { room: HouseRoomState; members:
 }
 
 /**
- * A szobabolt: a tagok közösen gyűjtenek pontot egy-egy új szobára (az elkölthető pontjaikból).
- * Az ár elérésekor a szoba megépül, és átveszi a zónáit.
+ * The room shop: members collect points together for a new room (from their spendable points).
+ * When the price is reached the room is built and takes over its zones.
  */
 export function HouseRoomShop({ rooms, members }: { rooms: HouseRoomState[]; members: HouseMember[] }) {
   const { t } = useTranslation();

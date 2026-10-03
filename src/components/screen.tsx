@@ -12,7 +12,6 @@ interface TabScreenProps {
   onRefresh?: () => void;
 }
 
-/** Tab képernyő váz: fejléc, görgethető tartalom, hely a lebegő tab barnak. */
 export function TabScreen({ children, refreshing = false, onRefresh }: TabScreenProps) {
   const colors = useThemeColors();
   const insets = useSafeAreaInsets();

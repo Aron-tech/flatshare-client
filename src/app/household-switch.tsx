@@ -65,10 +65,10 @@ export default function HouseholdSwitchScreen() {
   const [qrTarget, setQrTarget] = useState<Household | null>(null);
   const [qrSvg, setQrSvg] = useState<string | null>(null);
   const [qrLoading, setQrLoading] = useState(false);
-  // Lusta inicializálás: nem jön létre minden renderkor új Animated.Value.
+  // Lazy init: no new Animated.Value on every render.
   const [copiedOpacity] = useState(() => new Animated.Value(0));
 
-  // Háttérben előtöltjük a tagokat, hogy a "Tagok kezelése" azonnal nyíljon.
+  // Prefetch the members in the background so "Manage members" opens instantly.
   useEffect(() => {
     if (!isManaging || !token) return;
     households
@@ -98,7 +98,7 @@ export default function HouseholdSwitchScreen() {
     setQrLoading(true);
     try {
       if (!token) return;
-      // A join kód nem változik, ezért a QR kód a munkamenet végéig cache-elhető.
+      // The join code does not change, so the QR code can be cached until the end of the session.
       const svg = await queryClient.fetchQuery({
         queryKey: [...householdKey(item.id), "qrcode"],
         queryFn: () => householdService.getQrCode(item.id, token),
@@ -326,7 +326,7 @@ export default function HouseholdSwitchScreen() {
                 </>
               ) : (
                 <>
-                  {/* Nem létrehozóként csak a taglista (és a jelentés) érhető el. */}
+                  {/* Non-creators only get the member list (and the report). */}
                   <Button
                     size="icon"
                     variant="outline"

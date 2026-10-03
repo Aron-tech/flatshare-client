@@ -77,8 +77,8 @@ function Text({
   const textClass = React.useContext(TextClassContext);
   const Component = asChild ? Slot : RNText;
   const mergedClassName = cn(textVariants({ variant }), textClass, className);
-  // Súlyonként külön fontfájl van (SDK 57), ezért a `font-semibold` stb. alapján
-  // választjuk ki a pontos családot. A `code` variáns a rendszer mono fontját használja.
+  // There is a separate font file per weight (SDK 57), so the exact family is chosen from `font-semibold` etc.
+  // The `code` variant uses the system mono font.
   const resolvedFamily = useFontFamily(mergedClassName);
   const fontFamily = variant === 'code' ? undefined : resolvedFamily;
   return (

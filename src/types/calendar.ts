@@ -1,9 +1,9 @@
-/** Kinek a naptára: a saját vállalások/kiosztások, vagy a teljes háztartásé. */
+/** Whose calendar: own claims/assignments, or the whole household's. */
 export type CalendarScope = "mine" | "household";
 
 export type CalendarView = "day" | "week" | "month";
 
-/** `completed` kész, `open` nyitott, `overdue` lejárt, `planned` az ismétlődő feladat előre vetített (még nem létező) példánya. */
+/** `completed` done, `open` open, `overdue` overdue, `planned` a projected (not yet existing) instance of a recurring task. */
 export type CalendarEventStatus = "completed" | "open" | "overdue" | "planned";
 
 export interface CalendarEventAssignee {
@@ -23,7 +23,7 @@ export interface CalendarEvent {
   duration_minutes: number;
   is_recurring: boolean;
   status: CalendarEventStatus;
-  /** Ahová a naptárban kerül: teljesítés, különben határidő, határidő nélkül a vállalás ideje. */
+  /** Where it goes in the calendar: completion, otherwise the deadline, without a deadline the claim time. */
   at: string;
   due_at: string | null;
   completed_at: string | null;
@@ -36,9 +36,9 @@ export interface CalendarEventListResponse {
 }
 
 export interface CalendarFeedUrls {
-  /** https cím (Google Naptár "URL alapján" hozzáadás). */
+  /** https URL (Google Calendar "add by URL"). */
   url: string;
-  /** webcal:// cím (Apple Naptár feliratkozás). */
+  /** webcal:// URL (Apple Calendar subscription). */
   webcal_url: string;
 }
 
@@ -48,6 +48,6 @@ export type CalendarSubscription = Record<CalendarScope, CalendarFeedUrls>;
 export interface ICalendarService {
   getEvents(householdId: number, scope: CalendarScope, from: Date, to: Date, token: string): Promise<CalendarEvent[]>;
   getSubscription(householdId: number, token: string): Promise<CalendarSubscription>;
-  /** Visszavonja a feliratkozási linkeket (a régiek nem frissülnek tovább). */
+  /** Revokes the subscription links (the old ones stop updating). */
   resetSubscription(householdId: number, token: string): Promise<void>;
 }

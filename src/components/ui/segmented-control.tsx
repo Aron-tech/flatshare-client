@@ -12,11 +12,10 @@ interface SegmentedControlProps<T extends string> {
   options: SegmentOption<T>[];
   value: T;
   onChange: (value: T) => void;
-  /** Az aktív szegmens szövegszíne (dashboard: foreground, chores: primary). */
+  /** Text color of the active segment (dashboard: foreground, chores: primary). */
   activeTone?: "foreground" | "primary";
 }
 
-/** Pill alakú szegmens-váltó (My Tasks / Instant Pool, Recurring / Instant Pool). */
 export function SegmentedControl<T extends string>({
   options,
   value,

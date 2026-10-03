@@ -1,4 +1,4 @@
-// Ellenőrző képek a `preview/` mappába: a szoba 0–3. rendetlenség-szinten, néhány állattal.
+// Preview images into `preview/`: the room at mess levels 0–3, with a few pets.
 import { mkdirSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";

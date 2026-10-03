@@ -3,14 +3,14 @@ import type { HouseZone, PetId, RoomKey } from "@/lib/house/scene.generated";
 export type HouseMoodBand = "happy" | "content" | "grumpy" | "sad";
 
 export interface HouseMood {
-  /** 0–100, a backend számolja (rendetlenség, függő büntetések, tempó). */
+  /** 0–100, computed by the backend (mess, pending penalties, pace). */
   score: number;
   band: HouseMoodBand;
   behind_pace: boolean;
   pending_penalties: number;
 }
 
-/** Egy feladat-kategória nyitott példányai; `category_id = null` a kategória nélküli feladatok. */
+/** Open instances of a task category; `category_id = null` is the tasks without a category. */
 export interface HouseZoneState {
   category_id: number | null;
   category_icon: string | null;
@@ -18,7 +18,7 @@ export interface HouseZoneState {
   open: number;
   due_today: number;
   overdue: number;
-  /** 0 = rendben, 1 = ma esedékes, 2 = egy lejárt, 3 = több lejárt vagy régóta lejárt. */
+  /** 0 = fine, 1 = due today, 2 = one overdue, 3 = several overdue or overdue for long. */
   mess_level: number;
 }
 
@@ -26,28 +26,28 @@ export interface HouseMember {
   user_id: number;
   name: string;
   role: string;
-  /** A választott, vagy (ha nincs) az alapértelmezett állat. */
+  /** The chosen pet, or (if none) the default one. */
   character: PetId;
   is_me: boolean;
 }
 
 export interface HouseCompletion {
-  /** A pont-tranzakció azonosítója (növekvő), ezzel jegyzi meg a kliens a már lejátszottakat. */
+  /** The point transaction's id (increasing), which the client uses to remember the already played ones. */
   id: number;
   user_id: number;
   category_icon: string | null;
   completed_at: string;
 }
 
-/** Egy pontokból építhető szoba: a tagok közösen gyűjtenek rá, az ár elérésekor elkészül. */
+/** A room buildable from points: members collect for it together, it is built when the price is reached. */
 export interface HouseRoomState {
   key: Exclude<RoomKey, "main">;
   price: number;
   collected: number;
   unlocked: boolean;
-  /** A zónák, amelyek a feloldás után ebbe a szobába költöznek. */
+  /** The zones that move into this room after unlocking. */
   zones: HouseZone[];
-  /** Ki mennyit tett bele (a legtöbbet adó elöl). */
+  /** Who put in how much (the biggest giver first). */
   contributors: { user_id: number; amount: number }[];
 }
 

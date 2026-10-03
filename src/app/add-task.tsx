@@ -46,7 +46,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 type Mode = "template" | "custom";
 
-/** Ismétlődés a backend formátumában, vagy mezőnkénti hibák a backend mezőneveivel. */
+/** Recurrence in the backend format, or per-field errors keyed by backend field names. */
 function toRecurrenceDto(
   value: RecurrenceValue,
   t: TFunction
@@ -59,7 +59,6 @@ function toRecurrenceDto(
   return { dto: { is_recurring: true, recurrence_interval: interval, recurrence_unit: value.unit } };
 }
 
-/** A meglévő feladat értékei az űrlap formátumában. */
 function fromTask(task: HouseholdTask): {
   custom: CustomTaskValue;
   recurrence: RecurrenceValue;
@@ -91,7 +90,7 @@ function fromTask(task: HouseholdTask): {
   };
 }
 
-/** Feladat csatolása a háztartáshoz (sablonból vagy egyedileg), `taskId` paraméterrel a meglévő szerkesztése. */
+/** Attaches a task to the household (from a template or custom); with `taskId` edits the existing one. */
 export default function AddTaskScreen() {
   const { t } = useTranslation();
   const router = useRouter();
@@ -106,7 +105,6 @@ export default function AddTaskScreen() {
   const [submitting, setSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  // Sablonból
   const [query, setQuery] = useState("");
   const [selected, setSelected] = useState<TaskTemplate | null>(null);
 
@@ -117,7 +115,7 @@ export default function AddTaskScreen() {
   const [assignment, setAssignment] = useState<AssignmentValue>(DEFAULT_ASSIGNMENT);
   const members = useHouseholdMembers();
 
-  // Szerkesztésnél a feladat a Chores lista cache-éből jön (onnan nyílik), különben betöltődik.
+  // When editing, the task comes from the Chores list cache (it opens from there), otherwise it is loaded.
   const tasks = useHouseholdQuery(HouseholdQueries.tasks, { enabled: isEditing });
   const editedTask = tasks.data?.find((task) => task.id === editedTaskId) ?? null;
   const [loadedTaskId, setLoadedTaskId] = useState<number | null>(null);
@@ -130,7 +128,7 @@ export default function AddTaskScreen() {
   }
   const isLoadingTask = isEditing && loadedTaskId === null;
 
-  // A feladatot közben törölték, vagy nem tölthető be (a hibát a HttpClient már toastban jelezte).
+  // The task was deleted meanwhile or cannot be loaded (HttpClient already showed the error toast).
   const taskMissing = isEditing && (tasks.error !== null || (tasks.data !== null && editedTask === null));
   useEffect(() => {
     if (taskMissing) router.back();
@@ -144,7 +142,7 @@ export default function AddTaskScreen() {
   };
 
   const submit = async () => {
-    // A sablon kiválasztása után az egyedi űrlapon, a sablon adataival kitöltve lehet véglegesíteni.
+    // After picking a template, the custom form is prefilled with its data and can be submitted.
     if (mode === "template") {
       if (!selected) return;
       setCustom((current) => applyTemplate(current, selected));
@@ -188,7 +186,7 @@ export default function AddTaskScreen() {
       void invalidateHousehold();
       router.back();
     } catch (e) {
-      // Egyéb hibát a HttpClient már toastban megjelenített.
+      // HttpClient already showed any other error toast.
       setErrors(fieldErrorsOf(e));
     } finally {
       setSubmitting(false);

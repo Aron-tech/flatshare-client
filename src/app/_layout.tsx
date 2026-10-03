@@ -82,7 +82,7 @@ function RootNavigation() {
         <Stack.Screen name="member-departures" options={{ presentation: "modal" }} />
         <Stack.Screen name="calendar" options={{ presentation: "modal" }} />
         <Stack.Screen name="sticker-album" options={{ presentation: "modal" }} />
-        {/* A lehúzás a 3D ház függőleges forgatása; bezárni az X gombbal lehet. */}
+        {/* Pulling down rotates the 3D house vertically; close it with the X button. */}
         <Stack.Screen name="house" options={{ presentation: "modal", gestureEnabled: false }} />
         <Stack.Screen name="character" options={{ presentation: "modal" }} />
       </Stack>
@@ -115,7 +115,7 @@ function AppShell() {
 const hideSplash = () => SplashScreen.hideAsync();
 
 export default function RootLayout() {
-  // A tárolt kinézet (paletta, font, ikonkészlet) betöltéséig a splash marad.
+  // The splash stays until the stored appearance (palette, font, icon set) is loaded.
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <AppearanceProvider onReady={hideSplash}>

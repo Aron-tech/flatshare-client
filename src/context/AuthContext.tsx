@@ -20,7 +20,7 @@ interface AuthContextType {
   login: (token: string, user: User) => Promise<void>;
   updateUser: (user: User) => void;
   logout: () => Promise<void>;
-  /** Véglegesen törli a fiókot a backenden (App Store / Google Play követelmény), majd kijelentkeztet. */
+  /** Permanently deletes the account on the backend (App Store / Google Play requirement), then signs out. */
   deleteAccount: () => Promise<void>;
   authService: IAuthService;
 }
@@ -53,8 +53,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
           return;
         }
 
-        // A tokent csak ellenőrzés után tesszük a state-be, különben a
-        // többi provider lejárt tokennel kérdezne le adatokat (401).
+        // The token only goes into the state after verification, otherwise the other providers would query
+        // data with an expired token (401).
         const currentUser = await service.getCurrentUser(storedToken);
         if (isMounted) {
           setToken(storedToken);
@@ -82,7 +82,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
   const login = useCallback(
     async (newToken: string, newUser: User) => {
       await storage.saveToken(newToken);
-      // Egy korábbi fiók gyorsítótárazott adatai nem látszhatnak.
+      // A previous account's cached data must not be visible.
       queryClient.clear();
       setToken(newToken);
       setUser(newUser);
@@ -98,7 +98,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
 
   const logout = useCallback(async () => {
     if (token) {
-      // Kijelentkezés után ne kapjon értesítést az eszköz erre a fiókra.
+      // After signing out the device must not receive notifications for this account.
       await pushNotificationService.unregister(token).catch(() => undefined);
     }
     await storage.removeToken();
@@ -109,7 +109,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
 
   const deleteAccount = useCallback(async () => {
     if (!token) return;
-    // A backend a push- és API-tokeneket is törli, ezért itt csak a helyi állapotot kell üríteni.
+    // The backend also deletes the push and API tokens, so only the local state needs clearing here.
     await service.deleteAccount(token);
     await storage.removeToken();
     queryClient.clear();

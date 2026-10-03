@@ -2,11 +2,11 @@ import { Config } from "@/config/env";
 import i18n from "@/i18n";
 import { showToast } from "@/lib/toast";
 
-/** A backend hibaválaszából dobott hiba; a felhasználó már toastban látta. */
+/** An error thrown from the backend's error response; the user already saw it in a toast. */
 export class ApiError extends Error {
   public constructor(
     message: string,
-    /** Mezőnkénti validációs hibák (422), mezőnként az első üzenettel. */
+    /** Per-field validation errors (422), the first message per field. */
     public readonly fieldErrors: Record<string, string> = {},
   ) {
     super(message);
@@ -15,11 +15,11 @@ export class ApiError extends Error {
 }
 
 export interface RequestOptions {
-  /** A validációs hibát (422) a képernyő mutatja a mezők mellett, ezért nem jelenik meg toast. */
+  /** A validation error (422) is shown by the screen next to the fields, so no toast appears. */
   inlineValidation?: boolean;
 }
 
-/** A Laravel `errors` objektumából mezőnként az első üzenet. */
+/** The first message per field from Laravel's `errors` object. */
 function firstFieldErrors(errors: unknown): Record<string, string> {
   if (!errors || typeof errors !== "object") return {};
   const result: Record<string, string> = {};
@@ -41,7 +41,7 @@ export class HttpClient {
     const headers: Record<string, string> = {
       "Content-Type": "application/json",
       Accept: "application/json",
-      // Bejelentkezés előtt ebből tudja a backend a válaszok nyelvét.
+      // Before sign-in the backend knows the response language from this.
       "Accept-Language": i18n.language,
       "X-App-Key": Config.APP_KEY,
       ...(options.headers as Record<string, string>),
@@ -65,7 +65,7 @@ export class HttpClient {
     const data = await response.json().catch(() => ({}));
 
     if (!response.ok) {
-      // A nyers szerverhiba (data.error, pl. SQL) sosem kerülhet a felhasználó elé.
+      // The raw server error (data.error, e.g. SQL) must never reach the user.
       const errorMessage =
         typeof data?.message === "string" && data.message
           ? data.message

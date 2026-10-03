@@ -8,7 +8,7 @@ import { Lora_500Medium } from "@expo-google-fonts/lora/500Medium";
 import { Lora_600SemiBold } from "@expo-google-fonts/lora/600SemiBold";
 import { Lora_700Bold } from "@expo-google-fonts/lora/700Bold";
 
-/** Klasszikus készlet: Inter + Lora (a Lorának nincs 800-as vágása, ott a 700-as szolgál). */
+/** Classic set: Inter + Lora (Lora has no 800 weight, 700 is used there). */
 export default {
   Inter_400Regular,
   Inter_500Medium,

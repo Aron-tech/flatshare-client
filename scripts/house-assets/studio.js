@@ -1,6 +1,6 @@
-// A Ház nézet jelenete: Kenney Furniture Kit szoba, zónánként 3 rendetlenség-szint, Kenney Cube Pets állatok.
-// Az app a szobát és az állatokat 3D-ben rajzolja (exportRoom / exportPet → GLB); a karakterválasztó
-// rácsa a renderPet sprite-atlaszait használja (ugyanazzal az izometrikus kamerával).
+// House view scene: Kenney Furniture Kit room, 3 mess levels per zone, Kenney Cube Pets.
+// The app renders the room and the pets in 3D (exportRoom / exportPet → GLB); the character picker
+// grid uses the renderPet sprite atlases (same isometric camera).
 import * as THREE from "three";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { GLTFExporter } from "three/addons/exporters/GLTFExporter.js";
@@ -8,10 +8,10 @@ import { GLTFExporter } from "three/addons/exporters/GLTFExporter.js";
 const FURNITURE = "/.cache/furniture-kit/Models/GLTF format/";
 const PETS = "/.cache/cube-pets/Models/GLB format/";
 
-/** A szoba mérete (padlólapban): x 0..ROOM, z 0..ROOM; a hátsó falak az x = 0 és a z = 0 oldalon. */
+/** Room size (in floor tiles): x 0..ROOM, z 0..ROOM; the back walls are on the x = 0 and z = 0 sides. */
 const ROOM = 4;
 const ROOM_WIDTH_PX = 1170;
-/** Az állatok mérete a bútorokhoz képest (eredetileg ~1,6 egység magasak). */
+/** Pet size relative to the furniture (originally ~1.6 units tall). */
 const PET_SCALE = 0.3;
 const FPS = 16;
 
@@ -72,7 +72,7 @@ document.body.appendChild(renderer.domElement);
 
 const scene = new THREE.Scene();
 const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.1, 100);
-/** 2:1 dimetrikus nézet: 30° emelkedés, 45° elforgatás (a kamera a +x, +z sarok felől néz). */
+/** 2:1 dimetric view: 30° elevation, 45° rotation (the camera looks from the +x, +z corner). */
 const VIEW_DIR = new THREE.Vector3(Math.cos(Math.PI / 6) * Math.SQRT1_2, Math.sin(Math.PI / 6), Math.cos(Math.PI / 6) * Math.SQRT1_2);
 
 scene.add(new THREE.HemisphereLight("#FFF7EC", "#D9CDBB", 1.9));
@@ -94,7 +94,7 @@ scene.add(sun, sun.target);
 
 const room = new THREE.Group();
 scene.add(room);
-/** zóna → [1. szint, 2. szint, 3. szint] csoportok (a magasabb szint a korábbiakat is tartalmazza). */
+/** zone → groups of [level 1, level 2, level 3] (a higher level also contains the lower ones). */
 const mess = {};
 
 function material(color, options = {}) {
@@ -118,8 +118,8 @@ function recolor(object) {
 }
 
 /**
- * Elhelyez egy Kenney modellt: `rotation` fokban az y tengely körül, a befoglaló doboz
- * minimum sarka kerül az (x, y, z) pontba.
+ * Places a Kenney model: `rotation` in degrees around the y axis; the min corner of the
+ * bounding box goes to the (x, y, z) point.
  */
 async function place(parent, name, { x, z, y = 0, rotation = 0, color } = {}) {
   const gltf = await load(FURNITURE + name + ".glb");
@@ -144,7 +144,7 @@ function mesh(parent, geometry, color, { x = 0, y = 0, z = 0, rx = 0, ry = 0, rz
   return m;
 }
 
-/** Lapos folt a padlón (kosz, víz, mancsnyom). */
+/** Flat patch on the floor (dirt, water, paw print). */
 function decal(parent, color, { x, z, rx = 0.1, rz = 0.07, opacity = 0.55, rotation = 0, y = 0.052 }) {
   const m = new THREE.Mesh(
     new THREE.CircleGeometry(1, 24),
@@ -159,7 +159,7 @@ function decal(parent, color, { x, z, rx = 0.1, rz = 0.07, opacity = 0.55, rotat
   return m;
 }
 
-// ---------------------------------------------------------------- szoba
+// ---------------------------------------------------------------- room
 
 async function buildRoom() {
   for (let i = 0; i < ROOM; i++) {
@@ -167,13 +167,13 @@ async function buildRoom() {
       await place(room, "floorFull", { x: i, z: j, color: (i + j) % 2 ? COLORS.floor : "#E5D0AC" });
     }
   }
-  // Hátsó falak: z = 0 mentén (konyha, ablak), x = 0 mentén (mosókonyha, fürdőajtó, nappali).
+  // Back walls: along z = 0 (kitchen, window), along x = 0 (laundry, bathroom door, living room).
   const backX = ["wall", "wall", "wall", "wallWindow"];
   for (let i = 0; i < ROOM; i++) await place(room, backX[i], { x: i, z: -0.09, y: 0 });
   const backZ = ["wall", "wall", "wallDoorway", "wallWindow"];
   for (let j = 0; j < ROOM; j++) await place(room, backZ[j], { x: -0.09, z: j, rotation: 90 });
 
-  // Konyhasor a z = 0 fal mentén.
+  // Kitchen counter along the z = 0 wall.
   const counter = ["kitchenFridge", "kitchenCabinetDrawer", "kitchenSink", "kitchenCabinet", "kitchenStove", "kitchenCabinetDrawer"];
   let x = 0.12;
   for (const name of counter) {
@@ -186,7 +186,7 @@ async function buildRoom() {
   await place(room, "trashcan", { x: 2.95, z: 0.12 });
   await place(room, "pottedPlant", { x: 3.62, z: 0.12 });
 
-  // Mosókonyha-sarok és szennyeskosár az x = 0 fal mentén.
+  // Laundry corner and hamper along the x = 0 wall.
   await place(room, "washer", { x: 0, z: 0.62, rotation: 90 });
   const basket = new THREE.Group();
   mesh(basket, new THREE.CylinderGeometry(0.14, 0.12, 0.22, 20, 1, true), COLORS.wicker, { y: 0.11, options: { side: THREE.DoubleSide } });
@@ -194,7 +194,7 @@ async function buildRoom() {
   basket.position.set(0.22, 0.05, 1.22);
   room.add(basket);
 
-  // Fürdőszoba ajtaja a falnyílásban, előtte lábtörlő.
+  // Bathroom door in the wall opening, doormat in front of it.
   await place(room, "doorway", { x: -0.06, z: 2.27, rotation: 90 });
   await place(room, "rugDoormat", { x: 0.05, z: 2.25, y: 0.05, rotation: 90 });
 
@@ -206,7 +206,7 @@ async function buildRoom() {
   await place(room, "pillow", { x: 0.12, z: 3.62, y: 0.24, rotation: 90, color: COLORS.terracotta });
 }
 
-// ---------------------------------------------------------------- rendetlenség
+// ---------------------------------------------------------------- mess
 
 function plateStack(parent, count, { x, y, z }) {
   for (let i = 0; i < count; i++) {
@@ -274,7 +274,7 @@ function dustBunny(parent, { x, z, s = 1 }) {
   }
 }
 
-/** Zónánként a rendetlenség szintjei; minden szint az előzőre épül. */
+/** Mess levels per zone; each level builds on the previous one. */
 const MESS_BUILDERS = {
   kitchen: [
     (g) => {
@@ -375,7 +375,7 @@ async function buildMess() {
   }
 }
 
-/** Ahova az állat a zóna rendbetételéhez odamegy (padló koordináta) és amerre közben néz. */
+/** Where the pet goes to tidy up the zone (floor coordinates) and the direction it faces meanwhile. */
 const SPOTS = {
   kitchen: { x: 1.4, z: 0.85, facing: "ne" },
   shopping: { x: 0.45, z: 0.75, facing: "ne" },
@@ -385,12 +385,12 @@ const SPOTS = {
   cleaning: { x: 2.4, z: 2.3, facing: "se" },
 };
 
-/** A bejárható padlórész (az állatok itt sétálgatnak). */
+/** The walkable part of the floor (pets wander here). */
 const WALK_AREA = { minX: 0.9, maxX: 3.6, minZ: 1.0, maxZ: 3.6 };
 
-// ---------------------------------------------------------------- extra szobák (pontokból építhetők)
+// ---------------------------------------------------------------- extra rooms (built from points)
 
-/** Padló sakktábla mintával; `sx` × `sz` lap a szoba saját (0, 0) sarkától. */
+/** Checkerboard floor; `sx` × `sz` tiles from the room's own (0, 0) corner. */
 async function floor(parent, sx, sz, [a, b]) {
   for (let i = 0; i < sx; i++) for (let j = 0; j < sz; j++) await place(parent, "floorFull", { x: i, z: j, color: (i + j) % 2 ? a : b });
 }
@@ -408,7 +408,7 @@ async function buildKitchenRoom(g) {
   await place(g, "kitchenCabinetUpperDouble", { x: 1.0, z: 0, y: 0.82 });
   await place(g, "kitchenMicrowave", { x: 0.62, z: 0.08, y: 0.45 });
   await place(g, "trashcan", { x: 2.62, z: 0.12 });
-  // Étkezőasztal székekkel.
+  // Dining table with chairs.
   await place(g, "tableCloth", { x: 0.75, z: 2.2, color: COLORS.sage });
   await place(g, "chairCushion", { x: 0.55, z: 2.05, rotation: 90 });
   await place(g, "chairCushion", { x: 1.75, z: 2.4, rotation: -90 });
@@ -434,8 +434,8 @@ async function buildBathroomRoom(g) {
 }
 
 /**
- * A pontokból építhető szobák: a szoba saját koordinátáiban (0, 0 a hátsó sarok), az `offset`
- * a fő szobához képest. A feloldás után a felsorolt zónák rendetlensége itt jelenik meg.
+ * Rooms built from points: in the room's own coordinates (0, 0 is the back corner), `offset`
+ * is relative to the main room. After unlocking, the listed zones' mess shows up here.
  */
 const EXTRA_ROOMS = {
   kitchen: {
@@ -499,7 +499,7 @@ const EXTRA_ROOMS = {
   },
 };
 
-// ---------------------------------------------------------------- kamera, renderelés
+// ---------------------------------------------------------------- camera, rendering
 
 let ppu = 0;
 let roomSize = { width: 0, height: 0 };
@@ -517,7 +517,7 @@ function fitCamera() {
   const minX = Math.min(...pts.map((p) => p.x)) - margin;
   const maxX = Math.max(...pts.map((p) => p.x)) + margin;
   const minY = Math.min(...pts.map((p) => p.y)) - margin;
-  // Felül hely marad az állatok fejének és a buboréknak.
+  // Space is left on top for the pets' heads and the bubble.
   const maxY = Math.max(...pts.map((p) => p.y)) + margin;
   camera.left = minX;
   camera.right = maxX;
@@ -529,7 +529,6 @@ function fitCamera() {
   renderer.setSize(roomSize.width, roomSize.height);
 }
 
-/** A padlólapok teteje. */
 const FLOOR_Y = 0.05;
 
 function snapshot(type = "image/webp", quality = 0.9) {
@@ -547,7 +546,7 @@ async function setup() {
   return { room: roomSize, ppu };
 }
 
-/** Átnézeti kép: szoba + minden zóna adott szinten + néhány állat (csak ellenőrzéshez). */
+/** Overview image: room + every zone at a given level + a few pets (only for checking). */
 async function renderPreview(level, pets = []) {
   for (const groups of Object.values(mess)) groups.forEach((g, i) => (g.visible = i < level));
   const added = [];
@@ -573,9 +572,9 @@ async function renderPreview(level, pets = []) {
   return data;
 }
 
-// ---------------------------------------------------------------- állatok
+// ---------------------------------------------------------------- pets
 
-/** Az animációk sorrendje az atlaszban; `clip` = a Kenney animáció neve. */
+/** Animation order in the atlas; `clip` = the Kenney animation name. */
 const PET_ANIMATIONS = [
   { name: "idle", clip: "idle", fps: 8 },
   { name: "walk", clip: "walk", fps: FPS },
@@ -585,16 +584,16 @@ const PET_ANIMATIONS = [
   { name: "sad", clip: "gesture-negative", fps: FPS },
 ];
 
-/** A kép két nézési iránya; a másik kettő ezek tükörképe (sw = se tükrözve, nw = ne tükrözve). */
+/** The two facings in the image; the other two are their mirror images (sw = se mirrored, nw = ne mirrored). */
 const FACINGS = [
-  // Az állat alapból +z felé néz; +x a képen jobbra-le (se), −z jobbra-fel (ne).
+  // The pet faces +z by default; +x is down-right in the image (se), −z is up-right (ne).
   { name: "se", rotation: Math.PI / 2 },
   { name: "ne", rotation: Math.PI },
 ];
 
 const PET_FRAME = { width: 176, height: 176, anchorY: 0.78 };
 
-/** A képkocka szélén van-e nem átlátszó pixel (akkor a kocka túl kicsi). */
+/** Whether the frame edge has a non-transparent pixel (then the frame is too small). */
 function touchesEdge(ctx, width, height) {
   const { data } = ctx.getImageData(0, 0, width, height);
   const solid = (x, y) => data[(y * width + x) * 4 + 3] > 24;
@@ -628,7 +627,7 @@ async function renderPet(name) {
   stage.add(object);
   const mixer = new THREE.AnimationMixer(object);
 
-  // Ugyanaz a nézet és lépték, mint a szobánál; az (0, 0, 0) pont a képkocka horgonyára esik.
+  // Same view and scale as for the room; the (0, 0, 0) point falls on the frame's anchor.
   const w = PET_FRAME.width / ppu;
   const h = PET_FRAME.height / ppu;
   const cam = new THREE.OrthographicCamera(-w / 2, w / 2, h * PET_FRAME.anchorY, -h * (1 - PET_FRAME.anchorY), 0.1, 100);
@@ -677,7 +676,7 @@ async function renderPet(name) {
   };
 }
 
-// ---------------------------------------------------------------- 3D export (az app futásidejű jelenete)
+// ---------------------------------------------------------------- 3D export (the app's runtime scene)
 
 const exporter = new GLTFExporter();
 
@@ -689,10 +688,10 @@ async function toGlb(input, options = {}) {
   return btoa(binary);
 }
 
-/** A nézési irány (y körüli elforgatás) a sprite-irány nevéből; az állat alapból +z felé néz. */
+/** Facing (rotation around y) from the sprite direction name; the pet faces +z by default. */
 const FACING_YAW = { se: Math.PI / 2, ne: Math.PI, nw: -Math.PI / 2, sw: 0 };
 
-/** A szoba GLB-je: `furniture` + zónánként `mess_<zóna>_<szint>` csoportok (1..3, kumulatív). */
+/** Room GLB: `furniture` + per zone `mess_<zone>_<level>` groups (1..3, cumulative). */
 async function assembleRoom(key, furnitureGroup, messGroups, meta) {
   const house = new THREE.Group();
   house.name = `room_${key}`;
@@ -719,12 +718,12 @@ async function assembleRoom(key, furnitureGroup, messGroups, meta) {
   };
 }
 
-/** A fő szoba (mindig megvan): a 6 zóna alaphelye. */
+/** The main room (always exists): the base positions of the 6 zones. */
 function exportRoom() {
   return assembleRoom("main", room, mess, { size: { x: ROOM, z: ROOM }, offset: { x: 0, z: 0 }, walkArea: WALK_AREA, spots: SPOTS });
 }
 
-/** Egy pontokból építhető szoba (EXTRA_ROOMS). */
+/** A room built from points (EXTRA_ROOMS). */
 async function exportExtraRoom(key) {
   const def = EXTRA_ROOMS[key];
   const furniture = new THREE.Group();
@@ -742,8 +741,8 @@ async function exportExtraRoom(key) {
 }
 
 /**
- * Egy állat GLB-je a használt animációkkal (az app neveivel). A textúra kimarad: minden állat
- * ugyanazt a `colormap.png`-t használja, amit az app egyszer tölt be (az UV-k megmaradnak).
+ * A pet GLB with the used animations (the app's names). The texture is left out: every pet
+ * uses the same `colormap.png`, which the app loads once (the UVs are kept).
  */
 async function exportPet(name) {
   const gltf = await loader.loadAsync(PETS + `animal-${name}.glb`);

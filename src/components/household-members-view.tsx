@@ -15,7 +15,7 @@ import { ActivityIndicator, Alert, FlatList, Linking, View } from "react-native"
 
 const ROLES = ["admin", "user", "child"] as const;
 
-/** Egy sor a listában; a `householdUser` csak a létrehozónál van meg (szerkesztéshez). */
+/** A row in the list; `householdUser` only exists for the creator (for editing). */
 type MemberRow = {
   userId: number;
   name: string;
@@ -28,8 +28,8 @@ type Props = {
 };
 
 /**
- * Taglista. A létrehozó módosíthatja a szerepköröket és eltávolíthat tagot; bárki jelentheti a többi tagot
- * (App Review 1.2: a felhasználói tartalomhoz kell jelentési lehetőség). A jelentés a támogatási címre megy e-mailben.
+ * Member list. The creator can change roles and remove a member; anyone can report the other members
+ * (App Review 1.2: user content needs a reporting option). The report goes to the support address by e-mail.
  */
 export function HouseholdMembersView({ householdId, onBack }: Props) {
   const { t } = useTranslation();
@@ -39,7 +39,7 @@ export function HouseholdMembersView({ householdId, onBack }: Props) {
   const household = households.find((h) => h.id === householdId);
   const viewerIsOwner = household ? user?.id === household.created_by : false;
 
-  // A teljes lista (szerepkör, e-mail) csak adminnak jár; a többi tag a névsort kapja.
+  // The full list (role, e-mail) is for admins only; other members get the name list.
   const membersKey = HouseholdQueries.householdUsers.key(householdId);
   const fullList = useQuery({
     queryKey: membersKey,
@@ -55,7 +55,7 @@ export function HouseholdMembersView({ householdId, onBack }: Props) {
     : (nameList.data ?? []).map((m) => ({ userId: m.user_id, name: m.name, householdUser: null }));
   const [busyUserId, setBusyUserId] = useState<number | null>(null);
 
-  /** Azonnal frissíti a listát, majd a háztartás többi adatát (pontok, statisztika…) is. */
+  /** Refreshes the list immediately, then the household's other data (points, stats…) too. */
   const updateMembers = (update: (current: HouseholdUser[]) => HouseholdUser[]) => {
     queryClient.setQueryData<HouseholdUser[]>(membersKey, (current) => update(current ?? []));
     void queryClient.invalidateQueries({ queryKey: householdKey(householdId) });
@@ -66,7 +66,7 @@ export function HouseholdMembersView({ householdId, onBack }: Props) {
     try {
       setBusyUserId(member.user_id);
       const updated = await householdUserService.update(member.id, { role }, token);
-      // A válasz nem tölti be a `user` relációt, ezért csak a szerepkört vesszük át.
+      // The response does not load the `user` relation, so only the role is taken over.
       updateMembers((current) => current.map((m) => (m.id === member.id ? { ...m, role: updated.role } : m)));
     } catch (error) {
       alertError(error, t("members.roleFailed"));
@@ -103,7 +103,7 @@ export function HouseholdMembersView({ householdId, onBack }: Props) {
     );
   };
 
-  /** Előre kitöltött e-mail a támogatásnak; levelezőprogram nélkül a címet mutatja. */
+  /** Prefilled e-mail to support; without a mail client it shows the address. */
   const handleReport = (member: MemberRow) => {
     const subject = t("members.reportSubject", { name: member.name });
     const body = t("members.reportBody", {

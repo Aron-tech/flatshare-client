@@ -3,9 +3,9 @@ import type { TFunction } from "i18next";
 import type { HouseZone } from "./scene.generated";
 import type { ZoneLevels } from "./zones";
 
-/** Két megszólalás közti szünet (ms): véletlenszerűen e között. */
+/** Pause between two utterances (ms): random within this range. */
 export const SPEECH_GAP_MS = { min: 12000, max: 25000 } as const;
-/** Ennyi ideig látszik egy buborék. */
+/** How long a bubble is visible. */
 export const SPEECH_VISIBLE_MS = 4000;
 
 function pick<T>(items: readonly T[], random: () => number): T | undefined {
@@ -17,7 +17,7 @@ function lines(t: TFunction, key: string, values: Record<string, string> = {}): 
   return Array.isArray(value) ? (value as string[]) : [];
 }
 
-/** A legrendetlenebb zóna (holtversenyben véletlenszerű), ha van rendetlenség. */
+/** The messiest zone (random on a tie), if there is any mess. */
 export function messiestZone(levels: ZoneLevels, random: () => number = Math.random): HouseZone | null {
   const max = Math.max(0, ...Object.values(levels));
   if (max === 0) return null;
@@ -25,8 +25,8 @@ export function messiestZone(levels: ZoneLevels, random: () => number = Math.ran
 }
 
 /**
- * Egy állat mondata a ház állapotáról: morcos / szomorú hangulatban gyakran a legrendetlenebb
- * zónát említi, különben a hangulat általános mondatai közül választ.
+ * A pet's sentence about the house's state: in a grumpy / sad mood it often mentions the messiest zone,
+ * otherwise it picks from the mood's general sentences.
  */
 export function moodLine(t: TFunction, mood: HouseMoodBand, levels: ZoneLevels, random: () => number = Math.random): string | null {
   const zone = messiestZone(levels, random);
@@ -38,7 +38,7 @@ export function moodLine(t: TFunction, mood: HouseMoodBand, levels: ZoneLevels, 
   return pick(lines(t, `house.speech.${mood}`), random) ?? null;
 }
 
-/** Elvégzett takarítás után. */
+/** After a finished cleaning. */
 export function doneLine(t: TFunction, random: () => number = Math.random): string | null {
   return pick(lines(t, "house.speech.done"), random) ?? null;
 }

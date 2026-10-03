@@ -14,7 +14,6 @@ const BAND_STYLE: Record<HouseMoodBand, { icon: LucideIcon; badge: string; icon_
   sad: { icon: Frown, badge: "bg-primary-soft", icon_color: "text-primary", bar: "bg-primary" },
 };
 
-/** A ház közös hangulata és ami rontja (rendetlen zónák, függő büntetések, tempó). */
 export function HouseMoodCard({ mood, messyZones }: { mood: HouseMood; messyZones: number }) {
   const { t } = useTranslation();
   const style = BAND_STYLE[mood.band];

@@ -2,8 +2,8 @@ import type { HouseZoneState } from "@/types/house";
 import { HOUSE_ZONES, type HouseZone } from "./scene.generated";
 
 /**
- * A `categories.icon` szabad szöveg (lásd `components/category-icon.tsx`), ezért kulcsszavak alapján
- * dől el, melyik zónában látszik a kategória rendetlensége. A sorrend számít (pl. "dish" → konyha).
+ * `categories.icon` is free text (see `components/category-icon.tsx`), so keywords decide in which zone a
+ * category's mess shows. The order matters (e.g. "dish" → kitchen).
  */
 const ZONE_HINTS: readonly (readonly [RegExp, HouseZone])[] = [
   [/utensil|kitchen|konyha|dish|edény|mosogat|cook|meal|food|főz/i, "kitchen"],
@@ -14,7 +14,7 @@ const ZONE_HINTS: readonly (readonly [RegExp, HouseZone])[] = [
   [/spray|clean|takarít|vacuum|floor|padló|porsz|sparkle|broom|söpr|living|nappali/i, "cleaning"],
 ];
 
-/** A kategória (ikon, majd név alapján) melyik zónába tartozik; `null`, ha egyikbe sem. */
+/** Which zone a category belongs to (by icon, then name); `null` if none. */
 export function zoneOf(hints: readonly (string | null | undefined)[]): HouseZone | null {
   for (const hint of hints) {
     if (!hint) continue;
@@ -28,7 +28,7 @@ export type ZoneLevels = Record<HouseZone, number>;
 
 export interface ZoneSummary {
   zone: HouseZone | null;
-  /** A zóna kategóriáinak legnagyobb szintje (0–3). */
+  /** The highest level of the zone's categories (0–3). */
   level: number;
   open: number;
   dueToday: number;
@@ -36,9 +36,9 @@ export interface ZoneSummary {
 }
 
 /**
- * A backend kategóriánkénti állapotát zónákra vonja össze. A zónához nem rendelhető kategóriák
- * (és a kategória nélküli feladatok) az "egyéb" (`zone: null`) sorba kerülnek: a térképen nem
- * látszanak, de a hangulatba (backend) beszámítanak.
+ * Folds the backend's per-category state into zones. Categories that cannot be assigned to a zone (and tasks
+ * without a category) go into the "other" (`zone: null`) row: they are not shown on the map but count towards
+ * the mood (backend).
  */
 export function summarizeZones(states: readonly HouseZoneState[]): { levels: ZoneLevels; summaries: ZoneSummary[] } {
   const levels = Object.fromEntries(HOUSE_ZONES.map((zone) => [zone, 0])) as ZoneLevels;

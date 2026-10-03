@@ -1,7 +1,6 @@
 import { THEME } from "@/constants/theme";
 import Svg, { Path } from "react-native-svg";
 
-/** FlatShare embléma (flatshare_emblem) – terrakotta tető, zsálya házak és levél. */
 export function Emblem({ size = 32 }: { size?: number }) {
   return (
     <Svg width={size} height={size} viewBox="0 0 64 64" fill="none">

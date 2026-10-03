@@ -20,15 +20,15 @@ interface CalendarExportSheetProps {
 }
 
 /**
- * Feliratkozás a háztartás iCalendar feedjére: az Apple Naptár a webcal:// linket nyitja meg,
- * a Google Naptár (és így az Android naptár) URL alapján veszi fel. A naptárak maguk frissítik a feedet.
- * Csak nyitott állapotban kell renderelni (a kezdő nézet a naptár aktuális kapcsolója).
+ * Subscription to the household's iCalendar feed: Apple Calendar opens the webcal:// link, Google Calendar
+ * (and thus the Android calendar) takes the URL. The calendars refresh the feed themselves.
+ * Render only while open (the initial view is the calendar's current switch).
  */
 export function CalendarExportSheet({ initialScope, onClose }: CalendarExportSheetProps) {
   const { t } = useTranslation();
   const [scope, setScope] = useState<CalendarScope>(initialScope);
   const { data: subscription } = useHouseholdQuery(HouseholdQueries.calendarSubscription);
-  // A visszavonás után a háztartás adatai (így a linkek is) elavulnak, a következő megnyitás új linket kér.
+  // After revoking, the household data (and so the links) go stale; the next open requests a new link.
   const reset = useHouseholdMutation((householdId, token, _: void) => calendarService.resetSubscription(householdId, token));
 
   const feed = subscription?.[scope] ?? null;

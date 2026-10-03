@@ -6,7 +6,7 @@ import { Category, TaskDifficulty } from "@/types/task";
 import { useTranslation } from "react-i18next";
 import { Pressable, View } from "react-native";
 
-/** Sablon és háztartási feladat közös, listában megjelenített mezői. */
+/** Fields shared by a template and a household task shown in the list. */
 export interface TaskOption {
   name: string;
   category: Category | null;
@@ -15,7 +15,6 @@ export interface TaskOption {
   difficulty: TaskDifficulty;
 }
 
-/** Kiválasztható feladat-kártya kategória ikonnal, adatokkal és pont-jelvénnyel. */
 export function TaskOptionCard({
   task,
   points,

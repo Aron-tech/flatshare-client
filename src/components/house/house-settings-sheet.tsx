@@ -11,13 +11,13 @@ interface HouseSettingsSheetProps {
   onClose: () => void;
   onChooseCharacter: () => void;
   onResetCamera: () => void;
-  /** A szobabolt tartalma (szobák, gyűjtés); nélküle a szekció nem látszik. */
+  /** Room shop content (rooms, collection); without it the section is hidden. */
   shop?: ReactNode;
 }
 
 /**
- * A Ház nézet beállításai (a jelenet fogaskerék gombjáról): karakterválasztás, alapnézet,
- * szobabolt. Csak nyitott állapotban kell renderelni.
+ * House view settings (from the scene's gear button): character picker, default view, room shop.
+ * Render only while open.
  */
 export function HouseSettingsSheet({ onClose, onChooseCharacter, onResetCamera, shop }: HouseSettingsSheetProps) {
   const { t } = useTranslation();

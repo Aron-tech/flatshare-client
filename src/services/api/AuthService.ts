@@ -43,7 +43,7 @@ export class AuthService implements IAuthService {
     });
   }
 
-  /** Natív Sign in with Apple (iOS): a backend ellenőrzi az Apple tokent, és elteszi a törléskori visszavonáshoz. */
+  /** Native Sign in with Apple (iOS): the backend verifies the Apple token and stores it for revocation on account deletion. */
   public async authenticateWithApple(
     payload: AppleLoginPayload,
     language: string

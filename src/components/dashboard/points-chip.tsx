@@ -3,13 +3,13 @@ import { useTranslation } from "react-i18next";
 import { View } from "react-native";
 
 interface PointsChipProps {
-  /** A user ténylegesen járó része a pontból; null, ha nincs súlyozás. */
+  /** The user's actual share of the points; null if there is no weighting. */
   points: number | null;
   /** Ennyien osztoznak a ponton. */
   claimers?: number;
 }
 
-/** A feladatért ténylegesen járó pont (megosztva, súllyal, a vállaláskor rögzített bónusszal). */
+/** Points actually earned for the task (shared, weighted, with the bonus recorded at claim time). */
 export function PointsChip({ points, claimers = 1 }: PointsChipProps) {
   const { t } = useTranslation();
 

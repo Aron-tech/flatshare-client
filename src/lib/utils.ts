@@ -4,9 +4,8 @@ import { extendTailwindMerge } from "tailwind-merge";
 import { radius, typography } from "@/theme/tokens";
 
 /**
- * A saját tokeneket (`text-headline-md`, `rounded-card`, `bg-primary-soft`…) meg kell
- * tanítani a tailwind-merge-nek, különben pl. a `text-body-sm`-et színnek hinné, és
- * kiütné a `text-foreground`-ot.
+ * Our own tokens (`text-headline-md`, `rounded-card`, `bg-primary-soft`…) must be taught to tailwind-merge,
+ * otherwise it would take `text-body-sm` for a color and knock out `text-foreground`.
  */
 const twMerge = extendTailwindMerge({
   extend: {

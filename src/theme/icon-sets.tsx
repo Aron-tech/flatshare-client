@@ -87,7 +87,7 @@ import { X as XP } from "phosphor-react-native/src/icons/X";
 type PhosphorWeight = "regular" | "bold";
 type IconLike = ComponentType<Record<string, unknown>>;
 
-/** Lucide ikon → Phosphor megfelelő. Új ikon felvételekor itt is fel kell venni (különben Lucide marad). */
+/** Lucide icon → Phosphor counterpart. When adding an icon, add it here too (otherwise Lucide stays). */
 const PHOSPHOR = new Map<LucideIcon, IconLike>([
   [ArrowLeftRight, ArrowsLeftRightP],
   [ArrowRight, ArrowRightP],
@@ -132,7 +132,7 @@ const PHOSPHOR = new Map<LucideIcon, IconLike>([
 
 const astCache = new Map<FluentColorName, JsxAST | null>();
 
-/** Színes (többszínű) SVG ikon; az XML-t csak első rendereléskor parse-olja, utána cache-ből. */
+/** Colored (multi-color) SVG icon; the XML is parsed only on the first render, then served from the cache. */
 function fluentColor(name: FluentColorName): IconLike {
   function FluentColorIcon({ size = 24, style }: { size?: number; style?: unknown }) {
     let ast = astCache.get(name);
@@ -147,8 +147,8 @@ function fluentColor(name: FluentColorName): IconLike {
 }
 
 /**
- * Lucide ikon → Fluent Color megfelelő. A tisztán UI-jelek (X, +, pipa, nyíl, keresés…)
- * a színes készletben sincsenek, ezek egyszínű Lucide-ként maradnak.
+ * Lucide icon → Fluent Color counterpart. Pure UI signs (X, +, check, arrow, search…) do not exist
+ * in the color set either, they stay single-color Lucide.
  */
 const FLUENT_COLOR = new Map<LucideIcon, IconLike>(
   (
@@ -181,13 +181,13 @@ const FLUENT_COLOR = new Map<LucideIcon, IconLike>(
 );
 
 interface IconSet {
-  /** Lucide ikon → az adott készlet ikonja; `null` = maga a Lucide. */
+  /** Lucide icon → the set's icon; `null` = Lucide itself. */
   map: Map<LucideIcon, IconLike> | null;
-  /** Készlet-specifikus propok (pl. Phosphor `weight`). */
+  /** Set-specific props (e.g. Phosphor `weight`). */
   props?: { weight: PhosphorWeight };
 }
 
-/** Választható ikonkészletek; a kulcsok a `settings.icons_<id>` fordításokban szerepelnek. */
+/** Selectable icon sets; the keys appear in the `settings.icons_<id>` translations. */
 export type IconSetId = "lucide" | "phosphor" | "fluentColor";
 
 export const ICON_SETS: Record<IconSetId, IconSet> = {
@@ -198,5 +198,5 @@ export const ICON_SETS: Record<IconSetId, IconSet> = {
 export const ICON_SET_IDS = Object.keys(ICON_SETS) as IconSetId[];
 export const DEFAULT_ICON_SET: IconSetId = "lucide";
 
-/** Az `Icon` ebből tudja az aktív készletet (csak váltáskor renderel újra). */
+/** `Icon` knows the active set from this (re-renders only on a switch). */
 export const IconSetContext = createContext<IconSetId>(DEFAULT_ICON_SET);

@@ -33,7 +33,7 @@ export default function SettingsScreen() {
   const { preference, setPreference } = useThemePreference();
   const appearance = useAppearance();
   const colors = useThemeColors();
-  // A font betöltéséig is azonnal a kattintott chip látszik kiválasztottnak.
+  // The clicked chip shows as selected immediately, even before the font loads.
   const [pendingFont, setPendingFont] = useState<FontSetId | null>(null);
 
   const changeFont = async (font: FontSetId) => {
@@ -55,7 +55,7 @@ export default function SettingsScreen() {
     try {
       updateUser(await authService.updateLanguage(token, next));
     } catch {
-      // A hibát a HttpClient már toastban megjelenítette.
+      // HttpClient already showed the error toast.
     } finally {
       setSavingLanguage(false);
     }
@@ -81,10 +81,10 @@ export default function SettingsScreen() {
         onPress: async () => {
           setDeletingAccount(true);
           try {
-            // Sikeres törlés után a kijelentkezett állapot a bejelentkező képernyőre visz.
+            // After a successful deletion the signed-out state leads to the login screen.
             await deleteAccount();
           } catch {
-            // A hibát a HttpClient már toastban megjelenítette.
+            // HttpClient already showed the error toast.
             setDeletingAccount(false);
           }
         },
@@ -104,7 +104,7 @@ export default function SettingsScreen() {
       updateUser(updated);
       setNickname(updated.nickname ?? "");
     } catch {
-      // A hibát a HttpClient már toastban megjelenítette.
+      // HttpClient already showed the error toast.
     } finally {
       setSaving(false);
     }

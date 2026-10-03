@@ -47,7 +47,7 @@ export const HouseholdProvider: React.FC<HouseholdProviderProps> = ({
   });
   const households = householdsQuery.data ?? NO_HOUSEHOLDS;
 
-  /** A tárolt választás; `undefined`, amíg a tárolóból be nem olvastuk. */
+  /** The stored choice; `undefined` until it has been read from storage. */
   const [selectedId, setSelectedId] = useState<number | null | undefined>(undefined);
 
   useEffect(() => {
@@ -60,12 +60,12 @@ export const HouseholdProvider: React.FC<HouseholdProviderProps> = ({
     };
   }, [storage]);
 
-  // Ha nincs korábbi választás, vagy azt a háztartást azóta elhagyta / törölték, az első az aktív.
+  // If there is no earlier choice, or the household was left / deleted since, the first one is active.
   const activeHousehold = households.find((h) => h.id === selectedId) ?? households[0] ?? null;
 
   /**
-   * Csak az első betöltésnél igaz: a gyökér navigáció ilyenkor spinnert mutat, ami egy
-   * későbbi frissítésnél az összes képernyőt újramountolná.
+   * True only on the first load: the root navigation shows a spinner then, which on a later refresh
+   * would remount all the screens.
    */
   const isLoading = selectedId === undefined || (token !== null && householdsQuery.isPending);
 

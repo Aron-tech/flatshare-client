@@ -8,15 +8,15 @@ interface PetSpriteProps {
   pet: PetId;
   animation: PetAnimation;
   facing: SpriteFacing;
-  /** A szoba képéhez viszonyított méretarány (képernyő pt / kép px). */
+  /** Scale relative to the room image (screen pt / image px). */
   scale: number;
-  /** Csak az első képkocka látszik (pl. csökkentett mozgás). */
+  /** Only the first frame is shown (e.g. reduced motion). */
   paused?: boolean;
 }
 
 /**
- * Az állat egy animációja a sprite-atlaszból (a karakterválasztóhoz; a Ház nézet 3D): a képkocka-ablakban az atlasz eltolása
- * a UI szálon lép (Reanimated). A "sw" / "nw" irány a "se" / "ne" tükörképe.
+ * One animation of the pet from the sprite atlas (for the character picker; the House view is 3D): the atlas
+ * offset in the frame window steps on the UI thread (Reanimated). The "sw" / "nw" direction mirrors "se" / "ne".
  */
 export function PetSprite({ pet, animation, facing, scale, paused = false }: PetSpriteProps) {
   const { frame, columns, rows, perFacing } = PET_ATLAS;
@@ -56,13 +56,13 @@ export function PetSprite({ pet, animation, facing, scale, paused = false }: Pet
         width: frameWidth,
         height: frameHeight,
         overflow: "hidden",
-        // Mindig tömb: az `undefined`-ra váltó transform-ot a React Native `null`-ként dolgozza fel, és fejlesztői
-        // módban elszáll (`processTransform` → "Cannot read property 'forEach' of null").
+        // Always an array: React Native processes a transform switched to `undefined` as `null` and throws in dev
+        // mode (`processTransform` → "Cannot read property 'forEach' of null").
         transform: [{ scaleX: facing === "sw" || facing === "nw" ? -1 : 1 }],
       }}
     >
       <Animated.Image
-        // Egy újabb backend olyan állatot is küldhet, amit ez az app-verzió még nem ismer.
+        // A newer backend may send a pet this app version does not know yet.
         source={PET_SOURCES[pet] ?? PET_SOURCES.cat}
         style={[{ width: columns * frameWidth, height: rows * frameHeight }, atlasStyle]}
       />

@@ -15,11 +15,11 @@ interface MyTaskCardProps {
   done: boolean;
   isCompleting: boolean;
   onComplete: () => void;
-  /** Csere vagy türelmi nap kérése; csak határidős, nem kész feladatnál. */
+  /** Request a swap or grace day; only for a not-done task with a deadline. */
   onRequest?: () => void;
 }
 
-/** Elvállalt feladat – jobb oldali körrel teljesíthető (DESIGN: Completion Affordance), a kártyára koppintva csere / türelmi nap kérhető. */
+/** A claimed task – completable with the circle on the right (DESIGN: Completion Affordance), tapping the card requests a swap / grace day. */
 export function MyTaskCard({ item, done, isCompleting, onComplete, onRequest }: MyTaskCardProps) {
   const { t } = useTranslation();
   const category = item.task.category;

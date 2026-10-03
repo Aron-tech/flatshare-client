@@ -6,7 +6,7 @@ import { useEffect, useMemo, useRef } from "react";
 import { type Material, type Object3D } from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 
-/** A rendetlenség megjelenése / eltűnése (mp). */
+/** Mess fade in / out (s). */
 const FADE_IN = 0.4;
 const FADE_OUT = 0.8;
 
@@ -17,9 +17,9 @@ interface MessLayer {
   zone: HouseZone;
   level: number;
   object: Object3D;
-  /** A csoport saját (klónozott) anyagai az eredeti átlátszóságukkal. */
+  /** The group's own (cloned) materials with their original opacity. */
   materials: { material: Material; opacity: number; transparent: boolean }[];
-  /** 0..1, a jelenlegi láthatóság. */
+  /** 0..1, the current visibility. */
   opacity: number;
 }
 
@@ -29,7 +29,7 @@ interface HouseRoomProps {
   reducedMotion: boolean;
 }
 
-/** A mess csoportokból a zónához tartozó gyökér (koppintásnál). */
+/** The zone root from the mess groups (on tap). */
 export function zoneOfObject(object: Object3D | null): HouseZone | null {
   for (let node = object; node; node = node.parent) {
     const match = /^mess_(.+)_[123]$/.exec(node.name);
@@ -38,7 +38,7 @@ export function zoneOfObject(object: Object3D | null): HouseZone | null {
   return null;
 }
 
-/** Melyik szoba modelljéhez tartozik az objektum (a GLB gyökere `room_<kulcs>`). */
+/** Which room's model the object belongs to (the GLB root is `room_<key>`). */
 export function roomOfObject(object: Object3D | null): RoomKey | null {
   for (let node = object; node; node = node.parent) {
     const match = /^room_(.+)$/.exec(node.name);
@@ -48,8 +48,8 @@ export function roomOfObject(object: Object3D | null): RoomKey | null {
 }
 
 /**
- * Egy szoba modellje (bútorok) és a zónák rendetlensége: a `levels` szerinti szintig minden
- * mess csoport látszik (a szintek egymásra épülnek), a változás áttűnéssel jelenik meg.
+ * A room's model (furniture) and the zones' mess: every mess group up to the level in `levels` is visible
+ * (levels build on each other), changes fade.
  */
 export function HouseRoom({ room, levels, reducedMotion }: HouseRoomProps) {
   const definition = ROOMS[room];
@@ -70,7 +70,7 @@ export function HouseRoom({ room, levels, reducedMotion }: HouseRoomProps) {
   return <primitive object={gltf.scene} position={[definition.offset.x, 0, definition.offset.z]} />;
 }
 
-/** Árnyékok bekapcsolása, a mess csoportok elrejtése, saját anyaggal (hogy az áttűnés ne hasson másra). */
+/** Enables shadows, hides the mess groups, with their own material (so the fade does not affect others). */
 function prepareLayers(scene: Object3D): MessLayer[] {
   const result: MessLayer[] = [];
   scene.traverse((child) => {
@@ -108,7 +108,7 @@ function ownMaterial(child: { material: Material }): Material {
   return material;
 }
 
-/** Áttűnés nélkül (csökkentett mozgás). */
+/** Without a fade (reduced motion). */
 function snapLayers(layers: MessLayer[], levels: ZoneLevels) {
   for (const layer of layers) {
     layer.opacity = layer.level <= levels[layer.zone] ? 1 : 0;

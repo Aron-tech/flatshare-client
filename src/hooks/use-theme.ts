@@ -8,18 +8,18 @@ import { PaletteContext, resolveThemeColors } from '@/theme/palettes';
 import { useColorScheme } from 'nativewind';
 import { useContext, useMemo } from 'react';
 
-/** Aktuális (light/dark) téma neve – ugyanaz a forrás, amit a Nativewind `dark:` is használ. */
+/** Name of the current (light/dark) theme – the same source Nativewind's `dark:` uses. */
 export function useThemeName() {
   const { colorScheme } = useColorScheme();
   return colorScheme === 'dark' ? 'dark' : 'light';
 }
 
-/** Hex színek natív propokhoz a választott palettával (placeholderTextColor, RefreshControl tintColor stb.). */
+/** Hex colors for native props with the chosen palette (placeholderTextColor, RefreshControl tintColor etc.). */
 export function useThemeColors() {
   return resolveThemeColors(useContext(PaletteContext), useThemeName());
 }
 
-/** React Navigation téma a `ThemeProvider`-hez. */
+/** React Navigation theme for the `ThemeProvider`. */
 export function useNavTheme() {
   const name = useThemeName();
   const colors = useThemeColors();

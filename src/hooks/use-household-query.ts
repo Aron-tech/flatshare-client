@@ -5,14 +5,14 @@ import { householdKey, HouseholdQuery } from "@/lib/queries";
 import { keepPreviousData, skipToken, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 
-/** Az aktív háztartás azonosítója és a bejelentkezési token. */
+/** The active household's id and the sign-in token. */
 export function useHouseholdSession() {
   const { token } = useAuth();
   const { activeHousehold } = useHousehold();
   return { householdId: activeHousehold?.id ?? null, token };
 }
 
-/** Az aktív háztartás összes lekérdezését elavultnak jelöli (a láthatók azonnal újratöltenek). */
+/** Marks all queries of the active household as stale (the visible ones refetch immediately). */
 export function useInvalidateHousehold() {
   const queryClient = useQueryClient();
   const { householdId } = useHouseholdSession();
@@ -21,8 +21,8 @@ export function useInvalidateHousehold() {
 }
 
 /**
- * Az aktív háztartáshoz tartozó adat. Háztartásváltáskor a másik kulcs miatt nem a régi
- * háztartás adatát mutatja. `enabled: false` mellett nem tölt (pl. csak adminnak elérhető végpont).
+ * Data of the active household. On a household switch the other key means the old household's data is
+ * not shown. With `enabled: false` it does not load (e.g. an endpoint only admins can reach).
  */
 export function useHouseholdQuery<T>(
   query: HouseholdQuery<T>,
@@ -34,24 +34,24 @@ export function useHouseholdQuery<T>(
   const result = useQuery({
     queryKey: query.key(householdId ?? 0),
     queryFn: canFetch ? () => query.fetch(householdId, token) : skipToken,
-    // Lapozásnál (pl. naptár) az új időszak betöltéséig a régi adat marad látható.
+    // When paging (e.g. calendar) the old data stays visible until the new period loads.
     placeholderData: keepPrevious ? keepPreviousData : undefined,
   });
 
   return {
     data: result.data ?? null,
-    // Betöltés alatt van, amíg az aktuális háztartás adata meg nem érkezett.
+    // Loading until the current household's data has arrived.
     isLoading: result.isPending && !result.isError,
     error: result.error ? result.error.message || i18n.t("dashboard.loadFailed") : null,
     refetch: result.refetch,
-    /** Háttérben tölt (pl. az előző időszak adata látszik). */
+    /** Fetching in the background (e.g. the previous period's data is visible). */
     isFetching: result.isFetching,
   };
 }
 
 /**
- * Háztartás-művelet. Utána (hiba esetén is, pl. ha közben megváltozott az állapot) a háztartás
- * adatai újratöltődnek. A hibát a `HttpClient` már toastban megjelenítette.
+ * Household action. Afterwards (also on an error, e.g. if the state changed meanwhile) the household's
+ * data reloads. `HttpClient` already showed the error toast.
  */
 export function useHouseholdMutation<V, R = unknown>(
   action: (householdId: number, token: string, variables: V) => Promise<R>,
@@ -69,7 +69,7 @@ export function useHouseholdMutation<V, R = unknown>(
   });
 
   return {
-    /** A művelet eredménye, vagy `null`, ha nem sikerült. */
+    /** The action's result, or `null` if it failed. */
     run: async (variables: V): Promise<R | null> => {
       try {
         return await mutation.mutateAsync(variables);
@@ -77,12 +77,12 @@ export function useHouseholdMutation<V, R = unknown>(
         return null;
       }
     },
-    /** A futó művelet paramétere (pl. a feladat azonosítója), különben `null`. */
+    /** The running action's parameter (e.g. the task id), otherwise `null`. */
     pending: mutation.isPending ? mutation.variables : null,
   };
 }
 
-/** Lehúzásos frissítés: csak a felhasználó által indított frissítés alatt pörög a jelző. */
+/** Pull-to-refresh: the indicator only spins during a refresh started by the user. */
 export function usePullToRefresh(...refetchers: (() => Promise<unknown>)[]) {
   const [refreshing, setRefreshing] = useState(false);
 

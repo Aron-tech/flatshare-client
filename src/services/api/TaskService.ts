@@ -16,10 +16,10 @@ import {
 } from "@/types/task";
 import { HttpClient, RequestOptions } from "./HttpClient";
 
-/** A feladat-űrlapok a validációs hibákat a mezők mellett jelenítik meg. */
+/** The task forms show validation errors next to the fields. */
 const INLINE_VALIDATION: RequestOptions = { inlineValidation: true };
 
-/** A rögzítéssel elért új matricát jelzi a felugró értesítésnek. */
+/** Tells the popup about the new sticker earned by logging. */
 function withStickerAnnounced(result: TaskCompletionResponse): TaskCompletionResponse {
   announceSticker(result.new_sticker);
   return result;
