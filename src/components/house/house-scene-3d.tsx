@@ -2,6 +2,7 @@ import { assetUrl } from "@/components/house/three/asset";
 import { Icon } from "@/components/ui/icon";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Text } from "@/components/ui/text";
+import { Elevation } from "@/constants/theme";
 import { HousePet, type HouseJob } from "@/components/house/three/house-pet";
 import { HouseRoom, zoneOfObject } from "@/components/house/three/house-room";
 import { FixedAnchor, createAnchor, type ScreenAnchor } from "@/components/house/three/screen-anchor";
@@ -20,6 +21,7 @@ import {
   type OrbitState,
 } from "@/lib/house/orbit";
 import { HOUSE_ZONES, PET_COLORMAP, ROOMS, type HouseZone, type PetAnimation, type RoomKey } from "@/lib/house/scene.generated";
+import { SPEECH_GAP_MS, SPEECH_VISIBLE_MS, doneLine, moodLine } from "@/lib/house/speech";
 import { toWorld } from "@/lib/house/walk";
 import type { ZoneLevels } from "@/lib/house/zones";
 import type { HouseMember, HouseMoodBand } from "@/types/house";
@@ -29,7 +31,7 @@ import { Suspense, useCallback, useEffect, useImperativeHandle, useMemo, useRef,
 import { useTranslation } from "react-i18next";
 import { View } from "react-native";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
-import Animated, { useAnimatedStyle, useSharedValue, withSequence, withTiming } from "react-native-reanimated";
+import Animated, { FadeIn, FadeOut, useAnimatedStyle, useSharedValue, withSequence, withTiming } from "react-native-reanimated";
 import {
   DoubleSide,
   MeshStandardMaterial,
@@ -289,37 +291,61 @@ const BUBBLES: Partial<Record<PetAnimation, { icon: LucideIcon; className: strin
   work: { icon: Sparkles, className: "bg-card text-success-active" },
 };
 
-/** Az overlay elemek szélessége: a horgony ennek a közepén van. */
-const LABEL_WIDTH = 140;
+/** Az overlay elemek szélessége és magassága: a horgony az alsó szél közepén van. */
+const LABEL_WIDTH = 180;
+const LABEL_HEIGHT = 120;
 
-function PetLabel({ member, anchor, animation }: { member: HouseMember; anchor: ScreenAnchor; animation: PetAnimation }) {
+interface PetLabelProps {
+  member: HouseMember;
+  anchor: ScreenAnchor;
+  animation: PetAnimation;
+  /** Amit éppen mond (szövegbuborék). */
+  speech: string | null;
+}
+
+function PetLabel({ member, anchor, animation, speech }: PetLabelProps) {
   const style = useAnimatedStyle(() => ({
     opacity: anchor.visible.value,
-    transform: [{ translateX: anchor.x.value - LABEL_WIDTH / 2 }, { translateY: anchor.y.value - 22 }],
+    transform: [{ translateX: anchor.x.value - LABEL_WIDTH / 2 }, { translateY: anchor.y.value - LABEL_HEIGHT + 4 }],
   }));
   const bubble = BUBBLES[animation];
   return (
     <Animated.View
       pointerEvents="none"
       accessible
-      accessibilityLabel={member.name}
-      className="absolute left-0 top-0 flex-row items-center justify-center gap-1"
-      style={[{ width: LABEL_WIDTH }, style]}
+      accessibilityLabel={speech ? `${member.name}: ${speech}` : member.name}
+      accessibilityLiveRegion={speech ? "polite" : "none"}
+      className="absolute left-0 top-0 items-center justify-end gap-1"
+      style={[{ width: LABEL_WIDTH, height: LABEL_HEIGHT }, style]}
     >
-      <View className={`rounded-full px-2 py-0.5 ${member.is_me ? "bg-primary" : "bg-card"}`}>
-        <Text
-          numberOfLines={1}
-          className={`text-label-sm ${member.is_me ? "text-primary-foreground" : "text-foreground"}`}
-          style={{ fontSize: 10, lineHeight: 13 }}
+      {speech && (
+        <Animated.View
+          entering={FadeIn.duration(250)}
+          exiting={FadeOut.duration(300)}
+          className="max-w-full rounded-container bg-popover px-2.5 py-1.5"
+          style={Elevation.level1}
         >
-          {member.name}
-        </Text>
-      </View>
-      {bubble && (
-        <View className={`h-5 w-5 items-center justify-center rounded-full ${bubble.className}`}>
-          <Icon as={bubble.icon} size={11} className={bubble.className} />
-        </View>
+          <Text className="text-center text-body-sm text-foreground" style={{ fontSize: 11, lineHeight: 14 }} numberOfLines={3}>
+            {speech}
+          </Text>
+        </Animated.View>
       )}
+      <View className="flex-row items-center gap-1">
+        <View className={`rounded-full px-2 py-0.5 ${member.is_me ? "bg-primary" : "bg-card"}`}>
+          <Text
+            numberOfLines={1}
+            className={`text-label-sm ${member.is_me ? "text-primary-foreground" : "text-foreground"}`}
+            style={{ fontSize: 10, lineHeight: 13 }}
+          >
+            {member.name}
+          </Text>
+        </View>
+        {bubble && (
+          <View className={`h-5 w-5 items-center justify-center rounded-full ${bubble.className}`}>
+            <Icon as={bubble.icon} size={11} className={bubble.className} />
+          </View>
+        )}
+      </View>
     </Animated.View>
   );
 }
@@ -398,6 +424,32 @@ export function HouseScene3D({
     []
   );
 
+  // Időnként egy állat elmondja, mit gondol a házról (egyszerre legfeljebb egy buborék).
+  const [speech, setSpeech] = useState<{ userId: number; text: string } | null>(null);
+  const speechTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const say = useCallback((userId: number, text: string | null) => {
+    if (!text) return;
+    clearTimeout(speechTimer.current);
+    setSpeech({ userId, text });
+    speechTimer.current = setTimeout(() => setSpeech(null), SPEECH_VISIBLE_MS);
+  }, []);
+  useEffect(() => () => clearTimeout(speechTimer.current), []);
+
+  const memberIds = members.map((member) => member.user_id).join(",");
+  useEffect(() => {
+    const ids = memberIds ? memberIds.split(",").map(Number) : [];
+    if (ids.length === 0) return;
+    let timer: ReturnType<typeof setTimeout>;
+    const schedule = () => {
+      timer = setTimeout(() => {
+        say(ids[Math.floor(Math.random() * ids.length)], moodLine(t, mood, input.levels));
+        schedule();
+      }, SPEECH_GAP_MS.min + Math.random() * (SPEECH_GAP_MS.max - SPEECH_GAP_MS.min));
+    };
+    schedule();
+    return () => clearTimeout(timer);
+  }, [input, memberIds, mood, say, t]);
+
   const [sparkles, setSparkles] = useState<Sparkle[]>([]);
   const sparkleTimers = useRef(new Set<ReturnType<typeof setTimeout>>());
   useEffect(() => {
@@ -416,9 +468,10 @@ export function HouseScene3D({
         }, 1200);
         sparkleTimers.current.add(timer);
       }
+      say(userId, doneLine(t));
       onJobDone(userId, job);
     },
-    [onJobDone, reducedMotion]
+    [onJobDone, reducedMotion, say, t]
   );
 
   return (
@@ -462,7 +515,13 @@ export function HouseScene3D({
         </Canvas>
 
         {members.map((member) => (
-          <PetLabel key={member.user_id} member={member} anchor={anchorFor(member.user_id)} animation={animations[member.user_id] ?? "idle"} />
+          <PetLabel
+            key={member.user_id}
+            member={member}
+            anchor={anchorFor(member.user_id)}
+            animation={animations[member.user_id] ?? "idle"}
+            speech={speech?.userId === member.user_id ? speech.text : null}
+          />
         ))}
         {sparkles.map((sparkle) => (
           <SparkleBurst key={sparkle.key} anchor={sparkle.anchor} />
