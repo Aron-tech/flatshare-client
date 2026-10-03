@@ -1,3 +1,5 @@
+import type { PetId } from "@/lib/house/scene.generated";
+
 export interface User {
   id: number;
   email: string;
@@ -7,6 +9,8 @@ export interface User {
   name: string;
   nickname: string | null;
   avatar: string | null;
+  /** A Ház nézetben választott állat; `null` = nem választott (az alapértelmezettet a backend adja). */
+  character: PetId | null;
   language: string;
 }
 
@@ -45,5 +49,6 @@ export interface IAuthService {
   getCurrentUser(token: string): Promise<User>;
   updateNickname(token: string, nickname: string | null): Promise<User>;
   updateLanguage(token: string, language: string): Promise<User>;
+  updateCharacter(token: string, character: PetId | null): Promise<User>;
   deleteAccount(token: string): Promise<void>;
 }

@@ -81,6 +81,8 @@ function RootNavigation() {
         <Stack.Screen name="member-departures" options={{ presentation: "modal" }} />
         <Stack.Screen name="calendar" options={{ presentation: "modal" }} />
         <Stack.Screen name="sticker-album" options={{ presentation: "modal" }} />
+        <Stack.Screen name="house" options={{ presentation: "modal" }} />
+        <Stack.Screen name="character" options={{ presentation: "modal" }} />
       </Stack>
       <PortalHost />
       <StickerUnlockHost />

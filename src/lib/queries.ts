@@ -1,6 +1,7 @@
 import { calendarService } from "@/services/api/CalendarService";
 import { dashboardService } from "@/services/api/DashboardService";
 import { householdUserService } from "@/services/api/HouseholdUserService";
+import { houseService } from "@/services/api/HouseService";
 import { rewardService } from "@/services/api/RewardService";
 import { statsService } from "@/services/api/StatsService";
 import { stickerAlbumService } from "@/services/api/StickerAlbumService";
@@ -32,6 +33,8 @@ export const HouseholdQueries = {
   tasks: householdQuery("tasks", (h, token) => taskService.getHouseholdTasks(h, token)),
   oneOffTasks: householdQuery("one-off-tasks", (h, token) => taskService.getOneOffTasks(h, token)),
   stats: householdQuery("stats", (h, token) => statsService.getStats(h, token)),
+  /** A Ház nézet: zónánkénti rendetlenség, közös hangulat, a tagok állatai. */
+  house: householdQuery("house", (h, token) => houseService.getState(h, token)),
   rewards: householdQuery("rewards", (h, token) => rewardService.getByHousehold(h, token)),
   redemptions: householdQuery("redemptions", (h, token) => rewardService.getRedemptions(h, token)),
   /** Név + user_id, bármely tag lekérheti. */

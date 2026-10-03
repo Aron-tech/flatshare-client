@@ -1,4 +1,5 @@
 import { Config } from "@/config/env";
+import type { PetId } from "@/lib/house/scene.generated";
 import {
   AppleLoginPayload,
   AuthResponse,
@@ -88,6 +89,15 @@ export class AuthService implements IAuthService {
     const response = await this.http.request<UserMeResponse>(
       "/user/me",
       { method: "PUT", body: JSON.stringify({ language }) },
+      token
+    );
+    return response.user;
+  }
+
+  public async updateCharacter(token: string, character: PetId | null): Promise<User> {
+    const response = await this.http.request<UserMeResponse>(
+      "/user/me",
+      { method: "PUT", body: JSON.stringify({ character }) },
       token
     );
     return response.user;

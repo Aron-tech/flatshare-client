@@ -8,21 +8,22 @@ import { WeeklyGoalCard } from "@/components/dashboard/weekly-goal-card";
 import { TabScreen } from "@/components/screen";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { EmptyState } from "@/components/ui/empty-state";
-import { Icon } from "@/components/ui/icon";
 import { SegmentedControl } from "@/components/ui/segmented-control";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Text } from "@/components/ui/text";
 import { useAuth } from "@/context/AuthContext";
 import { useHousehold } from "@/context/HouseholdContext";
+import { HouseButton } from "@/components/dashboard/house-button";
 import { useDashboard } from "@/hooks/use-dashboard";
-import { usePullToRefresh } from "@/hooks/use-household-query";
+import { useHouseholdQuery, usePullToRefresh } from "@/hooks/use-household-query";
 import { useStats } from "@/hooks/use-stats";
 import { currentLocale } from "@/i18n";
 import { currentCycle, resetPeriodOf } from "@/lib/cycle";
 import { greetingKey } from "@/lib/format";
+import { HouseholdQueries } from "@/lib/queries";
 import { TaskInstance } from "@/types/dashboard";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { CircleAlert, Sprout } from "lucide-react-native";
+import { CircleAlert } from "lucide-react-native";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { View } from "react-native";
@@ -52,11 +53,18 @@ export default function DashboardScreen() {
     acceptOffer,
   } = useDashboard();
   const { stats, refetch: refetchStats } = useStats();
-  const { refreshing, onRefresh } = usePullToRefresh(refetch, refetchStats);
-  const [view, setView] = useState<DashboardView>("mine");
-  // A Stats büntetés-kártyája `?request={task_instance_id}` paraméterrel nyitja meg a kérés-sheetet.
+  const { data: house, refetch: refetchHouse } = useHouseholdQuery(HouseholdQueries.house);
+  const { refreshing, onRefresh } = usePullToRefresh(refetch, refetchStats, refetchHouse);
+  // A Stats büntetés-kártyája `?request={task_instance_id}` paraméterrel nyitja meg a kérés-sheetet,
+  // a Ház nézet `?view=pool`-lal az Azonnali listát.
   const router = useRouter();
-  const params = useLocalSearchParams<{ request?: string }>();
+  const params = useLocalSearchParams<{ request?: string; view?: string }>();
+  const [chosenView, setChosenView] = useState<DashboardView>("mine");
+  const view: DashboardView = params.view === "pool" ? "pool" : chosenView;
+  const setView = (next: DashboardView) => {
+    setChosenView(next);
+    if (params.view) router.setParams({ view: undefined });
+  };
   const [requestId, setRequestId] = useState<number | null>(null);
   const activeRequestId = requestId ?? (params.request ? Number(params.request) : null);
   /** A sheet mindig a friss (újratöltött) adatot mutatja, pl. a nyitott ajánlatot. */
@@ -84,9 +92,7 @@ export default function DashboardScreen() {
               : t("dashboard.cadenceOpen", { count: openCount })}
           </Text>
         </View>
-        <View className="h-14 w-14 items-center justify-center rounded-full bg-success-soft">
-          <Icon as={Sprout} size={26} className="text-success-active" />
-        </View>
+        <HouseButton band={house?.mood.band ?? null} onPress={() => router.push("/house")} />
       </View>
 
       {error && (

@@ -1,0 +1,14 @@
+{
+  "name": "house-assets",
+  "private": true,
+  "type": "module",
+  "description": "A Ház nézet sprite-jainak renderelése a Kenney CC0 modellekből (nem része az app függőségeinek).",
+  "scripts": {
+    "fetch": "node fetch-sources.mjs",
+    "render": "node render.mjs"
+  },
+  "devDependencies": {
+    "playwright-core": "1.63.0",
+    "three": "0.186.1"
+  }
+}

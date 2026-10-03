@@ -18,6 +18,7 @@ import { showToast } from "@/lib/toast";
 import { DEFAULT_FONT_SET, FONT_SET_IDS, type FontSetId } from "@/theme/fonts";
 import { DEFAULT_ICON_SET, ICON_SET_IDS } from "@/theme/icon-sets";
 import { DEFAULT_PALETTE, PALETTES, PALETTE_IDS } from "@/theme/palettes";
+import { useRouter } from "expo-router";
 import * as WebBrowser from "expo-web-browser";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -26,6 +27,7 @@ import { Alert, Linking, Switch, View } from "react-native";
 export default function SettingsScreen() {
   const { user, token, updateUser, authService, deleteAccount } = useAuth();
   const { t } = useTranslation();
+  const router = useRouter();
   const [nickname, setNickname] = useState(user?.nickname ?? "");
   const [saving, setSaving] = useState(false);
   const { preference, setPreference } = useThemePreference();
@@ -135,6 +137,16 @@ export default function SettingsScreen() {
         />
         <Button onPress={saveNickname} disabled={saving || unchanged}>
           <Text>{t("common.save")}</Text>
+        </Button>
+      </View>
+
+      <View className="gap-3 rounded-card bg-card p-5" style={Elevation.level1}>
+        <Text className="text-label-md uppercase text-muted-foreground">{t("house.character.title")}</Text>
+        <Text className="text-body-md">
+          {user?.character ? t(`house.pets.${user.character}`) : t("house.character.default")}
+        </Text>
+        <Button variant="outline" onPress={() => router.push("/character")}>
+          <Text>{t("house.chooseCharacter")}</Text>
         </Button>
       </View>
 
