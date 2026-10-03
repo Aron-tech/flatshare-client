@@ -1,4 +1,4 @@
-// A Ház nézet 3D jelenetének exportja: `assets/house/3d/` + `src/lib/house/scene3d.generated.ts`.
+// A Ház nézet 3D jelenetének exportja: `assets/house/3d/` + `src/lib/house/scene.generated.ts`.
 // Futtatás: `npm install && npm run fetch && npm run export` (ebben a mappában).
 import { copyFileSync, mkdirSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { dirname, join, relative } from "node:path";
@@ -9,7 +9,7 @@ import { PETS } from "./pets.mjs";
 const root = dirname(fileURLToPath(import.meta.url));
 const app = join(root, "..", "..");
 const assets = join(app, "assets", "house", "3d");
-const generated = join(app, "src", "lib", "house", "scene3d.generated.ts");
+const generated = join(app, "src", "lib", "house", "scene.generated.ts");
 const colormap = join(root, ".cache", "cube-pets", "Models", "GLB format", "Textures", "colormap.png");
 
 /** Az állatok mérete a bútorokhoz képest (eredetileg ~1,6 egység magasak); a studio.js PET_SCALE-je. */

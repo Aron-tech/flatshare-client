@@ -1,6 +1,6 @@
-import type { HouseJob } from "@/components/house/house-character";
 import { HouseMoodCard } from "@/components/house/house-mood-card";
-import { HouseScene } from "@/components/house/house-scene";
+import { HouseScene3D, type HouseSceneHandle } from "@/components/house/house-scene-3d";
+import type { HouseJob } from "@/components/house/three/house-pet";
 import { HouseZoneList } from "@/components/house/house-zone-list";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -9,16 +9,16 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Text } from "@/components/ui/text";
 import { Elevation, Gutter, MaxContentWidth } from "@/constants/theme";
 import { useHouseholdQuery, useHouseholdSession, usePullToRefresh } from "@/hooks/use-household-query";
-import { useThemeName } from "@/hooks/use-theme";
+import { useThemeColors, useThemeName } from "@/hooks/use-theme";
 import { pendingReplays, readLastReplayed, saveLastReplayed } from "@/lib/house/replay";
-import { HOUSE_ZONES, ROOM_IMAGE } from "@/lib/house/scene.generated";
+import { HOUSE_ZONES } from "@/lib/house/scene.generated";
 import { summarizeZones, zoneOf, type ZoneLevels } from "@/lib/house/zones";
 import { HouseholdQueries } from "@/lib/queries";
 import { useRouter } from "expo-router";
 import { PawPrint, X } from "lucide-react-native";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { RefreshControl, ScrollView, View } from "react-native";
+import { RefreshControl, ScrollView, useWindowDimensions, View } from "react-native";
 import { useReducedMotion } from "react-native-reanimated";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -34,6 +34,8 @@ export default function HouseScreen() {
   const { t } = useTranslation();
   const router = useRouter();
   const theme = useThemeName();
+  const colors = useThemeColors();
+  const window = useWindowDimensions();
   const reducedMotion = useReducedMotion();
   const { householdId } = useHouseholdSession();
   const { data: house, isLoading, error, refetch } = useHouseholdQuery(HouseholdQueries.house);
@@ -41,6 +43,9 @@ export default function HouseScreen() {
   const [width, setWidth] = useState(0);
   const [queues, setQueues] = useState<JobQueues>({});
   const replayedFor = useRef<number | null>(null);
+  const scene = useRef<HouseSceneHandle>(null);
+  // A jelenet fix magasságú (nem görög), hogy a forgatás ne akadjon össze a görgetéssel.
+  const sceneHeight = Math.round(Math.min(width * 0.95, window.height * 0.48));
 
   const { levels, summaries } = useMemo(() => summarizeZones(house?.zones ?? []), [house]);
 
@@ -93,20 +98,19 @@ export default function HouseScreen() {
           </Button>
         </View>
 
-        <ScrollView
-          contentContainerStyle={{ paddingHorizontal: Gutter, paddingBottom: 32, gap: 16 }}
-          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
-        >
+        <View style={{ paddingHorizontal: Gutter, paddingBottom: 16 }}>
           <View
             className="overflow-hidden rounded-card bg-secondary"
             style={Elevation.level1}
             onLayout={(event) => setWidth(event.nativeEvent.layout.width)}
           >
             {isLoading || !house || width === 0 ? (
-              <Skeleton className="w-full rounded-card" style={{ aspectRatio: ROOM_IMAGE.width / ROOM_IMAGE.height }} />
+              <Skeleton className="w-full rounded-card" style={{ height: sceneHeight || 320 }} />
             ) : (
-              <HouseScene
+              <HouseScene3D
+                ref={scene}
                 width={width}
+                height={sceneHeight}
                 levels={displayLevels}
                 members={house.members}
                 mood={house.mood.band}
@@ -115,10 +119,16 @@ export default function HouseScreen() {
                 onZonePress={openTasks}
                 reducedMotion={reducedMotion}
                 dark={theme === "dark"}
+                background={colors.secondary}
               />
             )}
           </View>
+        </View>
 
+        <ScrollView
+          contentContainerStyle={{ paddingHorizontal: Gutter, paddingBottom: 32, gap: 16 }}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+        >
           {error && <Text className="text-body-md text-destructive">{error}</Text>}
 
           {house && (

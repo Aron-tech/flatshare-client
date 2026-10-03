@@ -15,6 +15,7 @@ import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
 import { useEffect } from "react";
 import { ActivityIndicator, View } from "react-native";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
 import "../../global.css";
 
 SplashScreen.preventAutoHideAsync();
@@ -81,7 +82,8 @@ function RootNavigation() {
         <Stack.Screen name="member-departures" options={{ presentation: "modal" }} />
         <Stack.Screen name="calendar" options={{ presentation: "modal" }} />
         <Stack.Screen name="sticker-album" options={{ presentation: "modal" }} />
-        <Stack.Screen name="house" options={{ presentation: "modal" }} />
+        {/* A lehúzás a 3D ház függőleges forgatása; bezárni az X gombbal lehet. */}
+        <Stack.Screen name="house" options={{ presentation: "modal", gestureEnabled: false }} />
         <Stack.Screen name="character" options={{ presentation: "modal" }} />
       </Stack>
       <PortalHost />
@@ -115,8 +117,10 @@ const hideSplash = () => SplashScreen.hideAsync();
 export default function RootLayout() {
   // A tárolt kinézet (paletta, font, ikonkészlet) betöltéséig a splash marad.
   return (
-    <AppearanceProvider onReady={hideSplash}>
-      <AppShell />
-    </AppearanceProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <AppearanceProvider onReady={hideSplash}>
+        <AppShell />
+      </AppearanceProvider>
+    </GestureHandlerRootView>
   );
 }

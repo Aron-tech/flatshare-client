@@ -1,5 +1,6 @@
 // A Ház nézet jelenete: Kenney Furniture Kit szoba, zónánként 3 rendetlenség-szint, Kenney Cube Pets állatok.
-// Minden kép ugyanazzal az izometrikus (2:1 dimetrikus) kamerával készül, így az appban egymásra rakhatók.
+// Az app a szobát és az állatokat 3D-ben rajzolja (exportRoom / exportPet → GLB); a karakterválasztó
+// rácsa a renderPet sprite-atlaszait használja (ugyanazzal az izometrikus kamerával).
 import * as THREE from "three";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { GLTFExporter } from "three/addons/exporters/GLTFExporter.js";
@@ -417,100 +418,26 @@ function fitCamera() {
   renderer.setSize(roomSize.width, roomSize.height);
 }
 
-function project(x, y, z) {
-  const v = new THREE.Vector3(x, y, z).project(camera);
-  return { u: ((v.x + 1) / 2) * roomSize.width, v: ((1 - v.y) / 2) * roomSize.height };
-}
-
 /** A padlólapok teteje. */
 const FLOOR_Y = 0.05;
 
-/** A padló teteje → kép pixel affin leképezés: u = u0 + ux·x + uz·z, v = v0 + vx·x + vz·z. */
-function projection() {
-  const o = project(0, FLOOR_Y, 0);
-  const px = project(1, FLOOR_Y, 0);
-  const pz = project(0, FLOOR_Y, 1);
-  return { u0: o.u, v0: o.v, ux: px.u - o.u, uz: pz.u - o.u, vx: px.v - o.v, vz: pz.v - o.v };
-}
-
 function snapshot(type = "image/webp", quality = 0.9) {
   return renderer.domElement.toDataURL(type, quality);
-}
-
-/** A kép nem átlátszó részének befoglaló téglalapja (a rendetlenség-rétegek kivágásához). */
-function cropToContent(padding = 6) {
-  const src = renderer.domElement;
-  const c = document.createElement("canvas");
-  c.width = src.width;
-  c.height = src.height;
-  const ctx = c.getContext("2d");
-  ctx.drawImage(src, 0, 0);
-  const { data, width, height } = ctx.getImageData(0, 0, c.width, c.height);
-  let minX = width, minY = height, maxX = -1, maxY = -1;
-  for (let y = 0; y < height; y++) {
-    for (let x = 0; x < width; x++) {
-      if (data[(y * width + x) * 4 + 3] > 8) {
-        if (x < minX) minX = x;
-        if (x > maxX) maxX = x;
-        if (y < minY) minY = y;
-        if (y > maxY) maxY = y;
-      }
-    }
-  }
-  if (maxX < 0) return null;
-  minX = Math.max(0, minX - padding);
-  minY = Math.max(0, minY - padding);
-  maxX = Math.min(width - 1, maxX + padding);
-  maxY = Math.min(height - 1, maxY + padding);
-  const out = document.createElement("canvas");
-  out.width = maxX - minX + 1;
-  out.height = maxY - minY + 1;
-  out.getContext("2d").drawImage(c, minX, minY, out.width, out.height, 0, 0, out.width, out.height);
-  return { x: minX, y: minY, width: out.width, height: out.height, data: out.toDataURL("image/webp", 0.9) };
 }
 
 function showMess(zone, level) {
   for (const [z, groups] of Object.entries(mess)) groups.forEach((g, i) => (g.visible = z === zone && i < level));
 }
 
-/** A szoba csak mélységet ír (eltakarja a mögötte lévő rendetlenséget), de nem látszik. */
-function roomAsOccluder(on) {
-  room.traverse((child) => {
-    if (!child.isMesh) return;
-    const materials = Array.isArray(child.material) ? child.material : [child.material];
-    for (const m of materials) m.colorWrite = !on;
-  });
-}
-
 async function setup() {
   await buildRoom();
   await buildMess();
   fitCamera();
-  return { room: roomSize, projection: projection(), ppu, spots: SPOTS, walkArea: WALK_AREA };
-}
-
-function renderRoom() {
-  showMess(null, 0);
-  roomAsOccluder(false);
-  renderer.setSize(roomSize.width, roomSize.height);
-  renderer.render(scene, camera);
-  return snapshot();
-}
-
-function renderMess(zone, level) {
-  showMess(zone, level);
-  roomAsOccluder(true);
-  renderer.setSize(roomSize.width, roomSize.height);
-  renderer.render(scene, camera);
-  const result = cropToContent();
-  roomAsOccluder(false);
-  showMess(null, 0);
-  return result;
+  return { room: roomSize, ppu };
 }
 
 /** Átnézeti kép: szoba + minden zóna adott szinten + néhány állat (csak ellenőrzéshez). */
 async function renderPreview(level, pets = []) {
-  roomAsOccluder(false);
   for (const groups of Object.values(mess)) groups.forEach((g, i) => (g.visible = i < level));
   const added = [];
   for (const [i, pet] of pets.entries()) {
@@ -711,8 +638,6 @@ window.studio = {
   setup,
   exportRoom,
   exportPet,
-  renderRoom,
-  renderMess,
   renderPreview,
   renderPet,
   zones: () => Object.keys(MESS_BUILDERS),

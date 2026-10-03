@@ -1,4 +1,5 @@
-import { PET_ATLAS, PET_SOURCES, type Facing, type PetAnimation, type PetId } from "@/lib/house/scene.generated";
+import { PET_ATLAS, PET_SOURCES, type SpriteFacing } from "@/lib/house/pet-sprites.generated";
+import type { PetAnimation, PetId } from "@/lib/house/scene.generated";
 import { useEffect } from "react";
 import { View } from "react-native";
 import Animated, { cancelAnimation, Easing, useAnimatedStyle, useSharedValue, withRepeat, withTiming } from "react-native-reanimated";
@@ -6,7 +7,7 @@ import Animated, { cancelAnimation, Easing, useAnimatedStyle, useSharedValue, wi
 interface PetSpriteProps {
   pet: PetId;
   animation: PetAnimation;
-  facing: Facing;
+  facing: SpriteFacing;
   /** A szoba képéhez viszonyított méretarány (képernyő pt / kép px). */
   scale: number;
   /** Csak az első képkocka látszik (pl. csökkentett mozgás). */
@@ -14,7 +15,7 @@ interface PetSpriteProps {
 }
 
 /**
- * Az állat egy animációja a sprite-atlaszból: a képkocka-ablakban az atlasz eltolása
+ * Az állat egy animációja a sprite-atlaszból (a karakterválasztóhoz; a Ház nézet 3D): a képkocka-ablakban az atlasz eltolása
  * a UI szálon lép (Reanimated). A "sw" / "nw" irány a "se" / "ne" tükörképe.
  */
 export function PetSprite({ pet, animation, facing, scale, paused = false }: PetSpriteProps) {

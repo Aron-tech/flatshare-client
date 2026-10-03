@@ -526,6 +526,8 @@ const hu = {
     allClean: "Minden a helyén van. Pihenhettek!",
     chooseCharacter: "Karakter választása",
     credits: "Bútorok és állatok: Kenney (kenney.nl, CC0)",
+    sceneLabel: "A ház 3D-ben",
+    sceneHint: "Egy ujjal forgasd, két ujjal nagyíts; a rendetlen helyre koppintva a feladatokhoz jutsz.",
     moodScore: "Hangulat: {{score}} / 100",
     messLevel: "Rendetlenség: {{level}} / 3",
     mood: {

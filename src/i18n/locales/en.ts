@@ -527,6 +527,8 @@ const en: Translations = {
     allClean: "Everything is in its place. Time to relax!",
     chooseCharacter: "Choose a character",
     credits: "Furniture and animals: Kenney (kenney.nl, CC0)",
+    sceneLabel: "The house in 3D",
+    sceneHint: "Drag with one finger to rotate, pinch to zoom; tap a messy spot to see its tasks.",
     moodScore: "Mood: {{score}} / 100",
     messLevel: "Mess: {{level}} / 3",
     mood: {

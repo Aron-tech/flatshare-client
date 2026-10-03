@@ -2,7 +2,7 @@
   "name": "house-assets",
   "private": true,
   "type": "module",
-  "description": "A Ház nézet sprite-jainak renderelése a Kenney CC0 modellekből (nem része az app függőségeinek).",
+  "description": "A Ház nézet 3D modelljei (GLB) és a karakterválasztó sprite-jai a Kenney CC0 modellekből (nem része az app függőségeinek).",
   "scripts": {
     "fetch": "node fetch-sources.mjs",
     "render": "node render.mjs",
