@@ -4,17 +4,12 @@ import { mkdirSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { dirname, join, relative } from "node:path";
 import { fileURLToPath } from "node:url";
 import { openStudio } from "./harness.mjs";
+import { PETS } from "./pets.mjs";
 
 const root = dirname(fileURLToPath(import.meta.url));
 const app = join(root, "..", "..");
 const assets = join(app, "assets", "house");
 const generated = join(app, "src", "lib", "house", "scene.generated.ts");
-
-/** A választható állatok (a hal kimarad: a padlón nem tud sétálni). */
-export const PETS = [
-  "cat", "dog", "bunny", "fox", "panda", "penguin", "koala", "pig", "monkey", "lion", "tiger", "polar",
-  "chick", "parrot", "bee", "beaver", "deer", "elephant", "giraffe", "cow", "hog", "crab", "caterpillar",
-];
 
 const save = (file, dataUrl) => {
   mkdirSync(dirname(file), { recursive: true });
@@ -25,7 +20,8 @@ const save = (file, dataUrl) => {
 /** Relatív útvonal a generált fájltól (a Metro statikus `require`-t vár). */
 const asset = (file) => `require("${relative(dirname(generated), file)}")`;
 
-rmSync(assets, { recursive: true, force: true });
+// A `3d/` mappát (npm run export) nem bántja.
+for (const old of ["room.webp", "mess", "pets"]) rmSync(join(assets, old), { recursive: true, force: true });
 const studio = await openStudio();
 const { page } = studio;
 const meta = await page.evaluate(() => window.studio.setup());

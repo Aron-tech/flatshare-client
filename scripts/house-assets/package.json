@@ -5,7 +5,8 @@
   "description": "A Ház nézet sprite-jainak renderelése a Kenney CC0 modellekből (nem része az app függőségeinek).",
   "scripts": {
     "fetch": "node fetch-sources.mjs",
-    "render": "node render.mjs"
+    "render": "node render.mjs",
+    "export": "node export.mjs"
   },
   "devDependencies": {
     "playwright-core": "1.63.0",

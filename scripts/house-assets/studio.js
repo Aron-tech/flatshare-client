@@ -2,6 +2,7 @@
 // Minden kép ugyanazzal az izometrikus (2:1 dimetrikus) kamerával készül, így az appban egymásra rakhatók.
 import * as THREE from "three";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
+import { GLTFExporter } from "three/addons/exporters/GLTFExporter.js";
 
 const FURNITURE = "/.cache/furniture-kit/Models/GLTF format/";
 const PETS = "/.cache/cube-pets/Models/GLB format/";
@@ -638,9 +639,78 @@ async function renderPet(name) {
   };
 }
 
+// ---------------------------------------------------------------- 3D export (az app futásidejű jelenete)
+
+const exporter = new GLTFExporter();
+
+async function toGlb(input, options = {}) {
+  const buffer = await exporter.parseAsync(input, { binary: true, onlyVisible: false, ...options });
+  let binary = "";
+  const bytes = new Uint8Array(buffer);
+  for (let i = 0; i < bytes.length; i += 0x8000) binary += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+  return btoa(binary);
+}
+
+/** A nézési irány (y körüli elforgatás) a sprite-irány nevéből; az állat alapból +z felé néz. */
+const FACING_YAW = { se: Math.PI / 2, ne: Math.PI, nw: -Math.PI / 2, sw: 0 };
+
+/**
+ * A fő szoba GLB-je: bútorok + zónánként `mess_<zone>_<szint>` csoportok (1..3, kumulatív:
+ * a 2. szinten az 1. és 2. csoport látszik). Az appban a mess csoportok alapból rejtettek.
+ */
+async function exportRoom() {
+  const house = new THREE.Group();
+  house.name = "room_main";
+  const furniture = room.clone(true);
+  furniture.name = "furniture";
+  house.add(furniture);
+  for (const [zone, groups] of Object.entries(mess)) {
+    groups.forEach((g, i) => {
+      const copy = g.clone(true);
+      copy.name = `mess_${zone}_${i + 1}`;
+      copy.visible = true;
+      house.add(copy);
+    });
+  }
+  const box = new THREE.Box3().setFromObject(room);
+  return {
+    data: await toGlb(house),
+    meta: {
+      size: ROOM,
+      floorY: FLOOR_Y,
+      bounds: { min: box.min.toArray(), max: box.max.toArray() },
+      walkArea: WALK_AREA,
+      spots: Object.fromEntries(Object.entries(SPOTS).map(([zone, s]) => [zone, { x: s.x, z: s.z, yaw: FACING_YAW[s.facing] }])),
+    },
+  };
+}
+
+/**
+ * Egy állat GLB-je a használt animációkkal (az app neveivel). A textúra kimarad: minden állat
+ * ugyanazt a `colormap.png`-t használja, amit az app egyszer tölt be (az UV-k megmaradnak).
+ */
+async function exportPet(name) {
+  const gltf = await loader.loadAsync(PETS + `animal-${name}.glb`);
+  const object = gltf.scene;
+  object.name = `pet_${name}`;
+  object.traverse((child) => {
+    if (!child.isMesh) return;
+    child.material = new THREE.MeshStandardMaterial({ name: "colormap", roughness: 0.8, metalness: 0, side: THREE.DoubleSide });
+  });
+  const animations = PET_ANIMATIONS.map((anim) => {
+    const clip = gltf.animations.find((a) => a.name === anim.clip).clone();
+    clip.name = anim.name;
+    return clip;
+  });
+  const box = new THREE.Box3().setFromObject(object);
+  return { data: await toGlb(object, { animations }), height: box.max.y - box.min.y };
+}
+
 window.studio = {
   ready: true,
   setup,
+  exportRoom,
+  exportPet,
   renderRoom,
   renderMess,
   renderPreview,
