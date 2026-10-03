@@ -1,5 +1,6 @@
 import { HouseMoodCard } from "@/components/house/house-mood-card";
 import { HouseScene3D, type HouseSceneHandle } from "@/components/house/house-scene-3d";
+import { HouseSettingsSheet } from "@/components/house/house-settings-sheet";
 import type { HouseJob } from "@/components/house/three/house-pet";
 import { HouseZoneList } from "@/components/house/house-zone-list";
 import { Button } from "@/components/ui/button";
@@ -15,7 +16,7 @@ import { HOUSE_ZONES } from "@/lib/house/scene.generated";
 import { summarizeZones, zoneOf, type ZoneLevels } from "@/lib/house/zones";
 import { HouseholdQueries } from "@/lib/queries";
 import { useRouter } from "expo-router";
-import { PawPrint, X } from "lucide-react-native";
+import { Settings2, X } from "lucide-react-native";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { RefreshControl, ScrollView, useWindowDimensions, View } from "react-native";
@@ -44,6 +45,7 @@ export default function HouseScreen() {
   const [queues, setQueues] = useState<JobQueues>({});
   const replayedFor = useRef<number | null>(null);
   const scene = useRef<HouseSceneHandle>(null);
+  const [settingsOpen, setSettingsOpen] = useState(false);
   // A jelenet fix magasságú (nem görög), hogy a forgatás ne akadjon össze a görgetéssel.
   const sceneHeight = Math.round(Math.min(width * 0.95, window.height * 0.48));
 
@@ -122,6 +124,18 @@ export default function HouseScreen() {
                 background={colors.secondary}
               />
             )}
+            {house && (
+              <Button
+                size="icon"
+                variant="secondary"
+                className="absolute right-3 top-3 rounded-full"
+                style={Elevation.level1}
+                onPress={() => setSettingsOpen(true)}
+                accessibilityLabel={t("house.settings.title")}
+              >
+                <Icon as={Settings2} size={18} />
+              </Button>
+            )}
           </View>
         </View>
 
@@ -142,15 +156,25 @@ export default function HouseScreen() {
                 <HouseZoneList summaries={summaries} onPress={openTasks} />
               )}
 
-              <Button variant="outline" onPress={() => router.push("/character")}>
-                <Icon as={PawPrint} size={16} />
-                <Text>{t("house.chooseCharacter")}</Text>
-              </Button>
               <Text className="px-1 text-center text-body-sm text-muted-foreground">{t("house.credits")}</Text>
             </>
           )}
         </ScrollView>
       </SafeAreaView>
+
+      {settingsOpen && (
+        <HouseSettingsSheet
+          onClose={() => setSettingsOpen(false)}
+          onChooseCharacter={() => {
+            setSettingsOpen(false);
+            router.push("/character");
+          }}
+          onResetCamera={() => {
+            setSettingsOpen(false);
+            scene.current?.resetCamera();
+          }}
+        />
+      )}
     </View>
   );
 }

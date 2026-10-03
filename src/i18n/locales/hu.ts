@@ -526,6 +526,12 @@ const hu = {
     allClean: "Minden a helyén van. Pihenhettek!",
     chooseCharacter: "Karakter választása",
     credits: "Bútorok és állatok: Kenney (kenney.nl, CC0)",
+    settings: {
+      title: "A ház beállításai",
+      resetCamera: "Alapnézet",
+      shop: "Szobabolt",
+      shopSoon: "Hamarosan: közösen gyűjtött pontokból új szobákat építhettek.",
+    },
     sceneLabel: "A ház 3D-ben",
     sceneHint: "Egy ujjal forgasd, két ujjal nagyíts; a rendetlen helyre koppintva a feladatokhoz jutsz.",
     moodScore: "Hangulat: {{score}} / 100",
