@@ -5,7 +5,6 @@ import { Progress } from "@/components/ui/progress";
 import { Text } from "@/components/ui/text";
 import { useHouseholdMutation, useHouseholdQuery } from "@/hooks/use-household-query";
 import { HouseholdQueries } from "@/lib/queries";
-import { showToast } from "@/lib/toast";
 import { houseService } from "@/services/api/HouseService";
 import type { HouseMember, HouseRoomState } from "@/types/house";
 import { Bath, CheckCircle2, CookingPot, type LucideIcon } from "lucide-react-native";
@@ -50,10 +49,8 @@ function RoomCard({ room, members, spendable }: { room: HouseRoomState; members:
   const submit = async () => {
     if (selected === null) return;
     const result = await contribute.run({ room: room.key, amount: selected });
-    if (result) {
-      setAmount(null);
-      showToast(result.message);
-    }
+    // HttpClient already shows the success message.
+    if (result) setAmount(null);
   };
 
   return (

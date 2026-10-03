@@ -106,14 +106,15 @@ function zoneMark(zone: HouseZone, layout: HouseLayout): [number, number, number
 /** Egy még meg nem épült szoba helye: áttetsző padló és körvonal (koppintható). */
 function GhostRoom({ room, color }: { room: HouseRoomState["key"]; color: string }) {
   const { offset, size, floorY } = ROOMS[room];
+  const box = useMemo(() => new BoxGeometry(size.x - 0.06, floorY, size.z - 0.06), [size.x, size.z, floorY]);
+  useEffect(() => () => box.dispose(), [box]);
   return (
     <group name={`ghost_${room}`} position={[offset.x + size.x / 2, floorY / 2, offset.z + size.z / 2]}>
-      <mesh>
-        <boxGeometry args={[size.x - 0.06, floorY, size.z - 0.06]} />
+      <mesh geometry={box}>
         <meshStandardMaterial color={color} transparent opacity={0.35} depthWrite={false} />
       </mesh>
       <lineSegments>
-        <edgesGeometry args={[new BoxGeometry(size.x - 0.06, floorY, size.z - 0.06)]} />
+        <edgesGeometry args={[box]} />
         <lineBasicMaterial color={color} />
       </lineSegments>
     </group>

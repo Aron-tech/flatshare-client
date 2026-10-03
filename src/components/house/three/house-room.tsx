@@ -10,6 +10,9 @@ import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 const FADE_IN = 0.4;
 const FADE_OUT = 0.8;
 
+const BASE_OPACITY = "messBaseOpacity";
+const BASE_TRANSPARENT = "messBaseTransparent";
+
 interface MessLayer {
   zone: HouseZone;
   level: number;
@@ -81,15 +84,28 @@ function prepareLayers(scene: Object3D): MessLayer[] {
       const materials: MessLayer["materials"] = [];
       object.traverse((child) => {
         if (!("material" in child) || !child.material) return;
-        const material = (child.material as Material).clone();
-        (child as { material: Material }).material = material;
-        materials.push({ material, opacity: material.opacity, transparent: material.transparent });
+        const material = ownMaterial(child as { material: Material });
+        materials.push({
+          material,
+          opacity: material.userData[BASE_OPACITY] as number,
+          transparent: material.userData[BASE_TRANSPARENT] as boolean,
+        });
       });
       object.visible = false;
       result.push({ zone, level, object, materials, opacity: 0 });
     }
   }
   return result;
+}
+
+/** The loaded scene is cached app-wide, so the original opacity is stored on the clone once. */
+function ownMaterial(child: { material: Material }): Material {
+  if (BASE_OPACITY in child.material.userData) return child.material;
+  const material = child.material.clone();
+  material.userData[BASE_OPACITY] = material.opacity;
+  material.userData[BASE_TRANSPARENT] = material.transparent;
+  child.material = material;
+  return material;
 }
 
 /** Áttűnés nélkül (csökkentett mozgás). */

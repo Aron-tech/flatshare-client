@@ -332,6 +332,12 @@ const hu = {
     removeFailed: "Nem sikerült eltávolítani a tagot.",
     owner: "Létrehozó",
     title: "Tagok kezelése",
+    listTitle: "Tagok",
+    report: "Jelentés",
+    reportSubject: "FlatShare jelentés: {{name}}",
+    reportBody:
+      "Háztartás: {{household}} (#{{householdId}})\nJelentett tag: {{name}} (#{{userId}})\n\nMi történt:\n",
+    reportFallback: "A jelentést a(z) {{email}} címre küldd el, a háztartás és a tag nevével együtt.",
     roleFailed: "Nem sikerült módosítani a szerepkört.",
     roles: { admin: "Admin", user: "Tag", child: "Gyerek" },
   },

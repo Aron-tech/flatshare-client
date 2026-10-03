@@ -2,6 +2,7 @@ import { alertError } from "@/lib/errors";
 import { Button } from "@/components/ui/button";
 import { SegmentedControl } from "@/components/ui/segmented-control";
 import { Text } from "@/components/ui/text";
+import { Config } from "@/config/env";
 import { useAuth } from "@/context/AuthContext";
 import { useHousehold } from "@/context/HouseholdContext";
 import { householdKey, HouseholdQueries } from "@/lib/queries";
@@ -10,28 +11,48 @@ import { HouseholdRole, HouseholdUser } from "@/types/household-user";
 import { skipToken, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { ActivityIndicator, Alert, FlatList, View } from "react-native";
+import { ActivityIndicator, Alert, FlatList, Linking, View } from "react-native";
 
 const ROLES = ["admin", "user", "child"] as const;
+
+/** Egy sor a listában; a `householdUser` csak a létrehozónál van meg (szerkesztéshez). */
+type MemberRow = {
+  userId: number;
+  name: string;
+  householdUser: HouseholdUser | null;
+};
 
 type Props = {
   householdId: number;
   onBack: () => void;
 };
 
-/** Tagkezelés (admin): szerepkör módosítása, tag eltávolítása. A lista a váltó képernyő előtöltött cache-éből jön. */
+/**
+ * Taglista. A létrehozó módosíthatja a szerepköröket és eltávolíthat tagot; bárki jelentheti a többi tagot
+ * (App Review 1.2: a felhasználói tartalomhoz kell jelentési lehetőség). A jelentés a támogatási címre megy e-mailben.
+ */
 export function HouseholdMembersView({ householdId, onBack }: Props) {
   const { t } = useTranslation();
   const { user, token } = useAuth();
   const { households } = useHousehold();
   const queryClient = useQueryClient();
   const household = households.find((h) => h.id === householdId);
+  const viewerIsOwner = household ? user?.id === household.created_by : false;
 
+  // A teljes lista (szerepkör, e-mail) csak adminnak jár; a többi tag a névsort kapja.
   const membersKey = HouseholdQueries.householdUsers.key(householdId);
-  const { data: members = [], isPending } = useQuery({
+  const fullList = useQuery({
     queryKey: membersKey,
-    queryFn: token ? () => HouseholdQueries.householdUsers.fetch(householdId, token) : skipToken,
+    queryFn: token && viewerIsOwner ? () => HouseholdQueries.householdUsers.fetch(householdId, token) : skipToken,
   });
+  const nameList = useQuery({
+    queryKey: HouseholdQueries.members.key(householdId),
+    queryFn: token && !viewerIsOwner ? () => HouseholdQueries.members.fetch(householdId, token) : skipToken,
+  });
+  const isPending = viewerIsOwner ? fullList.isPending : nameList.isPending;
+  const rows: MemberRow[] = viewerIsOwner
+    ? (fullList.data ?? []).map((m) => ({ userId: m.user_id, name: m.user.name, householdUser: m }))
+    : (nameList.data ?? []).map((m) => ({ userId: m.user_id, name: m.name, householdUser: null }));
   const [busyUserId, setBusyUserId] = useState<number | null>(null);
 
   /** Azonnal frissíti a listát, majd a háztartás többi adatát (pontok, statisztika…) is. */
@@ -82,31 +103,49 @@ export function HouseholdMembersView({ householdId, onBack }: Props) {
     );
   };
 
-  const renderItem = ({ item }: { item: HouseholdUser }) => {
-    const isOwner = household ? item.user_id === household.created_by : false;
-    const isSelf = user?.id === item.user_id;
-    const isBusy = busyUserId === item.user_id;
+  /** Előre kitöltött e-mail a támogatásnak; levelezőprogram nélkül a címet mutatja. */
+  const handleReport = (member: MemberRow) => {
+    const subject = t("members.reportSubject", { name: member.name });
+    const body = t("members.reportBody", {
+      household: household?.name ?? "",
+      householdId,
+      name: member.name,
+      userId: member.userId,
+    });
+    Linking.openURL(
+      `mailto:${Config.SUPPORT_EMAIL}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`,
+    ).catch(() => Alert.alert(t("members.report"), t("members.reportFallback", { email: Config.SUPPORT_EMAIL })));
+  };
 
-    const canEdit = !isOwner && !isSelf;
+  const renderItem = ({ item }: { item: MemberRow }) => {
+    const isOwner = household ? item.userId === household.created_by : false;
+    const isSelf = user?.id === item.userId;
+    const isBusy = busyUserId === item.userId;
+    const member = item.householdUser;
+
+    const canEdit = member !== null && !isOwner && !isSelf;
+    const details = [member?.user.email, isOwner ? t("members.owner") : null].filter(Boolean).join(" · ");
 
     return (
       <View className="mb-3 gap-3 rounded-card border border-border bg-card p-4">
         <View className="flex-row items-center justify-between gap-3">
           <View className="flex-1">
             <Text variant="h4">
-              {item.user.name}
+              {item.name}
             </Text>
-            <Text variant="muted">
-              {item.user.email}
-              {isOwner ? ` · ${t("members.owner")}` : ""}
-            </Text>
+            {details !== "" && <Text variant="muted">{details}</Text>}
           </View>
+          {!isSelf && (
+            <Button size="sm" variant="outline" onPress={() => handleReport(item)}>
+              <Text>{t("members.report")}</Text>
+            </Button>
+          )}
           {canEdit && (
             <Button
               size="sm"
               variant="destructive"
               disabled={isBusy}
-              onPress={() => handleRemove(item)}
+              onPress={() => handleRemove(member)}
             >
               <Text>{t("members.remove")}</Text>
             </Button>
@@ -116,8 +155,8 @@ export function HouseholdMembersView({ householdId, onBack }: Props) {
           <View className={isBusy ? "opacity-50" : undefined} style={{ pointerEvents: isBusy ? "none" : "auto" }}>
             <SegmentedControl
               activeTone="primary"
-              value={item.role}
-              onChange={(role) => handleRoleChange(item, role)}
+              value={member.role}
+              onChange={(role) => handleRoleChange(member, role)}
               options={ROLES.map((role) => ({ value: role, label: t(`members.roles.${role}`) }))}
             />
           </View>
@@ -137,15 +176,15 @@ export function HouseholdMembersView({ householdId, onBack }: Props) {
   return (
     <View className="flex-1 bg-background p-6">
       <Text variant="h3" className="mb-1">
-        {t("members.title")}
+        {viewerIsOwner ? t("members.title") : t("members.listTitle")}
       </Text>
       <Text variant="muted" className="mb-6">
         {household?.name}
       </Text>
 
       <FlatList
-        data={members}
-        keyExtractor={(item) => item.id.toString()}
+        data={rows}
+        keyExtractor={(item) => item.userId.toString()}
         renderItem={renderItem}
         className="flex-1"
       />

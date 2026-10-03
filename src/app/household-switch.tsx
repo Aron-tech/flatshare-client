@@ -325,15 +325,27 @@ export default function HouseholdSwitchScreen() {
                   </Button>
                 </>
               ) : (
-                <Button
-                  size="icon"
-                  variant="destructive"
-                  disabled={isBusy}
-                  onPress={() => handleLeave(item)}
-                  accessibilityLabel={t("switch.leave")}
-                >
-                  <Icon as={LogOut} size={18} className="text-white" />
-                </Button>
+                <>
+                  {/* Nem létrehozóként csak a taglista (és a jelentés) érhető el. */}
+                  <Button
+                    size="icon"
+                    variant="outline"
+                    disabled={isBusy}
+                    onPress={() => setMembersHouseholdId(item.id)}
+                    accessibilityLabel={t("members.listTitle")}
+                  >
+                    <Icon as={Users} size={18} />
+                  </Button>
+                  <Button
+                    size="icon"
+                    variant="destructive"
+                    disabled={isBusy}
+                    onPress={() => handleLeave(item)}
+                    accessibilityLabel={t("switch.leave")}
+                  >
+                    <Icon as={LogOut} size={18} className="text-white" />
+                  </Button>
+                </>
               )}
             </View>
           </View>

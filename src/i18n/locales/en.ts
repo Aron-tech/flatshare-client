@@ -333,6 +333,12 @@ const en: Translations = {
     removeFailed: "Could not remove the member.",
     owner: "Owner",
     title: "Manage members",
+    listTitle: "Members",
+    report: "Report",
+    reportSubject: "FlatShare report: {{name}}",
+    reportBody:
+      "Household: {{household}} (#{{householdId}})\nReported member: {{name}} (#{{userId}})\n\nWhat happened:\n",
+    reportFallback: "Send your report to {{email}}. Please include the household and member name.",
     roleFailed: "Could not change the role.",
     roles: { admin: "Admin", user: "Member", child: "Child" },
   },
