@@ -4,7 +4,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Text } from "@/components/ui/text";
 import { Elevation } from "@/constants/theme";
 import { HousePet, type HouseJob } from "@/components/house/three/house-pet";
-import { HouseRoom, zoneOfObject } from "@/components/house/three/house-room";
+import { HouseRoom, roomOfObject, zoneOfObject } from "@/components/house/three/house-room";
 import { FixedAnchor, createAnchor, type ScreenAnchor } from "@/components/house/three/screen-anchor";
 import {
   ORBIT,
@@ -22,9 +22,9 @@ import {
 } from "@/lib/house/orbit";
 import { HOUSE_ZONES, PET_COLORMAP, ROOMS, type HouseZone, type PetAnimation, type RoomKey } from "@/lib/house/scene.generated";
 import { SPEECH_GAP_MS, SPEECH_VISIBLE_MS, doneLine, moodLine } from "@/lib/house/speech";
-import { toWorld } from "@/lib/house/walk";
+import { houseLayout, roomLevels, unlockedRoomKeys, zoneSpot, type HouseLayout } from "@/lib/house/rooms";
 import type { ZoneLevels } from "@/lib/house/zones";
-import type { HouseMember, HouseMoodBand } from "@/types/house";
+import type { HouseMember, HouseMoodBand, HouseRoomState } from "@/types/house";
 import { Canvas, useFrame, useLoader, useThree } from "@react-three/fiber/native";
 import { Frown, Heart, Sparkles, type LucideIcon } from "lucide-react-native";
 import { Suspense, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState, type Ref } from "react";
@@ -33,6 +33,7 @@ import { View } from "react-native";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import Animated, { FadeIn, FadeOut, useAnimatedStyle, useSharedValue, withSequence, withTiming } from "react-native-reanimated";
 import {
+  BoxGeometry,
   DoubleSide,
   MeshStandardMaterial,
   Raycaster,
@@ -68,6 +69,10 @@ interface HouseScene3DProps {
   onJobDone: (userId: number, job: HouseJob) => void;
   /** A rendetlen zónára koppintva (a feladatokhoz visz). */
   onZonePress: (zone: HouseZone) => void;
+  /** A pontokból építhető szobák (a még nem megépültek szellemként látszanak). */
+  rooms: HouseRoomState[];
+  /** Egy még meg nem épült szobára koppintva (a szobaboltot nyitja). */
+  onRoomPress: (room: HouseRoomState["key"]) => void;
   reducedMotion: boolean;
   dark: boolean;
   /** A jelenet háttere (a kártya színe). */
@@ -92,11 +97,27 @@ function houseBounds(rooms: readonly RoomKey[]) {
   return { target, radius };
 }
 
-function zoneMark(zone: HouseZone): [number, number, number] | null {
-  const spot = ROOMS.main.spots[zone];
+function zoneMark(zone: HouseZone, layout: HouseLayout): [number, number, number] | null {
+  const spot = zoneSpot(zone, layout);
   if (!spot) return null;
-  const world = toWorld("main", spot);
-  return [world.x, ROOMS.main.floorY + ZONE_MARK_HEIGHT, world.z];
+  return [spot.x, ROOMS[spot.room].floorY + ZONE_MARK_HEIGHT, spot.z];
+}
+
+/** Egy még meg nem épült szoba helye: áttetsző padló és körvonal (koppintható). */
+function GhostRoom({ room, color }: { room: HouseRoomState["key"]; color: string }) {
+  const { offset, size, floorY } = ROOMS[room];
+  return (
+    <group name={`ghost_${room}`} position={[offset.x + size.x / 2, floorY / 2, offset.z + size.z / 2]}>
+      <mesh>
+        <boxGeometry args={[size.x - 0.06, floorY, size.z - 0.06]} />
+        <meshStandardMaterial color={color} transparent opacity={0.35} depthWrite={false} />
+      </mesh>
+      <lineSegments>
+        <edgesGeometry args={[new BoxGeometry(size.x - 0.06, floorY, size.z - 0.06)]} />
+        <lineBasicMaterial color={color} />
+      </lineSegments>
+    </group>
+  );
 }
 
 // ---------------------------------------------------------------- a Canvas belseje
@@ -113,16 +134,28 @@ function placeCamera(camera: Camera, orbit: OrbitState, delta: number, distance:
   camera.lookAt(target[0], target[1], target[2]);
 }
 
+type TapTarget = { zone: HouseZone } | { room: HouseRoomState["key"] };
+
 interface SceneBridge {
-  /** A koppintott rendetlen zóna (`x`, `y`: pt a jelenet bal felső sarkától). */
-  zoneAt: (x: number, y: number, levels: ZoneLevels) => HouseZone | null;
+  /** A koppintott rendetlen zóna vagy meg nem épült szoba (`x`, `y`: pt a jelenet bal felső sarkától). */
+  targetAt: (x: number, y: number, levels: ZoneLevels, layout: HouseLayout) => TapTarget | null;
 }
 
 /** A gesztusok (a Canvason kívül) ebből olvassák a jelenetet és a legfrissebb propokat. */
 interface GestureInput {
   bridge: SceneBridge | null;
   levels: ZoneLevels;
+  layout: HouseLayout;
   onZonePress: (zone: HouseZone) => void;
+  onRoomPress: (room: HouseRoomState["key"]) => void;
+}
+
+function ghostOf(object: Object3D | null): HouseRoomState["key"] | null {
+  for (let node = object; node; node = node.parent) {
+    const match = /^ghost_(.+)$/.exec(node.name);
+    if (match) return match[1] as HouseRoomState["key"];
+  }
+  return null;
 }
 
 function isShown(object: Object3D | null): boolean {
@@ -135,24 +168,27 @@ function createBridge(camera: Camera, scene: Scene, size: { width: number; heigh
   const pointer = new Vector2();
   const projected = new Vector3();
   return {
-    zoneAt: (x, y, levels) => {
+    targetAt: (x, y, levels, layout) => {
       pointer.set((x / size.width) * 2 - 1, -(y / size.height) * 2 + 1);
       raycaster.setFromCamera(pointer, camera);
+      let ghost: HouseRoomState["key"] | null = null;
       for (const hit of raycaster.intersectObjects(scene.children, true)) {
         if (!isShown(hit.object)) continue;
         const zone = zoneOfObject(hit.object);
-        if (zone && levels[zone] > 0) return zone;
+        if (zone && levels[zone] > 0 && layout.zoneRooms[zone] === roomOfObject(hit.object)) return { zone };
+        ghost ??= ghostOf(hit.object);
       }
       // Tartalék: a legközelebbi rendetlen zóna helye a koppintás körül.
       let best: { zone: HouseZone; d: number } | null = null;
       for (const zone of HOUSE_ZONES) {
-        const mark = zoneMark(zone);
+        const mark = zoneMark(zone, layout);
         if (!mark || levels[zone] <= 0) continue;
         projected.set(...mark).project(camera);
         const d = Math.hypot(((projected.x + 1) / 2) * size.width - x, ((1 - projected.y) / 2) * size.height - y);
         if (d <= TAP_RADIUS && (!best || d < best.d)) best = { zone, d };
       }
-      return best?.zone ?? null;
+      if (best) return { zone: best.zone };
+      return ghost ? { room: ghost } : null;
     },
   };
 }
@@ -161,9 +197,8 @@ function setBridge(input: GestureInput, bridge: SceneBridge | null) {
   input.bridge = bridge;
 }
 
-function updateInput(input: GestureInput, levels: ZoneLevels, onZonePress: (zone: HouseZone) => void) {
-  input.levels = levels;
-  input.onZonePress = onZonePress;
+function updateInput(input: GestureInput, values: Omit<GestureInput, "bridge">) {
+  Object.assign(input, values);
 }
 
 /** A Canvason kívülről (gesztusok) elérhető műveletek. */
@@ -198,8 +233,9 @@ function createGesture(orbit: OrbitState, input: GestureInput) {
     .maxDuration(300)
     .onEnd((event, success) => {
       if (!success) return;
-      const zone = input.bridge?.zoneAt(event.x, event.y, input.levels);
-      if (zone) input.onZonePress(zone);
+      const target = input.bridge?.targetAt(event.x, event.y, input.levels, input.layout);
+      if (target && "zone" in target) input.onZonePress(target.zone);
+      else if (target) input.onRoomPress(target.room);
     });
   return Gesture.Race(tap, Gesture.Simultaneous(pan, pinch));
 }
@@ -226,7 +262,7 @@ function Ready({ onReady }: { onReady: () => void }) {
   return null;
 }
 
-function Lights({ dark, target }: { dark: boolean; target: [number, number, number] }) {
+function Lights({ dark, target, radius }: { dark: boolean; target: [number, number, number]; radius: number }) {
   const sun = useMemo(() => new Vector3(target[0] + 4, 9, target[2] + 2.5), [target]);
   return (
     <>
@@ -237,10 +273,10 @@ function Lights({ dark, target }: { dark: boolean; target: [number, number, numb
         color={dark ? "#C9D3FF" : "#FFF1DE"}
         castShadow
         shadow-mapSize={[1024, 1024]}
-        shadow-camera-left={-4}
-        shadow-camera-right={4}
-        shadow-camera-top={4}
-        shadow-camera-bottom={-4}
+        shadow-camera-left={-radius}
+        shadow-camera-right={radius}
+        shadow-camera-top={radius}
+        shadow-camera-bottom={-radius}
         shadow-bias={-0.0004}
         shadow-normalBias={0.02}
       >
@@ -255,6 +291,7 @@ function Lights({ dark, target }: { dark: boolean; target: [number, number, numb
 interface PetsProps {
   members: HouseMember[];
   mood: HouseMoodBand;
+  layout: HouseLayout;
   jobs: Record<number, HouseJob | undefined>;
   onJobDone: (userId: number, job: HouseJob) => void;
   onAnimationChange: (userId: number, animation: PetAnimation) => void;
@@ -262,7 +299,7 @@ interface PetsProps {
   reducedMotion: boolean;
 }
 
-function Pets({ members, mood, jobs, onJobDone, onAnimationChange, anchorFor, reducedMotion }: PetsProps) {
+function Pets({ members, mood, layout, jobs, onJobDone, onAnimationChange, anchorFor, reducedMotion }: PetsProps) {
   const colormap = useLoader(TextureLoader, assetUrl(PET_COLORMAP));
   const material = useMemo(() => createPetMaterial(colormap), [colormap]);
   useEffect(() => () => material.dispose(), [material]);
@@ -273,6 +310,7 @@ function Pets({ members, mood, jobs, onJobDone, onAnimationChange, anchorFor, re
       member={member}
       index={index}
       mood={mood}
+      layout={layout}
       job={jobs[member.user_id] ?? null}
       onJobDone={(job) => onJobDone(member.user_id, job)}
       onAnimationChange={(animation) => onAnimationChange(member.user_id, animation)}
@@ -394,25 +432,33 @@ export function HouseScene3D({
   jobs,
   onJobDone,
   onZonePress,
+  rooms,
+  onRoomPress,
   reducedMotion,
   dark,
   background,
 }: HouseScene3DProps) {
   const { t } = useTranslation();
-  const rooms = useMemo<RoomKey[]>(() => ["main"], []);
-  const { target, radius } = useMemo(() => houseBounds(rooms), [rooms]);
+  const unlockedKeys = unlockedRoomKeys(rooms);
+  const layout = useMemo(() => houseLayout(unlockedKeys), [unlockedKeys]);
+  const lockedRooms = rooms.filter((room) => !room.unlocked && room.key in ROOMS);
+  const { target, radius } = useMemo(() => houseBounds(layout.rooms), [layout]);
+  const ghostColor = dark ? "#8A8FA8" : "#C9B89A";
   const distance = fitDistance(radius, width / height);
 
   // Változtatható állapot a gesztusoknak és a képkockáknak (nem okoz újrarenderelést).
   const [orbit] = useState(initialOrbit);
-  const [input] = useState<GestureInput>(() => ({ bridge: null, levels, onZonePress }));
+  const [input] = useState<GestureInput>(() => ({ bridge: null, levels, layout, onZonePress, onRoomPress }));
   const [anchors] = useState(() => new Map<number, ScreenAnchor>());
   const [ready, setReady] = useState(false);
   const onReady = useCallback(() => setReady(true), []);
 
   useImperativeHandle(ref, () => ({ resetCamera: () => startReset(orbit) }), [orbit]);
 
-  useEffect(() => updateInput(input, levels, onZonePress), [input, levels, onZonePress]);
+  useEffect(
+    () => updateInput(input, { levels, layout, onZonePress, onRoomPress }),
+    [input, levels, layout, onZonePress, onRoomPress]
+  );
 
   const gesture = useMemo(() => createGesture(orbit, input), [orbit, input]);
   const anchorFor = useCallback((userId: number) => anchorOf(anchors, userId), [anchors]);
@@ -459,7 +505,7 @@ export function HouseScene3D({
 
   const finishJob = useCallback(
     (userId: number, job: HouseJob) => {
-      const position = job.zone ? zoneMark(job.zone) : null;
+      const position = job.zone ? zoneMark(job.zone, layout) : null;
       if (position && !reducedMotion) {
         setSparkles((current) => [...current, { key: job.id, anchor: createAnchor(), position }]);
         const timer = setTimeout(() => {
@@ -471,7 +517,7 @@ export function HouseScene3D({
       say(userId, doneLine(t));
       onJobDone(userId, job);
     },
-    [onJobDone, reducedMotion, say, t]
+    [layout, onJobDone, reducedMotion, say, t]
   );
 
   return (
@@ -491,16 +537,20 @@ export function HouseScene3D({
           camera={{ fov: ORBIT.fov, near: 0.1, far: 100, position: orbitPosition(ORBIT, distance, target) }}
         >
           <color attach="background" args={[background]} />
-          <Lights dark={dark} target={target} />
+          <Lights dark={dark} target={target} radius={radius + 1} />
           <CameraRig orbit={orbit} target={target} distance={distance} />
           <Bridge input={input} />
           <Suspense fallback={null}>
-            {rooms.map((room) => (
-              <HouseRoom key={room} room={room} levels={levels} reducedMotion={reducedMotion} />
+            {layout.rooms.map((room) => (
+              <HouseRoom key={room} room={room} levels={roomLevels(room, levels, layout)} reducedMotion={reducedMotion} />
+            ))}
+            {lockedRooms.map((room) => (
+              <GhostRoom key={room.key} room={room.key} color={ghostColor} />
             ))}
             <Pets
               members={members}
               mood={mood}
+              layout={layout}
               jobs={jobs}
               onJobDone={finishJob}
               onAnimationChange={onAnimationChange}

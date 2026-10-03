@@ -388,6 +388,117 @@ const SPOTS = {
 /** A bejárható padlórész (az állatok itt sétálgatnak). */
 const WALK_AREA = { minX: 0.9, maxX: 3.6, minZ: 1.0, maxZ: 3.6 };
 
+// ---------------------------------------------------------------- extra szobák (pontokból építhetők)
+
+/** Padló sakktábla mintával; `sx` × `sz` lap a szoba saját (0, 0) sarkától. */
+async function floor(parent, sx, sz, [a, b]) {
+  for (let i = 0; i < sx; i++) for (let j = 0; j < sz; j++) await place(parent, "floorFull", { x: i, z: j, color: (i + j) % 2 ? a : b });
+}
+
+async function buildKitchenRoom(g) {
+  await floor(g, 3, 4, ["#E9E4DA", "#DAD3C6"]);
+  const back = ["wall", "wallWindow", "wall"];
+  for (let i = 0; i < 3; i++) await place(g, back[i], { x: i, z: -0.09 });
+  const counter = ["kitchenFridgeLarge", "kitchenCabinetDrawer", "kitchenSink", "kitchenStoveElectric", "kitchenCabinet"];
+  let x = 0.05;
+  for (const name of counter) {
+    const object = await place(g, name, { x, z: 0 });
+    x = new THREE.Box3().setFromObject(object).max.x + 0.01;
+  }
+  await place(g, "kitchenCabinetUpperDouble", { x: 1.0, z: 0, y: 0.82 });
+  await place(g, "kitchenMicrowave", { x: 0.62, z: 0.08, y: 0.45 });
+  await place(g, "trashcan", { x: 2.62, z: 0.12 });
+  // Étkezőasztal székekkel.
+  await place(g, "tableCloth", { x: 0.75, z: 2.2, color: COLORS.sage });
+  await place(g, "chairCushion", { x: 0.55, z: 2.05, rotation: 90 });
+  await place(g, "chairCushion", { x: 1.75, z: 2.4, rotation: -90 });
+  await place(g, "rugRectangle", { x: 0.5, z: 1.8, y: 0.05, color: COLORS.sand });
+  await place(g, "pottedPlant", { x: 2.6, z: 3.5 });
+}
+
+async function buildBathroomRoom(g) {
+  await floor(g, 4, 3, ["#DCE6E0", "#C9D8D2"]);
+  const back = ["wall", "wallWindow", "wall"];
+  for (let j = 0; j < 3; j++) await place(g, back[j], { x: -0.09, z: j, rotation: 90 });
+  await place(g, "bathtub", { x: 0, z: 0.05, rotation: 90 });
+  await place(g, "bathroomSinkSquare", { x: 0, z: 1.25, rotation: 90 });
+  await place(g, "bathroomMirror", { x: 0, z: 1.3, y: 0.62, rotation: 90 });
+  await place(g, "toiletSquare", { x: 0, z: 2.05, rotation: 90 });
+  await place(g, "washerDryerStacked", { x: 2.2, z: 2.45, rotation: 180 });
+  await place(g, "rugRounded", { x: 1.0, z: 0.9, y: 0.05, color: COLORS.ocean });
+  const basket = new THREE.Group();
+  mesh(basket, new THREE.CylinderGeometry(0.14, 0.12, 0.22, 20, 1, true), COLORS.wicker, { y: 0.11, options: { side: THREE.DoubleSide } });
+  mesh(basket, new THREE.CylinderGeometry(0.12, 0.12, 0.01, 20), COLORS.wicker, { y: 0.005 });
+  basket.position.set(3.1, 0.05, 2.65);
+  g.add(basket);
+}
+
+/**
+ * A pontokból építhető szobák: a szoba saját koordinátáiban (0, 0 a hátsó sarok), az `offset`
+ * a fő szobához képest. A feloldás után a felsorolt zónák rendetlensége itt jelenik meg.
+ */
+const EXTRA_ROOMS = {
+  kitchen: {
+    size: { x: 3, z: 4 },
+    offset: { x: 4, z: 0 },
+    build: buildKitchenRoom,
+    mess: {
+      kitchen: [
+        (g) => {
+          plateStack(g, 3, { x: 1.1, y: 0.42, z: 2.45 });
+          cup(g, { x: 1.4, y: 0.42, z: 2.6 });
+        },
+        (g) => {
+          pot(g, { x: 1.95, y: 0.45, z: 0.24 });
+          plateStack(g, 4, { x: 1.05, y: 0.45, z: 0.22 });
+        },
+        (g) => {
+          plateStack(g, 2, { x: 1.6, y: 0.05, z: 1.3 });
+          cup(g, { x: 0.95, y: 0.42, z: 2.85, color: COLORS.ocean });
+          decal(g, COLORS.dirt, { x: 1.3, z: 1.6, rx: 0.1, rz: 0.06, opacity: 0.35 });
+        },
+      ],
+      trash: [
+        (g) => {
+          mesh(g, new THREE.SphereGeometry(0.1, 14, 10), COLORS.bag, { x: 2.72, y: 0.42, z: 0.23, sy: 0.6 });
+        },
+        (g) => trashBag(g, { x: 2.5, z: 0.6 }),
+        (g) => {
+          trashBag(g, { x: 2.75, z: 0.75, s: 0.9 });
+          mesh(g, new THREE.BoxGeometry(0.05, 0.03, 0.05), COLORS.paper, { x: 2.3, y: 0.065, z: 0.95, ry: 0.3 });
+        },
+      ],
+    },
+    spots: { kitchen: { x: 1.25, z: 0.9, facing: "ne" }, trash: { x: 2.45, z: 1.15, facing: "ne" } },
+    walkArea: { minX: 0.4, maxX: 2.7, minZ: 1.1, maxZ: 3.6 },
+  },
+  bathroom: {
+    size: { x: 4, z: 3 },
+    offset: { x: 0, z: 4 },
+    build: buildBathroomRoom,
+    mess: {
+      bathroom: [
+        (g) => cloth(g, COLORS.sage, { x: 0.95, z: 1.0, ry: 0.9, w: 0.26, d: 0.14 }),
+        (g) => decal(g, COLORS.water, { x: 1.0, z: 0.55, rx: 0.16, rz: 0.11, opacity: 0.75, rotation: 0.3 }),
+        (g) => {
+          decal(g, COLORS.water, { x: 0.8, z: 2.2, rx: 0.12, rz: 0.08, opacity: 0.7 });
+          mesh(g, new THREE.CylinderGeometry(0.035, 0.035, 0.08, 14), COLORS.paper, { x: 0.9, y: 0.09, z: 2.5, rx: Math.PI / 2, ry: 0.4 });
+        },
+      ],
+      laundry: [
+        (g) => clothHeap(g, { x: 3.1, z: 2.65, y: 0.2, colors: [COLORS.sage, COLORS.terracotta, COLORS.sand] }),
+        (g) => {
+          cloth(g, COLORS.ocean, { x: 2.7, z: 2.0, ry: 0.5 });
+          cloth(g, COLORS.honey, { x: 3.2, z: 1.9, ry: -0.3, w: 0.16 });
+        },
+        (g) => clothHeap(g, { x: 1.8, z: 1.9, colors: [COLORS.terracotta, COLORS.sand, COLORS.ocean, COLORS.plum] }),
+      ],
+    },
+    spots: { bathroom: { x: 0.85, z: 1.4, facing: "nw" }, laundry: { x: 2.4, z: 1.75, facing: "sw" } },
+    walkArea: { minX: 1.0, maxX: 3.6, minZ: 0.4, maxZ: 2.0 },
+  },
+};
+
 // ---------------------------------------------------------------- kamera, renderelés
 
 let ppu = 0;
@@ -581,17 +692,14 @@ async function toGlb(input, options = {}) {
 /** A nézési irány (y körüli elforgatás) a sprite-irány nevéből; az állat alapból +z felé néz. */
 const FACING_YAW = { se: Math.PI / 2, ne: Math.PI, nw: -Math.PI / 2, sw: 0 };
 
-/**
- * A fő szoba GLB-je: bútorok + zónánként `mess_<zone>_<szint>` csoportok (1..3, kumulatív:
- * a 2. szinten az 1. és 2. csoport látszik). Az appban a mess csoportok alapból rejtettek.
- */
-async function exportRoom() {
+/** A szoba GLB-je: `furniture` + zónánként `mess_<zóna>_<szint>` csoportok (1..3, kumulatív). */
+async function assembleRoom(key, furnitureGroup, messGroups, meta) {
   const house = new THREE.Group();
-  house.name = "room_main";
-  const furniture = room.clone(true);
+  house.name = `room_${key}`;
+  const furniture = furnitureGroup.clone(true);
   furniture.name = "furniture";
   house.add(furniture);
-  for (const [zone, groups] of Object.entries(mess)) {
+  for (const [zone, groups] of Object.entries(messGroups)) {
     groups.forEach((g, i) => {
       const copy = g.clone(true);
       copy.name = `mess_${zone}_${i + 1}`;
@@ -599,17 +707,38 @@ async function exportRoom() {
       house.add(copy);
     });
   }
-  const box = new THREE.Box3().setFromObject(room);
+  const box = new THREE.Box3().setFromObject(furnitureGroup);
   return {
     data: await toGlb(house),
     meta: {
-      size: ROOM,
+      ...meta,
       floorY: FLOOR_Y,
       bounds: { min: box.min.toArray(), max: box.max.toArray() },
-      walkArea: WALK_AREA,
-      spots: Object.fromEntries(Object.entries(SPOTS).map(([zone, s]) => [zone, { x: s.x, z: s.z, yaw: FACING_YAW[s.facing] }])),
+      spots: Object.fromEntries(Object.entries(meta.spots).map(([zone, s]) => [zone, { x: s.x, z: s.z, yaw: FACING_YAW[s.facing] }])),
     },
   };
+}
+
+/** A fő szoba (mindig megvan): a 6 zóna alaphelye. */
+function exportRoom() {
+  return assembleRoom("main", room, mess, { size: { x: ROOM, z: ROOM }, offset: { x: 0, z: 0 }, walkArea: WALK_AREA, spots: SPOTS });
+}
+
+/** Egy pontokból építhető szoba (EXTRA_ROOMS). */
+async function exportExtraRoom(key) {
+  const def = EXTRA_ROOMS[key];
+  const furniture = new THREE.Group();
+  await def.build(furniture);
+  const messGroups = {};
+  for (const [zone, levels] of Object.entries(def.mess)) {
+    messGroups[zone] = [];
+    for (const build of levels) {
+      const group = new THREE.Group();
+      await build(group);
+      messGroups[zone].push(group);
+    }
+  }
+  return assembleRoom(key, furniture, messGroups, { size: def.size, offset: def.offset, walkArea: def.walkArea, spots: def.spots });
 }
 
 /**
@@ -637,6 +766,8 @@ window.studio = {
   ready: true,
   setup,
   exportRoom,
+  exportExtraRoom,
+  extraRooms: () => Object.keys(EXTRA_ROOMS),
   exportPet,
   renderPreview,
   renderPet,

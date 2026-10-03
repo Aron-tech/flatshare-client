@@ -1,7 +1,8 @@
 import { assetUrl } from "@/components/house/three/asset";
 import { writeAnchor, type ScreenAnchor } from "@/components/house/three/screen-anchor";
 import { PET_HEIGHT, PET_MODELS, PET_SCALE, ROOMS, type HouseZone, type PetAnimation } from "@/lib/house/scene.generated";
-import { angleDelta, distance, randomWalkPoint, seeded, toWorld, yawBetween, type FloorPoint } from "@/lib/house/walk";
+import { pathBetween, randomWalkTarget, zoneSpot, type HouseLayout } from "@/lib/house/rooms";
+import { angleDelta, distance, seeded, toWorld, yawBetween, type FloorPoint } from "@/lib/house/walk";
 import type { HouseMember, HouseMoodBand } from "@/types/house";
 import { useFrame, useLoader } from "@react-three/fiber/native";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -72,6 +73,8 @@ interface HousePetProps {
   /** A tag sorszáma (a kezdőhelyhez). */
   index: number;
   mood: HouseMoodBand;
+  /** A megépült szobák (séta) és a zónák helye (takarítás). */
+  layout: HouseLayout;
   job: HouseJob | null;
   onJobDone: (job: HouseJob) => void;
   /** Az aktuális mozdulat (az overlay buborékjához). */
@@ -87,7 +90,7 @@ interface HousePetProps {
  * Egy tag állata a házban: sétálgat a bejárható padlón, a közös hangulat szerint mozdul,
  * és ha `job` van, odamegy a zónához, rendet rak, majd örül (`onJobDone`).
  */
-export function HousePet({ member, index, mood, job, onJobDone, onAnimationChange, anchor, material, reducedMotion }: HousePetProps) {
+export function HousePet({ member, index, mood, layout, job, onJobDone, onAnimationChange, anchor, material, reducedMotion }: HousePetProps) {
   const gltf = useLoader(GLTFLoader, assetUrl(PET_MODELS[member.character]));
   const floorY = ROOMS.main.floorY;
 
@@ -147,22 +150,25 @@ export function HousePet({ member, index, mood, job, onJobDone, onAnimationChang
     const wait = (ms: number) => new Promise<void>((resolve) => (timer = setTimeout(resolve, ms)));
 
     const walkTo = async (target: FloorPoint) => {
-      const from = position.current;
-      const length = distance(from, target);
-      if (length < 0.05) return;
-      const duration = (length / WALK_SPEED) * 1000;
-      motion.current = { from, to: target, start: performance.now(), duration };
-      targetYaw.current = yawBetween(from, target);
-      setAnimation("walk");
-      await wait(duration);
+      for (const point of pathBetween(position.current, target, layout.rooms)) {
+        if (cancelled) return;
+        const from = position.current;
+        const length = distance(from, point);
+        if (length < 0.05) continue;
+        const duration = (length / WALK_SPEED) * 1000;
+        motion.current = { from, to: point, start: performance.now(), duration };
+        targetYaw.current = yawBetween(from, point);
+        setAnimation("walk");
+        await wait(duration);
+      }
     };
 
     const run = async () => {
       if (job) {
         if (job.zone) {
-          const spot = ROOMS.main.spots[job.zone];
+          const spot = zoneSpot(job.zone, layout);
           if (spot) {
-            await walkTo(toWorld("main", spot));
+            await walkTo(spot);
             if (cancelled) return;
             targetYaw.current = spot.yaw;
             setAnimation("work");
@@ -177,7 +183,7 @@ export function HousePet({ member, index, mood, job, onJobDone, onAnimationChang
       }
       while (!cancelled) {
         if (Math.random() < 0.5) {
-          await walkTo(randomWalkPoint());
+          await walkTo(randomWalkTarget(layout.rooms));
         } else {
           setAnimation(restingAnimation(mood));
           await wait(1800 + Math.random() * 2400);
@@ -195,7 +201,7 @@ export function HousePet({ member, index, mood, job, onJobDone, onAnimationChang
       // Séta közben megszakítva onnan folytatja, ahol éppen áll (a useFrame már odaállította).
       motion.current = null;
     };
-  }, [job, mood, reducedMotion]);
+  }, [job, layout, mood, reducedMotion]);
 
   useFrame(({ camera, size }, delta) => {
     const node = group.current;

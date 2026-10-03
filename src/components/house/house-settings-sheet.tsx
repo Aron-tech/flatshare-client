@@ -11,7 +11,7 @@ interface HouseSettingsSheetProps {
   onClose: () => void;
   onChooseCharacter: () => void;
   onResetCamera: () => void;
-  /** A szobabolt tartalma (szobák, gyűjtés). */
+  /** A szobabolt tartalma (szobák, gyűjtés); nélküle a szekció nem látszik. */
   shop?: ReactNode;
 }
 
@@ -50,13 +50,15 @@ export function HouseSettingsSheet({ onClose, onChooseCharacter, onResetCamera, 
               </Button>
             </View>
 
-            <View className="gap-2">
-              <View className="flex-row items-center gap-2 px-1">
-                <Icon as={Hammer} size={16} className="text-muted-foreground" />
-                <Text className="text-label-md uppercase text-muted-foreground">{t("house.settings.shop")}</Text>
+            {shop && (
+              <View className="gap-2">
+                <View className="flex-row items-center gap-2 px-1">
+                  <Icon as={Hammer} size={16} className="text-muted-foreground" />
+                  <Text className="text-label-md uppercase text-muted-foreground">{t("house.settings.shop")}</Text>
+                </View>
+                {shop}
               </View>
-              {shop ?? <Text className="px-1 text-body-md text-muted-foreground">{t("house.settings.shopSoon")}</Text>}
-            </View>
+            )}
           </ScrollView>
         </Pressable>
       </Pressable>

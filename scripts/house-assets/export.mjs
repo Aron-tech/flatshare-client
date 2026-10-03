@@ -32,10 +32,16 @@ await page.evaluate(() => window.studio.setup());
 let total = 0;
 
 const zones = await page.evaluate(() => window.studio.zones());
-const room = await page.evaluate(() => window.studio.exportRoom());
-const roomFile = join(assets, "room-main.glb");
-total += save(roomFile, room.data);
-console.log(`room-main: ${(statSync(roomFile).size / 1024).toFixed(0)} KB`);
+const rooms = { main: await page.evaluate(() => window.studio.exportRoom()) };
+for (const key of await page.evaluate(() => window.studio.extraRooms())) {
+  rooms[key] = await page.evaluate((key) => window.studio.exportExtraRoom(key), key);
+}
+const roomFiles = {};
+for (const [key, room] of Object.entries(rooms)) {
+  roomFiles[key] = join(assets, `room-${key}.glb`);
+  total += save(roomFiles[key], room.data);
+  console.log(`room-${key}: ${(statSync(roomFiles[key]).size / 1024).toFixed(0)} KB`);
+}
 
 const pets = {};
 let petHeight = 0;
@@ -51,7 +57,6 @@ copyFileSync(colormap, colormapFile);
 total += statSync(colormapFile).size;
 await studio.close();
 
-const m = room.meta;
 const ts = `// GENERÁLT FÁJL – ne szerkeszd kézzel. Forrás: scripts/house-assets (npm run export).
 // Modellek: Kenney Furniture Kit és Cube Pets (CC0, www.kenney.nl).
 
@@ -64,7 +69,9 @@ export type PetId = (typeof PET_IDS)[number];
 /** Az állat GLB-kben lévő animációk (a Kenney klipek átnevezve). */
 export type PetAnimation = "idle" | "walk" | "work" | "happy" | "cheer" | "sad";
 
-export type RoomKey = "main";
+/** A fő szoba mindig megvan, a többit a tagok pontokból építik (backend: HouseRoomEnum). */
+export const ROOM_KEYS = ${JSON.stringify(Object.keys(rooms))} as const;
+export type RoomKey = (typeof ROOM_KEYS)[number];
 
 export interface RoomSpot {
   x: number;
@@ -76,26 +83,29 @@ export interface RoomSpot {
 export interface RoomDefinition {
   /** GLB: \`furniture\` csoport + \`mess_<zóna>_<1..3>\` csoportok (kumulatív szintek). */
   model: number;
-  /** A szoba helye a házban (világkoordináta, padlólapban). */
+  /** A szoba helye a házban (világkoordináta, padlólapban); a szoba saját koordinátái ehhez adódnak. */
   offset: { x: number; z: number };
-  size: number;
+  size: { x: number; z: number };
   /** A padló teteje (ezen állnak az állatok). */
   floorY: number;
   bounds: { min: [number, number, number]; max: [number, number, number] };
   walkArea: { minX: number; maxX: number; minZ: number; maxZ: number };
+  /** A szoba zónáinak helye (ahova az állat rendet rakni megy). */
   spots: Partial<Record<HouseZone, RoomSpot>>;
 }
 
 export const ROOMS: Record<RoomKey, RoomDefinition> = {
-  main: {
-    model: ${asset(roomFile)},
-    offset: { x: 0, z: 0 },
-    size: ${m.size},
+${Object.entries(rooms)
+  .map(([key, { meta: m }]) => `  ${key}: {
+    model: ${asset(roomFiles[key])},
+    offset: ${JSON.stringify(m.offset)},
+    size: ${JSON.stringify(m.size)},
     floorY: ${m.floorY},
     bounds: { min: ${JSON.stringify(m.bounds.min.map(round))}, max: ${JSON.stringify(m.bounds.max.map(round))} },
     walkArea: ${JSON.stringify(m.walkArea)},
-    spots: ${JSON.stringify(Object.fromEntries(Object.entries(m.spots).map(([k, s]) => [k, { x: s.x, z: s.z, yaw: round(s.yaw) }])))},
-  },
+    spots: ${JSON.stringify(Object.fromEntries(Object.entries(m.spots).map(([k, sp]) => [k, { x: sp.x, z: sp.z, yaw: round(sp.yaw) }])))},
+  },`)
+  .join("\n")}
 };
 
 /** A mess csoport neve a szoba GLB-jében. */

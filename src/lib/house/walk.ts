@@ -31,11 +31,3 @@ export function toWorld(room: RoomKey, point: FloorPoint): FloorPoint {
   const { offset } = ROOMS[room];
   return { x: point.x + offset.x, z: point.z + offset.z };
 }
-
-export function randomWalkPoint(room: RoomKey = "main", random: () => number = Math.random): FloorPoint {
-  const area = ROOMS[room].walkArea;
-  return toWorld(room, {
-    x: area.minX + (area.maxX - area.minX) * random(),
-    z: area.minZ + (area.maxZ - area.minZ) * random(),
-  });
-}

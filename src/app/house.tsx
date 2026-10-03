@@ -1,5 +1,6 @@
 import { HouseMoodCard } from "@/components/house/house-mood-card";
 import { HouseScene3D, type HouseSceneHandle } from "@/components/house/house-scene-3d";
+import { HouseRoomShop } from "@/components/house/house-room-shop";
 import { HouseSettingsSheet } from "@/components/house/house-settings-sheet";
 import type { HouseJob } from "@/components/house/three/house-pet";
 import { HouseZoneList } from "@/components/house/house-zone-list";
@@ -12,6 +13,7 @@ import { Elevation, Gutter, MaxContentWidth } from "@/constants/theme";
 import { useHouseholdQuery, useHouseholdSession, usePullToRefresh } from "@/hooks/use-household-query";
 import { useThemeColors, useThemeName } from "@/hooks/use-theme";
 import { pendingReplays, readLastReplayed, saveLastReplayed } from "@/lib/house/replay";
+import { houseLayout, unlockedRoomKeys } from "@/lib/house/rooms";
 import { HOUSE_ZONES } from "@/lib/house/scene.generated";
 import { summarizeZones, zoneOf, type ZoneLevels } from "@/lib/house/zones";
 import { HouseholdQueries } from "@/lib/queries";
@@ -50,6 +52,8 @@ export default function HouseScreen() {
   const sceneHeight = Math.round(Math.min(width * 0.95, window.height * 0.48));
 
   const { levels, summaries } = useMemo(() => summarizeZones(house?.zones ?? []), [house]);
+  const unlockedRooms = unlockedRoomKeys(house?.rooms);
+  const layout = useMemo(() => houseLayout(unlockedRooms), [unlockedRooms]);
 
   // Egyszer, az első betöltéskor: a legutóbbi megnyitás óta történt teljesítések lejátszása.
   useEffect(() => {
@@ -119,6 +123,8 @@ export default function HouseScreen() {
                 jobs={currentJobs}
                 onJobDone={finishJob}
                 onZonePress={openTasks}
+                rooms={house.rooms ?? []}
+                onRoomPress={() => setSettingsOpen(true)}
                 reducedMotion={reducedMotion}
                 dark={theme === "dark"}
                 background={colors.secondary}
@@ -153,7 +159,7 @@ export default function HouseScreen() {
               {summaries.length === 0 ? (
                 <EmptyState text={t("house.allClean")} />
               ) : (
-                <HouseZoneList summaries={summaries} onPress={openTasks} />
+                <HouseZoneList summaries={summaries} zoneRooms={layout.zoneRooms} onPress={openTasks} />
               )}
 
               <Text className="px-1 text-center text-body-sm text-muted-foreground">{t("house.credits")}</Text>
@@ -173,6 +179,7 @@ export default function HouseScreen() {
             setSettingsOpen(false);
             scene.current?.resetCamera();
           }}
+          shop={house && (house.rooms ?? []).length > 0 ? <HouseRoomShop rooms={house.rooms} members={house.members} /> : undefined}
         />
       )}
     </View>

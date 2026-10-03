@@ -1,7 +1,7 @@
 import { Icon } from "@/components/ui/icon";
 import { Text } from "@/components/ui/text";
 import { Elevation } from "@/constants/theme";
-import type { HouseZone } from "@/lib/house/scene.generated";
+import type { HouseZone, RoomKey } from "@/lib/house/scene.generated";
 import type { ZoneSummary } from "@/lib/house/zones";
 import { cn } from "@/lib/utils";
 import { Bath, ChevronRight, Shirt, ShoppingCart, Sparkles, SprayCan, Trash2, Utensils, type LucideIcon } from "lucide-react-native";
@@ -18,7 +18,14 @@ export const ZONE_ICONS: Record<HouseZone, LucideIcon> = {
 };
 
 /** A zónák szöveges állapota (a kép akadálymentes párja is). Koppintásra a feladatokhoz visz. */
-export function HouseZoneList({ summaries, onPress }: { summaries: ZoneSummary[]; onPress: () => void }) {
+interface HouseZoneListProps {
+  summaries: ZoneSummary[];
+  /** A zóna melyik megépült szobában van (a fő szobánál nincs felirat). */
+  zoneRooms?: Partial<Record<HouseZone, RoomKey>>;
+  onPress: () => void;
+}
+
+export function HouseZoneList({ summaries, zoneRooms, onPress }: HouseZoneListProps) {
   const { t } = useTranslation();
 
   const status = (summary: ZoneSummary) => {
@@ -52,7 +59,15 @@ export function HouseZoneList({ summaries, onPress }: { summaries: ZoneSummary[]
             />
           </View>
           <View className="flex-1 gap-0.5">
-            <Text className="text-body-lg font-medium">{t(`house.zones.${summary.zone ?? "other"}`)}</Text>
+            <Text className="text-body-lg font-medium">
+              {t(`house.zones.${summary.zone ?? "other"}`)}
+              {summary.zone && zoneRooms?.[summary.zone] && zoneRooms[summary.zone] !== "main" && (
+                <Text className="text-body-sm text-muted-foreground">
+                  {"  ·  "}
+                  {t(`house.rooms.names.${zoneRooms[summary.zone]}`)}
+                </Text>
+              )}
+            </Text>
             <Text className={cn("text-body-sm", summary.overdue > 0 ? "text-primary" : "text-muted-foreground")}>
               {status(summary)}
             </Text>

@@ -1,4 +1,4 @@
-import type { PetId } from "@/lib/house/scene.generated";
+import type { HouseZone, PetId, RoomKey } from "@/lib/house/scene.generated";
 
 export type HouseMoodBand = "happy" | "content" | "grumpy" | "sad";
 
@@ -39,13 +39,34 @@ export interface HouseCompletion {
   completed_at: string;
 }
 
+/** Egy pontokból építhető szoba: a tagok közösen gyűjtenek rá, az ár elérésekor elkészül. */
+export interface HouseRoomState {
+  key: Exclude<RoomKey, "main">;
+  price: number;
+  collected: number;
+  unlocked: boolean;
+  /** A zónák, amelyek a feloldás után ebbe a szobába költöznek. */
+  zones: HouseZone[];
+  /** Ki mennyit tett bele (a legtöbbet adó elöl). */
+  contributors: { user_id: number; amount: number }[];
+}
+
 export interface HouseState {
   mood: HouseMood;
   zones: HouseZoneState[];
   members: HouseMember[];
   recent_completions: HouseCompletion[];
+  rooms: HouseRoomState[];
+}
+
+/** `POST /households/{h}/house/rooms/{room}/contribute` */
+export interface ContributeToRoomResponse {
+  points_balance: number;
+  room: HouseRoomState;
+  message: string;
 }
 
 export interface IHouseService {
   getState(householdId: number, token: string): Promise<HouseState>;
+  contributeToRoom(householdId: number, room: HouseRoomState["key"], amount: number, token: string): Promise<ContributeToRoomResponse>;
 }

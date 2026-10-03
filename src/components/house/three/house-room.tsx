@@ -35,6 +35,15 @@ export function zoneOfObject(object: Object3D | null): HouseZone | null {
   return null;
 }
 
+/** Melyik szoba modelljéhez tartozik az objektum (a GLB gyökere `room_<kulcs>`). */
+export function roomOfObject(object: Object3D | null): RoomKey | null {
+  for (let node = object; node; node = node.parent) {
+    const match = /^room_(.+)$/.exec(node.name);
+    if (match && match[1] in ROOMS) return match[1] as RoomKey;
+  }
+  return null;
+}
+
 /**
  * Egy szoba modellje (bútorok) és a zónák rendetlensége: a `levels` szerinti szintig minden
  * mess csoport látszik (a szintek egymásra épülnek), a változás áttűnéssel jelenik meg.

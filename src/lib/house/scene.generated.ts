@@ -10,7 +10,9 @@ export type PetId = (typeof PET_IDS)[number];
 /** Az állat GLB-kben lévő animációk (a Kenney klipek átnevezve). */
 export type PetAnimation = "idle" | "walk" | "work" | "happy" | "cheer" | "sad";
 
-export type RoomKey = "main";
+/** A fő szoba mindig megvan, a többit a tagok pontokból építik (backend: HouseRoomEnum). */
+export const ROOM_KEYS = ["main","kitchen","bathroom"] as const;
+export type RoomKey = (typeof ROOM_KEYS)[number];
 
 export interface RoomSpot {
   x: number;
@@ -22,25 +24,44 @@ export interface RoomSpot {
 export interface RoomDefinition {
   /** GLB: `furniture` csoport + `mess_<zóna>_<1..3>` csoportok (kumulatív szintek). */
   model: number;
-  /** A szoba helye a házban (világkoordináta, padlólapban). */
+  /** A szoba helye a házban (világkoordináta, padlólapban); a szoba saját koordinátái ehhez adódnak. */
   offset: { x: number; z: number };
-  size: number;
+  size: { x: number; z: number };
   /** A padló teteje (ezen állnak az állatok). */
   floorY: number;
   bounds: { min: [number, number, number]; max: [number, number, number] };
   walkArea: { minX: number; maxX: number; minZ: number; maxZ: number };
+  /** A szoba zónáinak helye (ahova az állat rendet rakni megy). */
   spots: Partial<Record<HouseZone, RoomSpot>>;
 }
 
 export const ROOMS: Record<RoomKey, RoomDefinition> = {
   main: {
     model: require("../../../assets/house/3d/room-main.glb"),
-    offset: { x: 0, z: 0 },
-    size: 4,
+    offset: {"x":0,"z":0},
+    size: {"x":4,"z":4},
     floorY: 0.05,
     bounds: { min: [-0.09,0,-0.09], max: [4,1.29,4.002] },
     walkArea: {"minX":0.9,"maxX":3.6,"minZ":1,"maxZ":3.6},
     spots: {"kitchen":{"x":1.4,"z":0.85,"yaw":3.142},"shopping":{"x":0.45,"z":0.75,"yaw":3.142},"trash":{"x":3.05,"z":1,"yaw":3.142},"laundry":{"x":0.75,"z":1.25,"yaw":-1.571},"bathroom":{"x":0.85,"z":2.5,"yaw":-1.571},"cleaning":{"x":2.4,"z":2.3,"yaw":1.571}},
+  },
+  kitchen: {
+    model: require("../../../assets/house/3d/room-kitchen.glb"),
+    offset: {"x":4,"z":0},
+    size: {"x":3,"z":4},
+    floorY: 0.05,
+    bounds: { min: [0,0,-0.09], max: [3,1.29,4] },
+    walkArea: {"minX":0.4,"maxX":2.7,"minZ":1.1,"maxZ":3.6},
+    spots: {"kitchen":{"x":1.25,"z":0.9,"yaw":3.142},"trash":{"x":2.45,"z":1.15,"yaw":3.142}},
+  },
+  bathroom: {
+    model: require("../../../assets/house/3d/room-bathroom.glb"),
+    offset: {"x":0,"z":4},
+    size: {"x":4,"z":3},
+    floorY: 0.05,
+    bounds: { min: [-0.09,0,0], max: [4,1.29,3] },
+    walkArea: {"minX":1,"maxX":3.6,"minZ":0.4,"maxZ":2},
+    spots: {"bathroom":{"x":0.85,"z":1.4,"yaw":-1.571},"laundry":{"x":2.4,"z":1.75,"yaw":0}},
   },
 };
 
