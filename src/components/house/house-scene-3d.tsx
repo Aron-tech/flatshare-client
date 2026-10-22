@@ -258,14 +258,25 @@ function Ready({ onReady }: { onReady: () => void }) {
   return null;
 }
 
-function Lights({ dark, target, radius }: { dark: boolean; target: [number, number, number]; radius: number }) {
+/** Height of the room lights: just under the top of the walls. */
+const ROOM_LIGHT_HEIGHT = 1.1;
+
+interface LightsProps {
+  dark: boolean;
+  target: [number, number, number];
+  radius: number;
+  rooms: readonly RoomKey[];
+}
+
+function Lights({ dark, target, radius, rooms }: LightsProps) {
   const sun = useMemo(() => new Vector3(target[0] + 4, 9, target[2] + 2.5), [target]);
+  const fill = useMemo(() => new Vector3(target[0] - 5, 6, target[2] - 4), [target]);
   return (
     <>
-      <hemisphereLight args={dark ? ["#AEB6D6", "#4A4660", 1.1] : ["#FFF7EC", "#D9CDBB", 1.9]} />
+      <hemisphereLight args={dark ? ["#C3CBEA", "#6D6A8A", 2.4] : ["#FFF7EC", "#E3D8C6", 2.1]} />
       <directionalLight
         position={sun}
-        intensity={dark ? 0.8 : 2.2}
+        intensity={dark ? 1.5 : 2.2}
         color={dark ? "#C9D3FF" : "#FFF1DE"}
         castShadow
         shadow-mapSize={[1024, 1024]}
@@ -278,7 +289,22 @@ function Lights({ dark, target, radius }: { dark: boolean; target: [number, numb
       >
         <object3D attach="target" position={target} />
       </directionalLight>
-      {dark && <pointLight position={[0.3, 1.05, 3.85]} color="#F3DFA2" intensity={2.2} distance={3.2} decay={1.6} />}
+      {/* From the opposite side without shadows: the walls and furniture facing away from the sun do not go dark. */}
+      <directionalLight position={fill} intensity={dark ? 0.9 : 0.8} color={dark ? "#9FB0E8" : "#FFF7EC"} />
+      {rooms.map((key) => {
+        const { offset, size } = ROOMS[key];
+        return (
+          <pointLight
+            key={key}
+            position={[offset.x + size.x / 2, ROOM_LIGHT_HEIGHT, offset.z + size.z / 2]}
+            color="#FFE6BD"
+            intensity={dark ? 3.5 : 1.2}
+            distance={6}
+            decay={2}
+          />
+        );
+      })}
+      {dark && <pointLight position={[0.3, 1.05, 3.85]} color="#F3DFA2" intensity={2} distance={3.2} decay={1.6} />}
     </>
   );
 }
@@ -527,7 +553,7 @@ export function HouseScene3D({
           camera={{ fov: ORBIT.fov, near: 0.1, far: 100, position: orbitPosition(ORBIT, distance, target) }}
         >
           <color attach="background" args={[background]} />
-          <Lights dark={dark} target={target} radius={radius + 1} />
+          <Lights dark={dark} target={target} radius={radius + 1} rooms={layout.rooms} />
           <CameraRig orbit={orbit} target={target} distance={distance} />
           <Bridge input={input} />
           <Suspense fallback={null}>

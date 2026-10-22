@@ -59,6 +59,8 @@ export function HouseSettingsSheet({ onClose, onChooseCharacter, onResetCamera, 
                 {shop}
               </View>
             )}
+
+            <Text className="text-center text-body-sm text-muted-foreground">{t("house.credits")}</Text>
           </ScrollView>
         </Pressable>
       </Pressable>

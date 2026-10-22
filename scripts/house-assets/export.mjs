@@ -66,6 +66,7 @@ export type HouseZone = (typeof HOUSE_ZONES)[number];
 export const PET_IDS = ${JSON.stringify(PETS)} as const;
 export type PetId = (typeof PET_IDS)[number];
 
+/** The animations in the pet GLBs (the Kenney clips renamed). */
 export type PetAnimation = "idle" | "walk" | "work" | "happy" | "cheer" | "sad";
 
 /** The main room always exists, the others are built by members from points (backend: HouseRoomEnum). */

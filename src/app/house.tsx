@@ -159,8 +159,6 @@ export default function HouseScreen() {
               ) : (
                 <HouseZoneList summaries={summaries} zoneRooms={layout.zoneRooms} onPress={openTasks} />
               )}
-
-              <Text className="px-1 text-center text-body-sm text-muted-foreground">{t("house.credits")}</Text>
             </>
           )}
         </ScrollView>

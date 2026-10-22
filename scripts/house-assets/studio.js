@@ -14,6 +14,9 @@ const ROOM_WIDTH_PX = 1170;
 /** Pet size relative to the furniture (originally ~1.6 units tall). */
 const PET_SCALE = 0.3;
 const FPS = 16;
+/** The wall body is 0.05 thick (-0.05..0 behind the room's edge); window and doorway pieces also have a trim sticking out 0.02 on both sides. */
+const WALL_THICKNESS = 0.05;
+const TRIM = 0.02;
 
 /** A Japandi paletta (DESIGN.md) a Kenney anyagnevekre. */
 const PALETTE = {
@@ -121,10 +124,11 @@ function recolor(object) {
  * Places a Kenney model: `rotation` in degrees around the y axis; the min corner of the
  * bounding box goes to the (x, y, z) point.
  */
-async function place(parent, name, { x, z, y = 0, rotation = 0, color } = {}) {
+async function place(parent, name, { x, z, y = 0, rotation = 0, color, scale } = {}) {
   const gltf = await load(FURNITURE + name + ".glb");
   const object = recolor(gltf.scene.clone(true));
   if (color) object.traverse((child) => child.isMesh && (child.material = material(color)));
+  if (scale) object.scale.set(...scale);
   object.rotation.y = THREE.MathUtils.degToRad(rotation);
   object.updateMatrixWorld(true);
   const box = new THREE.Box3().setFromObject(object);
@@ -161,6 +165,20 @@ function decal(parent, color, { x, z, rx = 0.1, rz = 0.07, opacity = 0.55, rotat
 
 // ---------------------------------------------------------------- room
 
+/**
+ * A wall piece along the wall line, so that every piece's body is in the same plane: `rotation` 0 runs along
+ * x (the room's z = 0 side), 90 along z (the x = 0 side).
+ */
+async function wall(parent, name, { x, z, rotation = 0 }) {
+  const back = name === "wall" ? -WALL_THICKNESS : -WALL_THICKNESS - TRIM;
+  await place(parent, name, rotation ? { x: back, z, rotation } : { x, z: back, rotation });
+}
+
+/** Closes the hole where the two back walls meet. */
+async function wallCorner(parent) {
+  await place(parent, "wall", { x: -WALL_THICKNESS, z: -WALL_THICKNESS, scale: [WALL_THICKNESS, 1, 1] });
+}
+
 async function buildRoom() {
   for (let i = 0; i < ROOM; i++) {
     for (let j = 0; j < ROOM; j++) {
@@ -169,9 +187,10 @@ async function buildRoom() {
   }
   // Back walls: along z = 0 (kitchen, window), along x = 0 (laundry, bathroom door, living room).
   const backX = ["wall", "wall", "wall", "wallWindow"];
-  for (let i = 0; i < ROOM; i++) await place(room, backX[i], { x: i, z: -0.09, y: 0 });
+  for (let i = 0; i < ROOM; i++) await wall(room, backX[i], { x: i });
   const backZ = ["wall", "wall", "wallDoorway", "wallWindow"];
-  for (let j = 0; j < ROOM; j++) await place(room, backZ[j], { x: -0.09, z: j, rotation: 90 });
+  for (let j = 0; j < ROOM; j++) await wall(room, backZ[j], { z: j, rotation: 90 });
+  await wallCorner(room);
 
   // Kitchen counter along the z = 0 wall.
   const counter = ["kitchenFridge", "kitchenCabinetDrawer", "kitchenSink", "kitchenCabinet", "kitchenStove", "kitchenCabinetDrawer"];
@@ -195,7 +214,7 @@ async function buildRoom() {
   room.add(basket);
 
   // Bathroom door in the wall opening, doormat in front of it.
-  await place(room, "doorway", { x: -0.06, z: 2.27, rotation: 90 });
+  await place(room, "doorway", { x: -WALL_THICKNESS - TRIM, z: 2.27, rotation: 90 });
   await place(room, "rugDoormat", { x: 0.05, z: 2.25, y: 0.05, rotation: 90 });
 
   // Nappali.
@@ -398,7 +417,7 @@ async function floor(parent, sx, sz, [a, b]) {
 async function buildKitchenRoom(g) {
   await floor(g, 3, 4, ["#E9E4DA", "#DAD3C6"]);
   const back = ["wall", "wallWindow", "wall"];
-  for (let i = 0; i < 3; i++) await place(g, back[i], { x: i, z: -0.09 });
+  for (let i = 0; i < 3; i++) await wall(g, back[i], { x: i });
   const counter = ["kitchenFridgeLarge", "kitchenCabinetDrawer", "kitchenSink", "kitchenStoveElectric", "kitchenCabinet"];
   let x = 0.05;
   for (const name of counter) {
@@ -419,7 +438,7 @@ async function buildKitchenRoom(g) {
 async function buildBathroomRoom(g) {
   await floor(g, 4, 3, ["#DCE6E0", "#C9D8D2"]);
   const back = ["wall", "wallWindow", "wall"];
-  for (let j = 0; j < 3; j++) await place(g, back[j], { x: -0.09, z: j, rotation: 90 });
+  for (let j = 0; j < 3; j++) await wall(g, back[j], { z: j, rotation: 90 });
   await place(g, "bathtub", { x: 0, z: 0.05, rotation: 90 });
   await place(g, "bathroomSinkSquare", { x: 0, z: 1.25, rotation: 90 });
   await place(g, "bathroomMirror", { x: 0, z: 1.3, y: 0.62, rotation: 90 });
