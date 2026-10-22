@@ -1,13 +1,30 @@
-export class Config {
-  public static readonly BACKEND_URL: string =
-    process.env.EXPO_PUBLIC_BACKEND_URL ?? "http://192.168.0.32:8000/api";
+/**
+ * Expo inlines EXPO_PUBLIC_* at build time only when accessed statically (process.env.EXPO_PUBLIC_X),
+ * so every variable is read by its full name. A missing one fails at startup instead of falling back to a dev value.
+ */
+function required(value: string | undefined, name: string): string {
+  if (!value) {
+    throw new Error(`Missing environment variable ${name} (see .env.example).`);
+  }
+  return value;
+}
 
-  public static readonly WORKOS_CLIENT_ID: string =
-    process.env.EXPO_PUBLIC_WORKOS_CLIENT_ID ??
-    "client_01M23QN0EFT8XFXCHDR0PS4Z6B";
+export class Config {
+  public static readonly BACKEND_URL: string = required(
+    process.env.EXPO_PUBLIC_BACKEND_URL,
+    "EXPO_PUBLIC_BACKEND_URL",
+  );
+
+  public static readonly WORKOS_CLIENT_ID: string = required(
+    process.env.EXPO_PUBLIC_WORKOS_CLIENT_ID,
+    "EXPO_PUBLIC_WORKOS_CLIENT_ID",
+  );
 
   /** The backend only serves requests that arrive with this key (X-App-Key, see EnsureAppClientMiddleware). */
-  public static readonly APP_KEY: string = process.env.EXPO_PUBLIC_APP_KEY ?? "";
+  public static readonly APP_KEY: string = required(
+    process.env.EXPO_PUBLIC_APP_KEY,
+    "EXPO_PUBLIC_APP_KEY",
+  );
 
   /** The public website (privacy policy, account deletion); from BACKEND_URL without `/api`. */
   public static readonly WEB_URL: string =
