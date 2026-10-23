@@ -4,6 +4,7 @@ import {
   TaskCompletionResponse,
 } from "@/types/dashboard";
 import { announceSticker } from "@/lib/sticker-events";
+import { requestReviewAfterChore } from "@/lib/store-review";
 import { HttpClient } from "./HttpClient";
 
 export class TaskCompletionService implements ITaskCompletionService {
@@ -24,6 +25,7 @@ export class TaskCompletionService implements ITaskCompletionService {
       token
     );
     announceSticker(result.new_sticker);
+    void requestReviewAfterChore(result);
     return result;
   }
 }

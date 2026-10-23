@@ -1,5 +1,6 @@
 import { Config } from "@/config/env";
 import { announceSticker } from "@/lib/sticker-events";
+import { requestReviewAfterChore } from "@/lib/store-review";
 import { TaskCompletionResponse } from "@/types/dashboard";
 import {
   CreateTaskDto,
@@ -19,9 +20,10 @@ import { HttpClient, RequestOptions } from "./HttpClient";
 /** The task forms show validation errors next to the fields. */
 const INLINE_VALIDATION: RequestOptions = { inlineValidation: true };
 
-/** Tells the popup about the new sticker earned by logging. */
-function withStickerAnnounced(result: TaskCompletionResponse): TaskCompletionResponse {
+/** Hands a logged completion to the sticker popup and the review prompt. */
+function afterCompletion(result: TaskCompletionResponse): TaskCompletionResponse {
   announceSticker(result.new_sticker);
+  void requestReviewAfterChore(result);
   return result;
 }
 
@@ -117,7 +119,7 @@ export class TaskService implements ITaskService {
       `/households/${householdId}/tasks/${taskId}/log`,
       { method: "POST" },
       token
-    ).then(withStickerAnnounced);
+    ).then(afterCompletion);
   }
 
   public logNewTask(
@@ -130,7 +132,7 @@ export class TaskService implements ITaskService {
       { method: "POST", body: JSON.stringify(dto) },
       token,
       INLINE_VALIDATION
-    ).then(withStickerAnnounced);
+    ).then(afterCompletion);
   }
 
   public logTaskFromTemplate(
@@ -143,7 +145,7 @@ export class TaskService implements ITaskService {
       `/households/${householdId}/tasks/templates/${templateId}/log`,
       { method: "POST", body: JSON.stringify(dto) },
       token
-    ).then(withStickerAnnounced);
+    ).then(afterCompletion);
   }
 
   public async deleteTask(
