@@ -12,6 +12,7 @@ import { SUPPORTED_LANGUAGES, type AppLanguage } from "@/i18n";
 import { useAppearance } from "@/context/AppearanceContext";
 import { useAuth } from "@/context/AuthContext";
 import { useNotificationPermissionStatus } from "@/hooks/use-notification-permission-prompt";
+import { replayOnboarding } from "@/hooks/use-onboarding";
 import { type ThemePreference, useThemePreference } from "@/hooks/use-theme-preference";
 import { useThemeColors } from "@/hooks/use-theme";
 import { showToast } from "@/lib/toast";
@@ -260,6 +261,13 @@ export default function SettingsScreen() {
           )}
         </View>
       )}
+
+      <View className="gap-3 rounded-card bg-card p-5" style={Elevation.level1}>
+        <Text className="text-label-md uppercase text-muted-foreground">{t("settings.guide")}</Text>
+        <Button variant="secondary" onPress={replayOnboarding}>
+          <Text>{t("settings.guideOpen")}</Text>
+        </Button>
+      </View>
 
       <View className="gap-3 rounded-card bg-card p-5" style={Elevation.level1}>
         <Text className="text-label-md uppercase text-muted-foreground">{t("settings.account")}</Text>

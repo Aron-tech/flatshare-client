@@ -124,6 +124,8 @@ const hu = {
     notifications_undetermined: "Az értesítések még nincsenek bekapcsolva.",
     notificationsEnable: "Értesítések bekapcsolása",
     notificationsOpenSettings: "Rendszerbeállítások megnyitása",
+    guide: "Útmutató",
+    guideOpen: "Útmutató megnyitása",
     deleteAccount: "Fiókom törlése",
     deleteAccountHint: "Véglegesen törli a fiókodat és a személyes adataidat. Az általad létrehozott háztartások minden tagjuknál törlődnek, a többiből kilépsz.",
     deleteAccountConfirmTitle: "Biztosan törlöd a fiókodat?",
@@ -254,6 +256,39 @@ const hu = {
     activitySubtitle: "Legutóbbi teljesítések",
     viewAll: "Mind",
     allActivityTitle: "Összes teljesítés",
+  },
+  onboarding: {
+    skip: "Kihagyás",
+    start: "Kezdjük!",
+    progress: "{{current}}. lépés / {{total}}",
+    sample: { task: "Mosogatás", due: "Ma, 20:00-ig", reward: "Mozijegy · 120 pont" },
+    steps: {
+      welcome: {
+        title: "Üdv a FlatShare-ben!",
+        body: "Közösen osztjátok be a házimunkát, és minden elvégzett feladatért pont jár. Egy perc, és megmutatjuk, mi hol van.",
+        where: "Rövid bemutató",
+      },
+      tasks: {
+        title: "A te feladataid",
+        body: "Itt látod, mit vállaltál és meddig. Ha kész vagy, koppints a körre – a pontot azonnal jóváírjuk. Nem érsz rá? Kérj türelmi napot, vagy add át pontért.",
+        where: "Kezdőlap → Feladataim",
+      },
+      pool: {
+        title: "Azonnali feladatok",
+        body: "Az Azonnali fülön bárki elvihet egy szabad feladatot. Ha olyat csináltál, ami nem volt kiírva, a középső + gombbal utólag is rögzítheted.",
+        where: "Kezdőlap → Azonnali  ·  + gomb",
+      },
+      points: {
+        title: "Pontok és jutalmak",
+        body: "Minden ciklusban van egy pontcélod. Ami e fölött gyűlik, azt beválthatod a jutalmakra, amelyeket ti magatok töltötök fel.",
+        where: "Jutalmak fül",
+      },
+      house: {
+        title: "A ház, ami él",
+        body: "A ház ikonra koppintva látod a háztartás hangulatát: a háziállatok annál vidámabbak, minél nagyobb a rend. Az ismételt teljesítésekért matricákat gyűjtesz.",
+        where: "Kezdőlap → ház ikon",
+      },
+    },
   },
   notifications: {
     prompt: {

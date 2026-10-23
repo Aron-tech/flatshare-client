@@ -126,6 +126,8 @@ const en: Translations = {
     notifications_undetermined: "Notifications are not turned on yet.",
     notificationsEnable: "Turn on notifications",
     notificationsOpenSettings: "Open system settings",
+    guide: "Guide",
+    guideOpen: "Open the guide",
     deleteAccount: "Delete my account",
     deleteAccountHint: "Permanently deletes your account and personal data. Households you created are deleted for every member, and you leave the others.",
     deleteAccountConfirmTitle: "Delete your account?",
@@ -256,6 +258,39 @@ const en: Translations = {
     activitySubtitle: "Recent completions and contributions",
     viewAll: "View All",
     allActivityTitle: "All Completions",
+  },
+  onboarding: {
+    skip: "Skip",
+    start: "Let's go!",
+    progress: "Step {{current}} of {{total}}",
+    sample: { task: "Dishes", due: "Today, by 20:00", reward: "Cinema ticket · 120 points" },
+    steps: {
+      welcome: {
+        title: "Welcome to FlatShare!",
+        body: "You share the housework together, and every finished chore earns points. Give us a minute to show you around.",
+        where: "Quick tour",
+      },
+      tasks: {
+        title: "Your chores",
+        body: "See what you've claimed and when it's due. Done? Tap the circle – the points are credited right away. No time? Ask for a grace day or hand it over for points.",
+        where: "Home → My tasks",
+      },
+      pool: {
+        title: "Instant chores",
+        body: "On the Instant tab anyone can pick up a free chore. Did something that wasn't listed? Log it afterwards with the + button in the middle.",
+        where: "Home → Instant  ·  + button",
+      },
+      points: {
+        title: "Points and rewards",
+        body: "Each cycle you have a points goal. Whatever you earn above it can be spent on rewards that your household adds itself.",
+        where: "Rewards tab",
+      },
+      house: {
+        title: "A house that lives",
+        body: "Tap the house icon to see your household's mood: the pets get happier the tidier things are. Repeated chores also earn you stickers.",
+        where: "Home → house icon",
+      },
+    },
   },
   notifications: {
     prompt: {

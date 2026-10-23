@@ -3,6 +3,8 @@ import { AuthProvider, useAuth } from "@/context/AuthContext";
 import { HouseholdProvider, useHousehold } from "@/context/HouseholdContext";
 import { usePushNotifications } from "@/hooks/use-push-notifications";
 import { NotificationPermissionPrompt } from "@/components/notifications/notification-permission-prompt";
+import { OnboardingTour } from "@/components/onboarding/onboarding-tour";
+import { useOnboarding } from "@/hooks/use-onboarding";
 import { StickerUnlockHost } from "@/components/sticker-album/sticker-unlock-host";
 import { ToastHost } from "@/components/ui/toast";
 import { useNavTheme } from "@/hooks/use-theme";
@@ -31,6 +33,7 @@ function RootNavigation() {
   const router = useRouter();
 
   usePushNotifications();
+  const onboarding = useOnboarding();
 
   const isGlobalLoading = authLoading || (!!token && householdLoading);
 
@@ -88,7 +91,12 @@ function RootNavigation() {
       </Stack>
       <PortalHost />
       <StickerUnlockHost />
-      <NotificationPermissionPrompt active={!!token && !!activeHousehold} authToken={token} />
+      <OnboardingTour active={!!token && !!activeHousehold} />
+      {/* The permission explainer follows the tour instead of stacking on top of it. */}
+      <NotificationPermissionPrompt
+        active={!!token && !!activeHousehold && onboarding === "done"}
+        authToken={token}
+      />
       <ToastHost />
     </>
   );
