@@ -266,7 +266,7 @@ const en: Translations = {
     sample: { task: "Dishes", due: "Today, by 20:00", reward: "Cinema ticket · 120 points" },
     steps: {
       welcome: {
-        title: "Welcome to FlatShare!",
+        title: "Welcome to HomeQuest!",
         body: "You share the housework together, and every finished chore earns points. Give us a minute to show you around.",
         where: "Quick tour",
       },
@@ -299,7 +299,7 @@ const en: Translations = {
     },
   },
   login: {
-    title: "FlatShare Login",
+    title: "HomeQuest Login",
     google: "Sign in with Google",
     apple: "Sign in with Apple",
     errorTitle: "Login error",
@@ -313,7 +313,7 @@ const en: Translations = {
     joinFailed: "Could not join the household.",
     permissionDenied: "Permission denied",
     cameraRequired: "Camera permission is required to scan QR codes.",
-    welcome: "Welcome to FlatShare!",
+    welcome: "Welcome to HomeQuest!",
     intro: "To continue, create a new household or join an existing one.",
     createNew: "Create a new household",
     joinExisting: "Join an existing one",
@@ -370,7 +370,7 @@ const en: Translations = {
     title: "Manage members",
     listTitle: "Members",
     report: "Report",
-    reportSubject: "FlatShare report: {{name}}",
+    reportSubject: "HomeQuest report: {{name}}",
     reportBody:
       "Household: {{household}} (#{{householdId}})\nReported member: {{name}} (#{{userId}})\n\nWhat happened:\n",
     reportFallback: "Send your report to {{email}}. Please include the household and member name.",

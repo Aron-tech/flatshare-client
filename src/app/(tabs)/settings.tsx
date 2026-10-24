@@ -69,7 +69,7 @@ export default function SettingsScreen() {
     WebBrowser.openBrowserAsync(`${Config.WEB_URL}/privacy?lang=${language}`);
 
   const contactSupport = () =>
-    Linking.openURL(`mailto:${Config.SUPPORT_EMAIL}?subject=${encodeURIComponent("FlatShare")}`).catch(() =>
+    Linking.openURL(`mailto:${Config.SUPPORT_EMAIL}?subject=${encodeURIComponent("HomeQuest")}`).catch(() =>
       Alert.alert(t("settings.contactSupport"), Config.SUPPORT_EMAIL),
     );
 

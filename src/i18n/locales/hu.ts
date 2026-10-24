@@ -264,7 +264,7 @@ const hu = {
     sample: { task: "Mosogatás", due: "Ma, 20:00-ig", reward: "Mozijegy · 120 pont" },
     steps: {
       welcome: {
-        title: "Üdv a FlatShare-ben!",
+        title: "Üdv a HomeQuest-ben!",
         body: "Közösen osztjátok be a házimunkát, és minden elvégzett feladatért pont jár. Egy perc, és megmutatjuk, mi hol van.",
         where: "Rövid bemutató",
       },
@@ -297,7 +297,7 @@ const hu = {
     },
   },
   login: {
-    title: "FlatShare Bejelentkezés",
+    title: "HomeQuest Bejelentkezés",
     google: "Bejelentkezés Google-lel",
     apple: "Bejelentkezés Apple-lel",
     errorTitle: "Bejelentkezési hiba",
@@ -311,7 +311,7 @@ const hu = {
     joinFailed: "Nem sikerült csatlakozni.",
     permissionDenied: "Engedély megtagadva",
     cameraRequired: "A kamera engedély szükséges a QR-kód olvasásához.",
-    welcome: "Üdvözlünk a FlatShare-ben!",
+    welcome: "Üdvözlünk a HomeQuest-ben!",
     intro:
       "A folytatáshoz hozz létre egy új háztartást vagy csatlakozz egy meglévőhöz.",
     createNew: "Új háztartás létrehozása",
@@ -369,7 +369,7 @@ const hu = {
     title: "Tagok kezelése",
     listTitle: "Tagok",
     report: "Jelentés",
-    reportSubject: "FlatShare jelentés: {{name}}",
+    reportSubject: "HomeQuest jelentés: {{name}}",
     reportBody:
       "Háztartás: {{household}} (#{{householdId}})\nJelentett tag: {{name}} (#{{userId}})\n\nMi történt:\n",
     reportFallback: "A jelentést a(z) {{email}} címre küldd el, a háztartás és a tag nevével együtt.",
