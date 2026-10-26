@@ -1,3 +1,4 @@
+import { Config } from "@/config/env";
 import { AppearanceProvider } from "@/context/AppearanceContext";
 import { AuthProvider, useAuth } from "@/context/AuthContext";
 import { HouseholdProvider, useHousehold } from "@/context/HouseholdContext";
@@ -85,9 +86,13 @@ function RootNavigation() {
         <Stack.Screen name="member-departures" options={{ presentation: "modal" }} />
         <Stack.Screen name="calendar" options={{ presentation: "modal" }} />
         <Stack.Screen name="sticker-album" options={{ presentation: "modal" }} />
-        {/* Pulling down rotates the 3D house vertically; close it with the X button. */}
-        <Stack.Screen name="house" options={{ presentation: "modal", gestureEnabled: false }} />
-        <Stack.Screen name="character" options={{ presentation: "modal" }} />
+        {Config.HOUSE_ENABLED && (
+          <>
+            {/* Pulling down rotates the 3D house vertically; close it with the X button. */}
+            <Stack.Screen name="house" options={{ presentation: "modal", gestureEnabled: false }} />
+            <Stack.Screen name="character" options={{ presentation: "modal" }} />
+          </>
+        )}
       </Stack>
       <PortalHost />
       <StickerUnlockHost />

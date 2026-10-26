@@ -141,15 +141,17 @@ export default function SettingsScreen() {
         </Button>
       </View>
 
-      <View className="gap-3 rounded-card bg-card p-5" style={Elevation.level1}>
-        <Text className="text-label-md uppercase text-muted-foreground">{t("house.character.title")}</Text>
-        <Text className="text-body-md">
-          {user?.character ? t(`house.pets.${user.character}`) : t("house.character.default")}
-        </Text>
-        <Button variant="outline" onPress={() => router.push("/character")}>
-          <Text>{t("house.chooseCharacter")}</Text>
-        </Button>
-      </View>
+      {Config.HOUSE_ENABLED && (
+        <View className="gap-3 rounded-card bg-card p-5" style={Elevation.level1}>
+          <Text className="text-label-md uppercase text-muted-foreground">{t("house.character.title")}</Text>
+          <Text className="text-body-md">
+            {user?.character ? t(`house.pets.${user.character}`) : t("house.character.default")}
+          </Text>
+          <Button variant="outline" onPress={() => router.push("/character")}>
+            <Text>{t("house.chooseCharacter")}</Text>
+          </Button>
+        </View>
+      )}
 
       <View className="gap-5 rounded-card bg-card p-5" style={Elevation.level1}>
         <Text className="text-headline-sm">{t("settings.appearance")}</Text>

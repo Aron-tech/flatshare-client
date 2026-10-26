@@ -5,6 +5,7 @@ import { OfferedTaskCard } from "@/components/dashboard/offered-task-card";
 import { PoolTaskCard } from "@/components/dashboard/pool-task-card";
 import { PresenceStrip } from "@/components/dashboard/presence-strip";
 import { WeeklyGoalCard } from "@/components/dashboard/weekly-goal-card";
+import { Config } from "@/config/env";
 import { TabScreen } from "@/components/screen";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -53,7 +54,9 @@ export default function DashboardScreen() {
     acceptOffer,
   } = useDashboard();
   const { stats, refetch: refetchStats } = useStats();
-  const { data: house, refetch: refetchHouse } = useHouseholdQuery(HouseholdQueries.house);
+  const { data: house, refetch: refetchHouse } = useHouseholdQuery(HouseholdQueries.house, {
+    enabled: Config.HOUSE_ENABLED,
+  });
   const { refreshing, onRefresh } = usePullToRefresh(refetch, refetchStats, refetchHouse);
   // The Stats penalty card opens the request sheet with `?request={task_instance_id}`,
   // the House view opens the Instant list with `?view=pool`.
@@ -92,7 +95,9 @@ export default function DashboardScreen() {
               : t("dashboard.cadenceOpen", { count: openCount })}
           </Text>
         </View>
-        <HouseButton band={house?.mood.band ?? null} onPress={() => router.push("/house")} />
+        {Config.HOUSE_ENABLED && (
+          <HouseButton band={house?.mood.band ?? null} onPress={() => router.push("/house")} />
+        )}
       </View>
 
       {error && (

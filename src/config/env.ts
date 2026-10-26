@@ -33,4 +33,7 @@ export class Config {
   /** Address of Settings' "Contact / Support" button (matches the backend APP_CONTACT_EMAIL). */
   public static readonly SUPPORT_EMAIL: string =
     process.env.EXPO_PUBLIC_SUPPORT_EMAIL ?? "aron.papp2003@gmail.com";
+
+  /** Shows the House feature (dashboard button, 3D view, character picker, onboarding step). Off unless `true`. */
+  public static readonly HOUSE_ENABLED: boolean = process.env.EXPO_PUBLIC_HOUSE_ENABLED === "true";
 }

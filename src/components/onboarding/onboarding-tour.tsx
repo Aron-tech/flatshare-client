@@ -1,3 +1,4 @@
+import { Config } from "@/config/env";
 import { Emblem } from "@/components/brand/emblem";
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
@@ -31,8 +32,9 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-const STEPS = ["welcome", "tasks", "pool", "points", "house"] as const;
-type Step = (typeof STEPS)[number];
+const ALL_STEPS = ["welcome", "tasks", "pool", "points", "house"] as const;
+type Step = (typeof ALL_STEPS)[number];
+const STEPS: readonly Step[] = Config.HOUSE_ENABLED ? ALL_STEPS : ALL_STEPS.filter((step) => step !== "house");
 
 const MAX_PAGE_WIDTH = 480;
 
