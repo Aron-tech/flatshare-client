@@ -547,7 +547,7 @@ export function HouseScene3D({
       >
         <Canvas
           pointerEvents="none"
-          shadows
+          shadows="percentage"
           flat
           style={{ width, height }}
           camera={{ fov: ORBIT.fov, near: 0.1, far: 100, position: orbitPosition(ORBIT, distance, target) }}

@@ -16,7 +16,7 @@ import { RewardDifficulty } from "@/types/reward";
 import { useQueryClient } from "@tanstack/react-query";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { X } from "lucide-react-native";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -36,6 +36,10 @@ function parseStock(value: string): number | null | undefined {
 export default function RewardFormScreen() {
   const { t } = useTranslation();
   const router = useRouter();
+  const closeForm = useCallback(() => {
+    if (router.canGoBack()) router.back();
+    else router.replace("/rewards");
+  }, [router]);
   const { user } = useAuth();
   const { householdId, token } = useHouseholdSession();
   const queryClient = useQueryClient();
@@ -74,7 +78,7 @@ export default function RewardFormScreen() {
         if (cancelled) return;
         if (!reward || reward.user_id !== user?.id) {
           showToast(t("rewardForm.notEditable"));
-          router.back();
+          closeForm();
           return;
         }
         setName(reward.name);
@@ -88,7 +92,7 @@ export default function RewardFormScreen() {
         else void rewardService.stopEditing(householdId, rewardId, token).catch(() => {});
       } catch {
         // HttpClient already showed the error toast.
-        if (!cancelled) router.back();
+        if (!cancelled) closeForm();
       }
     })();
 
@@ -101,7 +105,7 @@ export default function RewardFormScreen() {
           .catch(() => {});
       }
     };
-  }, [rewardId, token, householdId, user?.id, router, t, queryClient]);
+  }, [rewardId, token, householdId, user?.id, closeForm, t, queryClient]);
 
   // Difficulty preview while typing the price.
   useEffect(() => {

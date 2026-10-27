@@ -131,7 +131,9 @@ export default function AddTaskScreen() {
   // The task was deleted meanwhile or cannot be loaded (HttpClient already showed the error toast).
   const taskMissing = isEditing && (tasks.error !== null || (tasks.data !== null && editedTask === null));
   useEffect(() => {
-    if (taskMissing) router.back();
+    if (!taskMissing) return;
+    if (router.canGoBack()) router.back();
+    else router.replace("/chores");
   }, [taskMissing, router]);
 
   const visibleTemplates = filterByName(templates ?? [], query);

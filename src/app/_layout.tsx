@@ -88,13 +88,12 @@ function RootNavigation() {
         <Stack.Screen name="member-departures" options={{ presentation: "modal" }} />
         <Stack.Screen name="calendar" options={{ presentation: "modal" }} />
         <Stack.Screen name="sticker-album" options={{ presentation: "modal" }} />
-        {Config.HOUSE_ENABLED && (
-          <>
-            {/* Pulling down rotates the 3D house vertically; close it with the X button. */}
-            <Stack.Screen name="house" options={{ presentation: "modal", gestureEnabled: false }} />
-            <Stack.Screen name="character" options={{ presentation: "modal" }} />
-          </>
-        )}
+        {/* A Fragment is not a valid Stack child (expo-router crashes on it); Protected is. */}
+        <Stack.Protected guard={Config.HOUSE_ENABLED}>
+          {/* Pulling down rotates the 3D house vertically; close it with the X button. */}
+          <Stack.Screen name="house" options={{ presentation: "modal", gestureEnabled: false }} />
+          <Stack.Screen name="character" options={{ presentation: "modal" }} />
+        </Stack.Protected>
       </Stack>
       <PortalHost />
       <StickerUnlockHost />
