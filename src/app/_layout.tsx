@@ -3,6 +3,7 @@ import { AppearanceProvider } from "@/context/AppearanceContext";
 import { AuthProvider, useAuth } from "@/context/AuthContext";
 import { HouseholdProvider, useHousehold } from "@/context/HouseholdContext";
 import { usePushNotifications } from "@/hooks/use-push-notifications";
+import { useWidgetSync } from "@/hooks/use-widget-sync";
 import { NotificationPermissionPrompt } from "@/components/notifications/notification-permission-prompt";
 import { OnboardingTour } from "@/components/onboarding/onboarding-tour";
 import { useOnboarding } from "@/hooks/use-onboarding";
@@ -34,6 +35,7 @@ function RootNavigation() {
   const router = useRouter();
 
   usePushNotifications();
+  useWidgetSync();
   const onboarding = useOnboarding();
 
   const isGlobalLoading = authLoading || (!!token && householdLoading);

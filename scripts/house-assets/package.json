@@ -6,7 +6,8 @@
   "scripts": {
     "fetch": "node fetch-sources.mjs",
     "render": "node render.mjs",
-    "export": "node export.mjs"
+    "export": "node export.mjs",
+    "widget": "node widget-pets.mjs"
   },
   "devDependencies": {
     "playwright-core": "1.63.0",
